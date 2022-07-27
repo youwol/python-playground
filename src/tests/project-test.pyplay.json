@@ -1,0 +1,15 @@
+{
+    "projects": [
+        {
+            "environment": {
+                "packages": ["numpy", "pandas", "scikit-learn"]
+            },
+            "sources": [
+                {
+                    "name": "hello_world",
+                    "content": "import numpy as np\na = np.arange(15).reshape(3, 5)\na"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "type": "application",
+    "displayName": "Platform",
+    "icon": {"class": "fas fa-book-open"},
+    "exec": {
+        "standalone": true,
+        "openAsset": [
+                {   
+                    "display" : "",
+                    "target": {
+                        "kind" : "flux-project"
+                    },
+                    "command":{
+                        "queryParameters": {
+                            "id": "rawId"
+                        }
+                    }
+                }
+            ]
+        },
+    "cdnDependencies": {
+        "@youwol/cdn-client": "^0.0.10",
+        "@youwol/flux-core": "^0.0.21",
+        "@youwol/flux-view": "^0.0.10",
+        "@youwol/fv-button": "^0.0.3",
+        "@youwol/fv-group": "^0.0.4",
+        "@youwol/fv-input": "^0.0.5",
+        "@youwol/fv-tabs": "^0.0.2",
+        "@youwol/fv-tree": "^0.0.3",
+        "@youwol/flux-files": "^0.0.5",
+        "@youwol/platform-essentials": "^0.0.1",
+        "lodash": "4.x",
+        "reflect-metadata": "0.x",
+        "rxjs": "6.x"
+        }
+    }
