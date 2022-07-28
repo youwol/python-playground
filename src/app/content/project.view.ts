@@ -1,5 +1,4 @@
 import { VirtualDOM, children$ } from '@youwol/flux-view'
-import { AppState } from '../app.state'
 import { map } from 'rxjs/operators'
 import { ProjectState } from '../project'
 import { InstallMessageEvent, InstallStep } from '../models'
@@ -26,15 +25,11 @@ export class ProjectView implements VirtualDOM {
     projectState: ProjectState
 
     /**
-     * @group States
-     */
-    appState: AppState
-
-    /**
-     * @group Immutable DOM constants
+     * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
-    constructor(params: { projectState: ProjectState; appState: AppState }) {
+
+    constructor(params: { projectState: ProjectState }) {
         Object.assign(this, params)
         this.children = [
             {

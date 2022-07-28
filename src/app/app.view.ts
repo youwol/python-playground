@@ -72,7 +72,6 @@ export class AppView implements VirtualDOM {
                                     ),
                                     children: [
                                         new ContentView({
-                                            appState: this.appState,
                                             projectState,
                                         }),
                                     ],

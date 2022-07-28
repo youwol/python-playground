@@ -1,5 +1,4 @@
 import { child$, VirtualDOM } from '@youwol/flux-view'
-import { AppState } from '../app.state'
 
 import { BehaviorSubject } from 'rxjs'
 
@@ -24,11 +23,6 @@ export class ContentView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly appState: AppState
-
-    /**
-     * @group States
-     */
     public readonly projectState: ProjectState
 
     /**
@@ -44,7 +38,7 @@ export class ContentView implements VirtualDOM {
 
     public readonly file$ = new BehaviorSubject({ path: './', content: '' })
 
-    constructor(params: { appState: AppState; projectState: ProjectState }) {
+    constructor(params: { projectState: ProjectState }) {
         Object.assign(this, params)
         let sideNavView = new DockableTabs.View({
             state: new DockableTabs.State({
@@ -74,7 +68,6 @@ export class ContentView implements VirtualDOM {
                             if (selectedNode instanceof ProjectNode) {
                                 return new ProjectView({
                                     projectState: this.projectState,
-                                    appState: this.appState,
                                 })
                             }
                             if (selectedNode instanceof SourceNode) {
