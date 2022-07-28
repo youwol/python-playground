@@ -1,5 +1,6 @@
 import { VirtualDOM } from '@youwol/flux-view'
 import { ProjectState } from '../../project'
+import { CodeEditorView } from './code-editor.view'
 
 /**
  * @category View
@@ -58,6 +59,66 @@ export class HeaderBtnView implements VirtualDOM {
                         ],
                         onclick: params.onClick,
                     },
+                ],
+            },
+        ]
+    }
+}
+
+/**
+ * @category View
+ */
+export class CodePageView implements VirtualDOM {
+    /**
+     * @group States
+     */
+    public readonly projectState: ProjectState
+
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly class = 'h-100 d-flex flex-column'
+
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly children: VirtualDOM[]
+
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly headerView: VirtualDOM
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly onCtrlEnter: () => void
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly sourcePath: string
+
+    constructor(params: {
+        sourcePath: string
+        projectState: ProjectState
+        headerView: VirtualDOM
+        onCtrlEnter: () => void
+    }) {
+        Object.assign(this, params)
+        this.children = [
+            this.headerView,
+            {
+                class: 'flex-grow-1 w-100',
+                style: {
+                    minHeight: '0px',
+                },
+                children: [
+                    new CodeEditorView({
+                        sourcePath: this.sourcePath,
+                        projectState: this.projectState,
+                        onRun: this.onCtrlEnter,
+                    }),
                 ],
             },
         ]

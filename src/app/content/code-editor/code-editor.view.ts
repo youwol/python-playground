@@ -12,7 +12,7 @@ export class CodeEditorView {
     /**
      * @group Immutable DOM constants
      */
-    public readonly class = 'flex-grow-1 h-100'
+    public readonly class = 'w-100 h-100'
 
     /**
      * @group Immutable DOM constants

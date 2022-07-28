@@ -1,61 +1,36 @@
 import { children$, VirtualDOM } from '@youwol/flux-view'
 import { ProjectState } from '../project'
-import { CodeEditorView, HeaderBannerView, HeaderBtnView } from './code-editor'
+import { CodePageView, HeaderBannerView, HeaderBtnView } from './code-editor'
 import { combineLatest } from 'rxjs'
 
 /**
  * @category View
  */
-export class SourceView implements VirtualDOM {
-    /**
-     * @group States
-     */
-    public readonly projectState: ProjectState
-
-    /**
-     * @group Immutable DOM constants
-     */
-    public readonly class = 'h-100'
-
-    /**
-     * @group Immutable DOM constants
-     */
-    public readonly children: VirtualDOM[]
-
-    /**
-     *
-     * @group Immutable Constants
-     */
-    public readonly sourcePath: string
-
+export class SourceView extends CodePageView {
     constructor(params: { sourcePath: string; projectState: ProjectState }) {
-        Object.assign(this, params)
         const run = () => {
             this.projectState.runCurrentConfiguration()
         }
-        this.children = [
-            new HeaderBannerView({
+        super({
+            ...params,
+            headerView: new HeaderBannerView({
                 children: [
                     {
                         class: 'ml-3 mr-2',
                         innerText: 'Configurations',
                     },
                     new ConfigurationsDropDown({
-                        projectState: this.projectState,
+                        projectState: params.projectState,
                     }),
                     new HeaderBtnView({
-                        projectState: this.projectState,
+                        projectState: params.projectState,
                         icon: 'fas fa-play',
                         onClick: run,
                     }),
                 ],
             }),
-            new CodeEditorView({
-                sourcePath: this.sourcePath,
-                projectState: this.projectState,
-                onRun: run,
-            }),
-        ]
+            onCtrlEnter: run,
+        })
     }
 }
 
