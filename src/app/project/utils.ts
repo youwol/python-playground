@@ -105,5 +105,8 @@ export function registerYouwolUtilsModule(
         projectModules: Array.from(fileSystem.keys()).map(
             (k) => k.substring(1).split('.py')[0],
         ),
+        display: (title: string, htmlElement: HTMLElement) => {
+            projectState.displayElement$.next({ title, htmlElement })
+        },
     })
 }
