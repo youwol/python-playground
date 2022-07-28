@@ -1,5 +1,6 @@
 /**
+ * Encapsulates top-banner's related features.
  *
- * @module Top Banner
+ * @module TopBanner
  */
 export * from './top-banner.view'

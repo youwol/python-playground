@@ -1,6 +1,7 @@
 /**
+ * Encapsulates explorers' related features.
  *
- * @module SideNav
+ * @module Explorer
  */
 export * from './nodes'
 export * from './tree.view'

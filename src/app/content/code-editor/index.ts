@@ -1,4 +1,5 @@
 /**
+ * Encapsulates code-editors' related features.
  *
  * @module CodeEditor
  */

@@ -1,4 +1,5 @@
 /**
+ * Encapsulates page content's related features.
  *
  * @module Content
  */
