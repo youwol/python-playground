@@ -70,18 +70,29 @@ export function outputPython2Js(data) {
 export function patchPythonSrc(originalSrc: string) {
     return `
 import sys
-from youwol_utils import info, projectModules
-class Logger(object):
+from youwol_utils import log_info, log_error,projectModules
+class LoggerInfo(object):
     def __init__(self):
         self.terminal = sys.stdout
 
     def write(self, message):
-        info(message)
+        log_info(message)
         
-sys.stdout = Logger()        
+class LoggerError(object):
+    def __init__(self):
+        self.terminal = sys.stderr
+
+    def write(self, message):
+        print("An error!!", message)
+        log_error(message)
+        
+sys.stdout = LoggerInfo()  
+sys.stderr = LoggerError()       
+ 
 for module_name in projectModules:
     if module_name in sys.modules:
         del sys.modules[module_name]
+
 ${originalSrc}
 `
 }
@@ -92,10 +103,17 @@ export function registerYouwolUtilsModule(
     projectState: ProjectState,
 ) {
     pyodide.registerJsModule('youwol_utils', {
-        info: (message: string) => {
+        log_info: (message: string) => {
             message.trim() != '' &&
                 projectState.rawLog$.next({
                     level: 'info',
+                    message: message,
+                })
+        },
+        log_error: (message: string) => {
+            message.trim() != '' &&
+                projectState.rawLog$.next({
+                    level: 'error',
                     message: message,
                 })
         },

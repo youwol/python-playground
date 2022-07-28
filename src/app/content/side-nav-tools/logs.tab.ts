@@ -3,6 +3,7 @@ import { childrenAppendOnly$, VirtualDOM } from '@youwol/flux-view'
 import { ProjectState } from '../../project'
 import { debounceTime, map } from 'rxjs/operators'
 import { HTMLElement$ } from '@youwol/flux-view/dist'
+import { RawLog } from '../../models'
 
 /**
  * @category View
@@ -77,8 +78,9 @@ export class LogsView implements VirtualDOM {
                 class: 'h-100 overflow-auto',
                 children: childrenAppendOnly$(
                     this.projectState.rawLog$.pipe(map((log) => [log])),
-                    (log) => {
+                    (log: RawLog) => {
                         return {
+                            class: log.level == 'error' ? 'fv-text-error' : '',
                             innerText: `> ${log.message}`,
                         }
                     },
