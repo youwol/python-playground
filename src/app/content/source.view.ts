@@ -23,7 +23,6 @@ export class SourceView extends CodePageView {
                         projectState: params.projectState,
                     }),
                     new HeaderBtnView({
-                        projectState: params.projectState,
                         icon: 'fas fa-play',
                         onClick: run,
                     }),

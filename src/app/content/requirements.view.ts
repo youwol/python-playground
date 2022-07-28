@@ -14,7 +14,6 @@ export class RequirementsView extends CodePageView {
             headerView: new HeaderBannerView({
                 children: [
                     new HeaderBtnView({
-                        projectState: params.projectState,
                         icon: 'fas fa-check',
                         onClick: run,
                     }),

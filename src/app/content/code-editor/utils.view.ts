@@ -34,16 +34,7 @@ export class HeaderBtnView implements VirtualDOM {
      */
     public readonly children: VirtualDOM[]
 
-    /**
-     * @group State
-     */
-    public readonly projectState: ProjectState
-
-    constructor(params: {
-        projectState: ProjectState
-        icon: string
-        onClick: (ev) => void
-    }) {
+    constructor(params: { icon: string; onClick: (ev) => void }) {
         Object.assign(this, params)
 
         this.children = [
