@@ -67,10 +67,13 @@ export function outputPython2Js(data) {
     return recFct(jsData || data)
 }
 
-export function patchPythonSrc(originalSrc: string) {
+export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
 import sys
 from youwol_utils import log_info, log_error,projectModules
+
+__file__ = '/home/pyodide/${fileName.replace('./', '')}'
+
 class LoggerInfo(object):
     def __init__(self):
         self.terminal = sys.stdout
@@ -125,6 +128,17 @@ export function registerYouwolUtilsModule(
         ),
         display: (title: string, htmlElement: HTMLElement) => {
             projectState.displayElement$.next({ title, htmlElement })
+        },
+        createOutputView: (
+            name: string,
+            htmlElement: HTMLElement,
+            fileName: string,
+        ) => {
+            projectState.requestOutputViewCreation({
+                name,
+                fileName,
+                htmlElement,
+            })
         },
     })
 }

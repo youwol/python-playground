@@ -15,6 +15,8 @@ export type NodeCategory =
     | 'RequirementsNode'
     | 'ConfigurationsNode'
     | 'SourceNode'
+    | 'OutputViewNode'
+
 /**
  * Base class of workspace explorer
  *
@@ -176,6 +178,41 @@ export class SourceNode extends Node {
         super({
             id: params.path,
             name: params.path.split('/').slice(-1)[0],
+            children: [],
+        })
+        Object.assign(this, params)
+    }
+}
+
+/**
+ * Folder of output views Node of explorer
+ *
+ * @category Nodes
+ */
+export class OutputViewNode extends Node {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly category: NodeCategory = 'OutputViewNode'
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly projectState: ProjectState
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly htmlElement: HTMLElement
+
+    constructor(params: {
+        projectState: ProjectState
+        name: string
+        htmlElement: HTMLElement
+    }) {
+        super({
+            id: `${params.projectState.id}.folder-views.${params.name}`,
+            name: params.name,
         })
         Object.assign(this, params)
     }

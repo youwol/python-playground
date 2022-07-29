@@ -4,6 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 
 import {
     ConfigurationsNode,
+    OutputViewNode,
     ProjectNode,
     RequirementsNode,
     SourceNode,
@@ -15,8 +16,8 @@ import { DockableTabs } from '@youwol/fv-tabs'
 import { LogsTab } from './side-nav-tools'
 import { SourceView } from './source.view'
 import { RequirementsView } from './requirements.view'
-import { Carousel3dView, CarouselSide } from '../carousel-3d'
-import { RenderingPageView } from './rendering-page'
+
+import { distinctUntilChanged, filter } from 'rxjs/operators'
 
 /**
  * @category View
@@ -30,21 +31,30 @@ export class MainContentView implements VirtualDOM {
     /**
      * @group Immutable DOM constants
      */
-    public readonly class = 'w-100 h-100 d-flex flex-column fv-bg-background'
+    public readonly class =
+        'main-content-view w-100 h-100 d-flex flex-column fv-bg-background'
 
     /**
      * @group Immutable DOM constants
      */
     public readonly children: VirtualDOM[]
 
-    public readonly file$ = new BehaviorSubject({ path: './', content: '' })
-
     constructor(params: { projectState: ProjectState }) {
         Object.assign(this, params)
 
         this.children = [
             child$(
-                this.projectState.explorerState.selectedNode$,
+                this.projectState.explorerState.selectedNode$.pipe(
+                    distinctUntilChanged((nodePrev, nodeCurrent) => {
+                        if (nodePrev.id == nodeCurrent.id) return true
+                        return (
+                            nodePrev instanceof OutputViewNode &&
+                            nodeCurrent.children &&
+                            nodeCurrent.resolvedChildren().includes(nodePrev)
+                        )
+                    }),
+                    filter((node) => !(node instanceof OutputViewNode)),
+                ),
                 (selectedNode) => {
                     if (selectedNode instanceof ProjectNode) {
                         return new ProjectView({
@@ -97,18 +107,7 @@ export class ContentView implements VirtualDOM {
 
     constructor(params: { projectState: ProjectState }) {
         Object.assign(this, params)
-        const selectedSide$ = new BehaviorSubject<CarouselSide>('front')
-        const carousel = new Carousel3dView({
-            frontView: new MainContentView({
-                projectState: this.projectState,
-            }),
-            rightView: new RenderingPageView({
-                projectState: this.projectState,
-            }),
-            backView: {},
-            leftView: {},
-            selectedSide$: selectedSide$,
-        })
+
         let sideNavView = new DockableTabs.View({
             state: new DockableTabs.State({
                 disposition: 'bottom',
@@ -130,21 +129,13 @@ export class ContentView implements VirtualDOM {
                 style: {
                     minHeight: '0px',
                 },
-                children: [carousel],
+                children: [
+                    new MainContentView({
+                        projectState: this.projectState,
+                    }),
+                ],
             },
             sideNavView,
         ]
-        document.addEventListener('keydown', logKey)
-
-        function logKey(e) {
-            if (e.altKey && e.key == 'ArrowLeft') {
-                e.preventDefault()
-                selectedSide$.next('front')
-            }
-            if (e.altKey && e.key == 'ArrowRight') {
-                e.preventDefault()
-                selectedSide$.next('right')
-            }
-        }
     }
 }

@@ -5,10 +5,17 @@ import {
     Requirements,
     RunConfiguration,
 } from '../models'
-import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
+import {
+    BehaviorSubject,
+    combineLatest,
+    merge,
+    Observable,
+    ReplaySubject,
+    Subject,
+} from 'rxjs'
 import { debounceTime, filter, map, scan, skip, take } from 'rxjs/operators'
 import { Explorer } from '..'
-import { createProjectRootNode } from '../explorer'
+import { createProjectRootNode, OutputViewNode, SourceNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import {
     install,
@@ -27,6 +34,13 @@ declare type CodeEditorModule = typeof import('@youwol/fv-code-mirror-editors')
 export interface DisplayedElement {
     title: string
     htmlElement: HTMLElement
+}
+
+export interface OutputView {
+    name: string
+    fileName: string
+    htmlElement: HTMLElement
+    node: OutputViewNode
 }
 
 /**
@@ -106,6 +120,32 @@ export class ProjectState {
      * @group Observables
      */
     public readonly displayElement$ = new ReplaySubject<DisplayedElement>(1)
+
+    /**
+     * @group Observables
+     */
+    public readonly createdOutput$ = new ReplaySubject<OutputView>(1)
+
+    /**
+     * @group Observables
+     */
+    public readonly createdOutputs$ = new BehaviorSubject<OutputView[]>([])
+
+    /**
+     * @group Observables
+     */
+    public readonly runStart$ = new Subject<true>()
+
+    /**
+     * @group Observables
+     */
+    public readonly runDone$ = new Subject<true>()
+
+    /**
+     *
+     * @group Observables
+     */
+    public readonly openedPyFiles$ = new BehaviorSubject<string[]>([])
 
     constructor({
         project,
@@ -197,6 +237,31 @@ export class ProjectState {
                 }
             }),
         )
+
+        this.runStart$.subscribe(() => {
+            this.createdOutputs$
+                .getValue()
+                .map((output) => output.node)
+                .forEach((node) => {
+                    this.explorerState.removeNode(node)
+                })
+        })
+
+        merge(this.runStart$, this.createdOutput$)
+            .pipe(
+                scan(
+                    (acc, e: true | OutputView) =>
+                        e === true ? [] : [...acc, e],
+                    [],
+                ),
+            )
+            .subscribe((outputs) => {
+                this.createdOutputs$.next(outputs)
+            })
+
+        this.explorerState.selectedNode$.subscribe((node) => {
+            if (node instanceof SourceNode) this.openedPyFiles$.next([node.id])
+        })
     }
 
     selectConfiguration(name: string) {
@@ -232,6 +297,7 @@ export class ProjectState {
     }
 
     runCurrentConfiguration() {
+        this.runStart$.next(true)
         const pyodide = window['loadedPyodide']
         pyodide.registerJsModule('cdn_client', window['@youwol/cdn-client'])
         combineLatest([
@@ -251,9 +317,38 @@ export class ProjectState {
                     pyodide.FS.writeFile(path, value, { encoding: 'utf8' })
                 })
                 const content = fileSystem.get(sourcePath.substring(1))
-                const patchedContent = patchPythonSrc(content)
-                pyodide.runPythonAsync(patchedContent)
+                const patchedContent = patchPythonSrc(sourcePath, content)
+                pyodide.runPythonAsync(patchedContent).then(() => {
+                    this.runDone$.next(true)
+                })
             })
+    }
+
+    requestOutputViewCreation({ name, fileName, htmlElement }) {
+        const pyFileNode = this.explorerState.getNode(
+            fileName.replace('/home/pyodide', '.'),
+        )
+        if (!this.openedPyFiles$.getValue().includes(pyFileNode.id)) {
+            return
+        }
+
+        const newNode = new OutputViewNode({
+            name,
+            projectState: this,
+            htmlElement,
+        })
+        this.explorerState.selectedNode$.pipe(take(1)).subscribe((node) => {
+            this.explorerState.addChild(pyFileNode, newNode)
+            this.explorerState.selectedNode$.next(
+                this.explorerState.getNode(node.id),
+            )
+            this.createdOutput$.next({
+                name,
+                fileName,
+                htmlElement,
+                node: newNode,
+            })
+        })
     }
 
     private installRequirements(requirements: Requirements) {
