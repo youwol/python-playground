@@ -1,10 +1,26 @@
 import { attr$, Stream$, VirtualDOM } from '@youwol/flux-view'
-import { BehaviorSubject, combineLatest } from 'rxjs'
-import { debounceTime, map } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest, Observable } from 'rxjs'
+import { debounceTime, delay, map } from 'rxjs/operators'
 import { HTMLElement$ } from '@youwol/flux-view/dist'
+import * as _ from 'lodash'
 
 export type CarouselSide = 'front' | 'right' | 'back' | 'left'
 
+export interface Options {
+    transition?: {
+        duration?: number
+        ease?: number
+    }
+}
+/**
+ * category Configuration
+ */
+export const defaultOptions: Options = {
+    transition: {
+        duration: 0.5,
+        ease: 0.2,
+    },
+}
 export class Carousel3dView implements VirtualDOM {
     /**
      * @group DOM's style generator
@@ -102,15 +118,22 @@ export class Carousel3dView implements VirtualDOM {
         htmlElement: HTMLDivElement & HTMLElement$,
     ) => void
 
+    /**
+     * @group Configuration
+     */
+    public readonly options: Options = defaultOptions
+
     constructor(params: {
         frontView: VirtualDOM
         rightView: VirtualDOM
         backView: VirtualDOM
         leftView: VirtualDOM
         selectedSide$: BehaviorSubject<CarouselSide>
+        options?: Options
     }) {
         const sizeRaw$ = new BehaviorSubject({ width: 0, height: 0, depth: 0 })
         let isResizing = true
+        _.merge(this.options, params.options || {})
 
         this.connectedCallback = (htmlElement: HTMLDivElement) => {
             const resizeObserver = new ResizeObserver(() => {
@@ -125,6 +148,11 @@ export class Carousel3dView implements VirtualDOM {
             })
             resizeObserver.observe(htmlElement.parentElement)
         }
+        const transformOptions = this.options.transition
+        this.transitionDone$ = params.selectedSide$.pipe(
+            delay(transformOptions.duration + transformOptions.ease),
+        )
+
         sizeRaw$.pipe(debounceTime(100)).subscribe(() => {
             isResizing = false
             params.selectedSide$.next(params.selectedSide$.getValue())
@@ -190,7 +218,7 @@ export class Carousel3dView implements VirtualDOM {
                             ),
                             transition: isResizing
                                 ? 'transform 0s'
-                                : 'transform 0.5s ease 0.2s',
+                                : `transform ${transformOptions.duration}s ease ${transformOptions.ease}s`,
                         }
                     },
                 ),
