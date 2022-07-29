@@ -94,6 +94,10 @@ export class Carousel3dView implements VirtualDOM {
      * @group Immutable DOM Constants
      */
     public readonly class = 'w-100 h-100'
+
+    /**
+     * @group Immutable DOM Constants
+     */
     public readonly children: VirtualDOM[]
 
     /**
@@ -105,12 +109,18 @@ export class Carousel3dView implements VirtualDOM {
     }
 
     /**
-     * @group Observable
+     * @group Immutable DOM Observable
      */
     public readonly style: Stream$<
         { width: number; height: number; depth: number },
         { [k: string]: string }
     >
+
+    /**
+     * @group Observable
+     */
+    public readonly transitionDone$: Observable<any>
+
     /**
      * @group Immutable DOM Constants
      */
