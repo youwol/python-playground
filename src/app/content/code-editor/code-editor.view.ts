@@ -1,5 +1,9 @@
 import { VirtualDOM } from '@youwol/flux-view'
 import { ProjectState } from '../../project'
+import { delay, withLatestFrom } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { Common } from '@youwol/fv-code-mirror-editors'
+
 /**
  * @category View
  */
@@ -22,19 +26,25 @@ export class CodeEditorView {
     /**
      * @group Immutable constants
      */
-    public readonly sourcePath: string
+    public readonly sourcePath: Common.SourcePath
+
+    /**
+     * @group Observables
+     */
+    public readonly refresh$: Observable<any>
 
     constructor(params: {
-        sourcePath: string
+        sourcePath: Common.SourcePath
         projectState: ProjectState
         onRun: () => void
+        refresh$?: Observable<any>
     }) {
         Object.assign(this, params)
-
-        this.children = [
+        const codeEditorView =
             new this.projectState.CodeEditorModule.Common.CodeEditorView({
-                ideState: this.projectState.ideState,
-                path: this.sourcePath,
+                // I don't understand why any is needed on the next two lines: types definition seems correct
+                ideState: this.projectState.ideState as any,
+                path: this.sourcePath as any,
                 language: 'python',
                 config: {
                     extraKeys: {
@@ -43,7 +53,16 @@ export class CodeEditorView {
                         },
                     },
                 },
-            }),
-        ]
+            })
+        codeEditorView.nativeEditor$.pipe(delay(10)).subscribe((cmEditor) => {
+            cmEditor.refresh()
+        })
+        this.refresh$ &&
+            this.refresh$
+                .pipe(withLatestFrom(codeEditorView.nativeEditor$))
+                .subscribe(([_, cmEditor]) => {
+                    cmEditor.refresh()
+                })
+        this.children = [codeEditorView]
     }
 }
