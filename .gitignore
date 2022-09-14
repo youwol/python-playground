@@ -3,10 +3,7 @@ node_modules
 dist/
 coverage/
 junit.xml
-src/auto_generated.ts
-chart/
-deploy
-nginx.conf
-Dockerfile
-backup
 cdn.zip
+__pycache__
+*.iml
+.template

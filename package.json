@@ -1,198 +1,96 @@
 {
     "name": "@youwol/python-playground",
-    "version": "0.0.1-wip",
     "description": "Python playground application",
+    "version": "0.1.0",
     "author": "greinisch@youwol.com",
+    "homepage": "https://github.com/youwol/python-playground#README.md",
     "main": "dist/index.html",
+    "types": "src/index.ts",
     "scripts": {
+        "clean": "del-cli dist",
+        "auto-gen": "python template.py",
         "build": "yarn build:dev",
-        "build:dev": "del-cli dist && webpack --mode development",
-        "build:prod": "del-cli dist && webpack --mode production",
-        "test": "jest -c ./jest.config.js --rootDir . -i",
-        "test-coverage": "jest -c ./jest.config.js --rootDir . -i --collect-coverage --collectCoverageFrom=./src/app/**/*.ts ",
+        "pre-build": "yarn clean && yarn auto-gen",
+        "build:dev": "yarn pre-build && webpack --mode development",
+        "build:prod": "yarn pre-build && webpack --mode production",
+        "lint-check": "yarn lint-prettier-check && yarn lint-eslint-check",
+        "lint-prettier-check": "prettier --check ./src",
+        "lint-eslint-check": "eslint ./src",
+        "test": "jest -c ./jest.config.js -i --rootDir .",
+        "test-coverage": "jest -c ./jest.config.js -i --rootDir . --collect-coverage --collectCoverageFrom=./src/lib/**/*.ts ",
         "doc": "typedoc",
-        "start": "webpack serve",
-        "publish-npm-public": "yarn build:prod && yarn test-coverage && yarn publish --access public"
-    },
-    "license": "MIT",
-    "dependencies": {
-        "@youwol/cdn-client": ">=0.1.3 <1",
-        "@youwol/flux-view": ">=0.1.1 <1",
-        "@youwol/fv-tabs": ">=0.1.2 <1",
-        "@youwol/fv-tree": ">=0.1.4 <1",
-        "@youwol/http-clients": ">=0.1.9 <1",
-        "@youwol/os-core": ">=0.0.1 <1",
-        "@youwol/os-top-banner": "0.0.1 <1",
-        "uuid": "^8.3.2",
-        "lodash": "^4.17.15",
-        "rxjs": "^6.5.5"
+        "publish-npm-public": "yarn build:prod && yarn test-coverage && yarn publish --access public",
+        "start": "webpack serve"
     },
     "devDependencies": {
-        "@youwol/fv-code-mirror-editors": ">=0.0.1 <1",
-        "js-beautify": "^1.14.0",
-        "@types/jest": "26.0.22",
-        "@types/node": "14.14.37",
-        "@types/codemirror": "^5.60.5",
         "@types/lz-string": "^1.3.34",
-        "@typescript/vfs": "^1.3.5",
         "lz-string": "^1.4.4",
-        "@typescript-eslint/parser": "^5.13.0",
-        "css-loader": "5.2.0",
-        "del-cli": "3.0.1",
-        "eslint": "^8.20.0",
+        "@types/node": "18.0.6",
+        "typescript": "^4.7.4",
+        "ts-lib": "^0.0.5",
+        "ts-node": "^10.9.1",
+        "ts-loader": "^9.3.1",
+        "@types/jest": "27.4.1",
+        "ts-jest": "27.1.3",
+        "jest": "27.5.1",
+        "jest-junit": "13.0.0",
+        "typedoc": "^0.23.8",
+        "webpack": "^5.73.0",
+        "webpack-cli": "^4.9.1",
+        "webpack-bundle-analyzer": "^4.5.0",
+        "@types/webpack": "^5.28.0",
+        "del-cli": "^5.0.0",
+        "@youwol/prettier-config": "^0.0.1",
+        "@youwol/eslint-config": "^0.0.1",
+        "prettier": "^2.7.1",
+        "prettier-plugin-properties": "^0.2.0",
+        "@typescript-eslint/eslint-plugin": "^5.33.1",
+        "@typescript-eslint/parser": "^5.33.1",
+        "eslint": "8.22.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-eslint-comments": "^3.2.0",
         "eslint-plugin-import": "^2.26.0",
-        "eslint-plugin-jest": "^26.6.0",
+        "eslint-plugin-jest": "^26.8.4",
         "eslint-plugin-tsdoc": "^0.2.16",
         "eslint-plugin-unused-imports": "^2.0.0",
+        "css-loader": "5.2.0",
         "file-loader": "6.2.0",
         "html-webpack-plugin": "5.2.0",
-        "jest": "^28.1.3",
-        "jest-environment-jsdom": "^28.1.3",
-        "jest-junit": "^14.0.0",
-        "prettier": "^2.5.1",
-        "prettier-plugin-properties": "^0.1.0",
         "mini-css-extract-plugin": "1.3.9",
         "source-map-loader": "2.0.1",
-        "ts-jest": "^28.0.7",
-        "ts-lib": "^0.0.5",
-        "ts-loader": "^9.3.1",
-        "typedoc": "^0.23.8",
-        "typescript": "^4.7.4",
-        "webpack": "^5.65.0",
-        "webpack-bundle-analyzer": "^4.5.0",
-        "webpack-cli": "^4.9.1",
         "webpack-dev-server": "^4.7.1"
     },
-    "youwol": {
-        "type": "application",
-        "cdnDependencies": {
-        }
-    },
-    "prettier": {
-        "printWidth": 80,
-        "tabWidth": 4,
-        "useTabs": false,
-        "semi": false,
-        "singleQuote": true,
-        "quoteProps": "as-needed",
-        "trailingComma": "all",
-        "bracketSpacing": true,
-        "arrowParens": "always",
-        "rangeStart": 0,
-        "requirePragma": false,
-        "insertPragma": false,
-        "proseWrap": "preserve",
-        "htmlWhitespaceSensitivity": "css",
-        "endOfLine": "lf",
-        "embeddedLanguageFormatting": "auto",
-        "keySeparator": "="
-    },
+    "prettier": "@youwol/prettier-config",
     "eslintConfig": {
-        "root": true,
-        "ignorePatterns": [
-            "/dist/",
-            "/coverage/"
-        ],
-        "env": {
-            "browser": true,
-            "es2020": true
-        },
         "extends": [
-            "eslint:recommended",
-            "plugin:eslint-comments/recommended",
-            "plugin:import/recommended",
-            "prettier"
-        ],
-        "rules": {
-            "eslint-comments/require-description": [
-                "error"
-            ],
-            "eslint-comments/no-unused-disable": [
-                "error"
-            ],
-            "curly": [
-                "error"
-            ],
-            "no-irregular-whitespace": [
-                "error",
-                {
-                    "skipComments": true,
-                    "skipTemplates": true
-                }
-            ]
-        },
-        "overrides": [
-            {
-                "files": [
-                    "webpack.config.js",
-                    "jest.config.js"
-                ],
-                "env": {
-                    "node": true
-                }
-            },
-            {
-                "files": [
-                    "*.ts"
-                ],
-                "extends": [
-                    "plugin:@typescript-eslint/recommended",
-                    "plugin:import/typescript"
-                ],
-                "parser": "@typescript-eslint/parser",
-                "parserOptions": {
-                    "tsconfigRootDir": "./",
-                    "project": [
-                        "./tsconfig.json"
-                    ]
-                },
-                "plugins": [
-                    "unused-imports",
-                    "@typescript-eslint"
-                ],
-                "rules": {
-                    "@typescript-eslint/no-namespace": "off",
-                    "@typescript-eslint/no-unused-vars": "off",
-                    "unused-imports/no-unused-imports": "error",
-                    "unused-imports/no-unused-vars": [
-                        "warn",
-                        {
-                            "vars": "all",
-                            "varsIgnorePattern": "^_",
-                            "args": "after-used",
-                            "argsIgnorePattern": "^_"
-                        }
-                    ],
-                    "@typescript-eslint/no-unnecessary-type-assertion": "error"
-                }
-            },
-            {
-                "files": [
-                    "*.test.ts"
-                ],
-                "extends": [
-                    "plugin:jest/recommended",
-                    "plugin:jest/style"
-                ],
-                "plugins": [
-                    "jest"
-                ],
-                "rules": {
-                    "jest/expect-expect": [
-                        "error",
-                        {
-                            "assertFunctionNames": [
-                                "expect",
-                                "verify"
-                            ]
-                        }
-                    ]
-                }
-            }
-        ],
-        "noInlineConfig": false,
-        "reportUnusedDisableDirectives": true
+            "@youwol"
+        ]
+    },
+    "dependencies": {
+        "@youwol/os-core": "^0.1.1",
+        "@youwol/fv-tabs": "^0.2.1",
+        "@youwol/os-top-banner": "^0.1.1",
+        "@youwol/cdn-client": "^1.0.2",
+        "@youwol/http-clients": "^1.0.2",
+        "@youwol/flux-view": "^1.0.3",
+        "@youwol/fv-tree": "^0.2.3",
+        "pyodide": "0.19.1",
+        "lodash": "^4.17.15",
+        "rxjs": "^6.5.5",
+        "@youwol/fv-code-mirror-editors": "^0.1.1"
+    },
+    "youwol": {
+        "cdnDependencies": {
+            "@youwol/os-core": "^0.1.1",
+            "@youwol/fv-tabs": "^0.2.1",
+            "@youwol/os-top-banner": "^0.1.1",
+            "@youwol/cdn-client": "^1.0.2",
+            "@youwol/http-clients": "^1.0.2",
+            "@youwol/flux-view": "^1.0.3",
+            "@youwol/fv-tree": "^0.2.3",
+            "pyodide": "0.19.1",
+            "lodash": "^4.17.15",
+            "rxjs": "^6.5.5"
+        }
     }
 }

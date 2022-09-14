@@ -30,7 +30,7 @@ export const loadFvCodeEditorsModule$: () => Observable<CodeEditorModule> =
     () =>
         from(
             install({
-                modules: ['@youwol/fv-code-mirror-editors#0'],
+                modules: ['@youwol/fv-code-mirror-editors#^0.0.2'],
                 scripts: ['codemirror#5.52.0~mode/python.min.js'],
                 css: [
                     'codemirror#5.52.0~codemirror.min.css',

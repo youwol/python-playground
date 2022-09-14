@@ -1,7 +1,6 @@
-import { attr$, Stream$, VirtualDOM } from '@youwol/flux-view'
+import { attr$, Stream$, VirtualDOM, HTMLElement$} from '@youwol/flux-view'
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs'
 import { debounceTime, delay, map } from 'rxjs/operators'
-import { HTMLElement$ } from '@youwol/flux-view/dist'
 import * as _ from 'lodash'
 
 export type CarouselSide = 'front' | 'right' | 'back' | 'left'
@@ -119,7 +118,7 @@ export class Carousel3dView implements VirtualDOM {
     /**
      * @group Observable
      */
-    public readonly transitionDone$: Observable<any>
+    public readonly transitionDone$: Observable<CarouselSide>
 
     /**
      * @group Immutable DOM Constants

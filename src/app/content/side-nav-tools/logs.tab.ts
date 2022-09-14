@@ -1,8 +1,7 @@
 import { DockableTabs } from '@youwol/fv-tabs'
-import { childrenAppendOnly$, VirtualDOM } from '@youwol/flux-view'
+import { childrenAppendOnly$, VirtualDOM , HTMLElement$ } from '@youwol/flux-view'
 import { ProjectState } from '../../project'
 import { debounceTime, map } from 'rxjs/operators'
-import { HTMLElement$ } from '@youwol/flux-view/dist'
 import { RawLog } from '../../models'
 
 /**
