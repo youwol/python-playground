@@ -31,16 +31,6 @@ await setup.installMainModule({
     },
 })
 
-window['loadedPyodide'] = window['loadPyodide']({
-    indexURL: indexPyodide,
-})
-
-loadingScreen.next(
-    new CdnMessageEvent('loadPyodide', 'Loading Python environment...'),
-)
-window['loadedPyodide'] = await window['loadedPyodide']
-loadingScreen.next(new CdnMessageEvent('loadPyodide', 'Pyodide loaded'))
-
 loadingScreen.done()
 
 await import('./on-load')
