@@ -1,9 +1,3 @@
-/**
- * This module is the main entry point of the application, loaded at start and displaying a [[AppView]].
- *
- * @module Application
- */
-export * from './on-load'
 export * from './app.view'
 export * from './app.state'
 export * as TopBanner from './top-banner'
