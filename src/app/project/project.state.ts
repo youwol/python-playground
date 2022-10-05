@@ -1,10 +1,4 @@
-import {
-    InstallMessageEvent,
-    Project,
-    RawLog,
-    Requirements,
-    RunConfiguration,
-} from '../models'
+import { Project, RawLog, Requirements, RunConfiguration } from '../models'
 import {
     BehaviorSubject,
     combineLatest,
@@ -17,17 +11,8 @@ import { debounceTime, filter, map, scan, skip, take } from 'rxjs/operators'
 import { Explorer } from '..'
 import { createProjectRootNode, OutputViewNode, SourceNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
-import {
-    install,
-    SourceLoadedEvent,
-    SourceParsedEvent,
-    StartEvent,
-} from '@youwol/cdn-client'
-import {
-    formatInstallMessages,
-    patchPythonSrc,
-    registerYouwolUtilsModule,
-} from './utils'
+import { install, CdnEvent } from '@youwol/cdn-client'
+import { patchPythonSrc, registerYouwolUtilsModule } from './utils'
 
 declare type CodeEditorModule = typeof import('@youwol/fv-code-mirror-editors')
 
@@ -47,6 +32,7 @@ export interface OutputView {
  * @category State
  */
 export class ProjectState {
+    pyodide
     /**
      * @group Immutable Constants
      */
@@ -82,12 +68,7 @@ export class ProjectState {
     /**
      * @group Observables
      */
-    public readonly installMessage$ = new ReplaySubject<InstallMessageEvent>()
-
-    /**
-     * @group Observables
-     */
-    public readonly accInstallMessages$: Observable<InstallMessageEvent[]>
+    public readonly cdnEvent$ = new ReplaySubject<CdnEvent>()
 
     /**
      * @group Observables
@@ -195,16 +176,6 @@ export class ProjectState {
                 : projectNode.addProcess({ type: 'loading', id: project.id })
         })
 
-        this.accInstallMessages$ = this.installMessage$.pipe(
-            scan((acc, e) => [...acc, e], []),
-        )
-        const pyodide = window['loadedPyodide']
-
-        const systemVersion = pyodide.runPython('import sys\nsys.version')
-        this.rawLog$.next({
-            level: 'info',
-            message: `Python ${systemVersion.split('\n')[0]}`,
-        })
         this.installRequirements(project.environment.requirements)
         this.project$ = combineLatest([
             this.requirements$,
@@ -260,7 +231,9 @@ export class ProjectState {
             })
 
         this.explorerState.selectedNode$.subscribe((node) => {
-            if (node instanceof SourceNode) this.openedPyFiles$.next([node.id])
+            if (node instanceof SourceNode) {
+                this.openedPyFiles$.next([node.id])
+            }
         })
     }
 
@@ -298,8 +271,10 @@ export class ProjectState {
 
     runCurrentConfiguration() {
         this.runStart$.next(true)
-        const pyodide = window['loadedPyodide']
-        pyodide.registerJsModule('cdn_client', window['@youwol/cdn-client'])
+        this.pyodide.registerJsModule(
+            'cdn_client',
+            window['@youwol/cdn-client'],
+        )
         combineLatest([
             this.configurations$,
             this.selectedConfiguration$,
@@ -311,14 +286,14 @@ export class ProjectState {
                     (config) => config.name == selectedConfigName,
                 )
                 const sourcePath = selectedConfig.scriptPath
-                registerYouwolUtilsModule(pyodide, fileSystem, this)
+                registerYouwolUtilsModule(this.pyodide, fileSystem, this)
                 fileSystem.forEach((value, key) => {
                     const path = key.substring(1)
-                    pyodide.FS.writeFile(path, value, { encoding: 'utf8' })
+                    this.pyodide.FS.writeFile(path, value, { encoding: 'utf8' })
                 })
                 const content = fileSystem.get(sourcePath.substring(1))
                 const patchedContent = patchPythonSrc(sourcePath, content)
-                pyodide.runPythonAsync(patchedContent).then(() => {
+                this.pyodide.runPythonAsync(patchedContent).then(() => {
                     this.runDone$.next(true)
                 })
             })
@@ -352,67 +327,42 @@ export class ProjectState {
     }
 
     private installRequirements(requirements: Requirements) {
-        const pyodide = window['loadedPyodide']
-        const messageCallback = (rawMessage: string) => {
-            this.rawLog$.next({ level: 'info', message: rawMessage })
-            const installMessages = formatInstallMessages(this.id, rawMessage)
-            installMessages.forEach((message) => {
-                this.installMessage$.next(message)
-            })
-        }
-
-        const pyPackages = requirements.pythonPackages.map((name) => {
-            return pyodide.loadPackage(name, messageCallback).then(() => {
-                this.installMessage$.next({
-                    projectId: this.id,
-                    packageName: name,
-                    step: 'installing',
-                })
-                pyodide.runPython(`import ${name}`)
-                this.installMessage$.next({
-                    projectId: this.id,
-                    packageName: name,
-                    step: 'installed',
-                })
-                return true
-            })
-        })
-        const jsPackages = install({
+        const dependencies = install({
             ...requirements.javascriptPackages,
+            customInstallers: [
+                {
+                    module: '@youwol/cdn-pyodide-loader',
+                    installInputs: {
+                        modules: requirements.pythonPackages.map(
+                            (p) => `@pyodide/${p}`,
+                        ),
+                        warmUp: true,
+                        onEvent: (cdnEvent) => this.cdnEvent$.next(cdnEvent),
+                    },
+                },
+            ],
             onEvent: (cdnEvent) => {
-                const emitInstallMessage = (step, ev) => {
-                    this.installMessage$.next({
-                        projectId: this.id,
-                        packageName: ev.targetName,
-                        step,
-                    })
-                    this.rawLog$.next({
-                        level: 'info',
-                        message: `${step} js module '${ev.targetName}'`,
-                    })
-                }
-                if (cdnEvent instanceof StartEvent) {
-                    emitInstallMessage('loading', cdnEvent)
-                }
-
-                if (cdnEvent instanceof SourceLoadedEvent) {
-                    emitInstallMessage('loaded', cdnEvent)
-                }
-                if (cdnEvent instanceof SourceParsedEvent) {
-                    emitInstallMessage('installed', cdnEvent)
-                }
+                this.cdnEvent$.next(cdnEvent)
             },
-        })
+        }) as unknown as Promise<{ loadedPyodide }>
 
-        Promise.all([...pyPackages, jsPackages])
-            .then(() => {
+        dependencies
+            .then(({ loadedPyodide }) => {
+                this.pyodide = loadedPyodide
+                const systemVersion = this.pyodide.runPython(
+                    'import sys\nsys.version',
+                )
+                this.rawLog$.next({
+                    level: 'info',
+                    message: `Python ${systemVersion.split('\n')[0]}`,
+                })
                 Object.entries(requirements.javascriptPackages.aliases).forEach(
                     ([alias, originalName]) => {
                         this.rawLog$.next({
                             level: 'info',
                             message: `create alias '${alias}' to import '${originalName}' (version ${window[alias].__yw_set_from_version__}) `,
                         })
-                        pyodide.registerJsModule(alias, window[alias])
+                        this.pyodide.registerJsModule(alias, window[alias])
                     },
                 )
             })

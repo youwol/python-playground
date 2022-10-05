@@ -30,24 +30,8 @@ export interface Workspace {
     projects: Project[]
 }
 
-export type InstallStep =
-    | 'queued'
-    | 'loading'
-    | 'loaded'
-    | 'installing'
-    | 'installed'
-
-export interface ProjectEvent {
-    projectId: string
-}
-
-export interface InstallMessageEvent extends ProjectEvent {
-    packageName: string
-    step: InstallStep
-}
-
 export interface RawLog {
     level: 'info' | 'warning' | 'error'
     message: string
-    data?: any
+    data?: unknown
 }

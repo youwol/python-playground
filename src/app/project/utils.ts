@@ -1,56 +1,12 @@
-import { InstallMessageEvent } from '../models'
 import { ProjectState } from './project.state'
-
-export function formatInstallMessages(
-    projectId: string,
-    rawMessage: string,
-): InstallMessageEvent[] {
-    if (
-        rawMessage.startsWith('Loading') &&
-        !rawMessage.includes('/api/assets-gateway')
-    ) {
-        const packages = rawMessage.split('Loading ')[1].split(', ')
-        return packages.map((library) => {
-            return {
-                projectId,
-                packageName: library,
-                step: 'queued',
-            }
-        })
-    }
-    if (
-        rawMessage.startsWith('Loading') &&
-        rawMessage.includes('/api/assets-gateway')
-    ) {
-        const library = rawMessage.split(' ')[1]
-        return [
-            {
-                projectId,
-                packageName: library,
-                step: 'loading',
-            },
-        ]
-    }
-    if (rawMessage.startsWith('Loaded')) {
-        const packages = rawMessage.split('Loaded ')[1].split(', ')
-        return packages.map((library) => {
-            return {
-                projectId,
-                packageName: library,
-                step: 'loaded',
-            }
-        })
-    }
-    return []
-}
 
 export function outputPython2Js(data) {
     if (!data) {
         return data
     }
-    let recFct = (d) => {
+    const recFct = (d) => {
         if (d instanceof Map) {
-            let converted = {}
+            const converted = {}
             d.forEach((v, k) => {
                 converted[k] = recFct(v)
             })
