@@ -327,6 +327,7 @@ export class ProjectState {
     }
 
     private installRequirements(requirements: Requirements) {
+        const exportedPyodideInstanceName = 'loadedPyodide'
         const dependencies = install({
             ...requirements.javascriptPackages,
             customInstallers: [
@@ -338,17 +339,18 @@ export class ProjectState {
                         ),
                         warmUp: true,
                         onEvent: (cdnEvent) => this.cdnEvent$.next(cdnEvent),
+                        exportedPyodideInstanceName,
                     },
                 },
             ],
             onEvent: (cdnEvent) => {
                 this.cdnEvent$.next(cdnEvent)
             },
-        }) as unknown as Promise<{ loadedPyodide }>
+        }) as unknown as Promise<{ [exportedPyodideInstanceName] }>
 
         dependencies
-            .then(({ loadedPyodide }) => {
-                this.pyodide = loadedPyodide
+            .then((window) => {
+                this.pyodide = window[exportedPyodideInstanceName]
                 const systemVersion = this.pyodide.runPython(
                     'import sys\nsys.version',
                 )
