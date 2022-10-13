@@ -195,13 +195,14 @@ export class ProjectState {
                     sources: Array.from(fsMap.entries())
                         .filter(
                             ([path]) =>
-                                !['/requirements', '/configurations'].includes(
-                                    path,
-                                ),
+                                ![
+                                    './requirements',
+                                    './configurations',
+                                ].includes(path),
                         )
                         .map(([name, content]) => {
                             return {
-                                path: `.${name}`,
+                                path: name,
                                 content,
                             }
                         }),
@@ -287,11 +288,13 @@ export class ProjectState {
                 )
                 const sourcePath = selectedConfig.scriptPath
                 registerYouwolUtilsModule(this.pyodide, fileSystem, this)
-                fileSystem.forEach((value, key) => {
-                    const path = key.substring(1)
-                    this.pyodide.FS.writeFile(path, value, { encoding: 'utf8' })
+                fileSystem.forEach((value, path) => {
+                    path.endsWith('.py') &&
+                        this.pyodide.FS.writeFile(path, value, {
+                            encoding: 'utf8',
+                        })
                 })
-                const content = fileSystem.get(sourcePath.substring(1))
+                const content = fileSystem.get(sourcePath)
                 const patchedContent = patchPythonSrc(sourcePath, content)
                 this.pyodide.runPythonAsync(patchedContent).then(() => {
                     this.runDone$.next(true)
