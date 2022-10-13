@@ -143,7 +143,7 @@ export class AppState {
                 skip(1),
                 mergeMap((workspace) => {
                     const filesClient = new AssetsGateway.Client().files
-                    const str = JSON.stringify(workspace)
+                    const str = JSON.stringify(workspace, null, 4)
                     const bytes = new TextEncoder().encode(str)
                     const blob = new Blob([bytes], {
                         type: 'application/json;charset=utf-8',
