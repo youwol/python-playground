@@ -1436,21 +1436,6 @@
   dependencies:
     semver "^7.3.4"
 
-"@youwol/cdn-client@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.4.tgz#e2d56a6597ad587f12cdd09b32ae5ae324295958"
-  integrity sha512-tGYDs9o1fhBRZ006GB7rSXHVnIKlijL/GOF2g03hHQaJj/f88p2obEVaTArPRfgbGng2xokUhvySvi61WnzhEg==
-  dependencies:
-    semver "^7.3.4"
-
-"@youwol/cdn-pyodide-loader@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@youwol/cdn-pyodide-loader/-/cdn-pyodide-loader-0.1.0.tgz#c1e1c1bb91c7fa8fa4f508860cdaf495da5a1915"
-  integrity sha512-xqkTv2Qi6QdNlkE+MY0YZ6W2weae5J5jQ5/8jr6GN327MYAuiLgHHmDyeqVHIFHeXNQoT2W01t7l7KpF/0CxxQ==
-  dependencies:
-    "@youwol/cdn-client" "^1.0.4"
-    pyodide "^0.21.3"
-
 "@youwol/eslint-config@^0.0.1":
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@youwol/eslint-config/-/eslint-config-0.0.1.tgz#afc2586b8255a1fa56d17d181c42e1d28a8f8598"
@@ -1793,11 +1778,6 @@ balanced-match@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
-
-base-64@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/base-64/-/base-64-1.0.0.tgz#09d0f2084e32a3fd08c2475b973788eee6ae8f4a"
-  integrity sha512-kwDPIFCGx0NZHog36dj+tHiwP4QMzsZ3AgMViUBKI0+V5n4U0ufTCUMhnQ04diaRI8EX/QcPfql7zlhZ7j4zgg==
 
 batch@0.6.1:
   version "0.6.1"
@@ -5085,15 +5065,6 @@ punycode@^2.1.0, punycode@^2.1.1:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-pyodide@^0.21.3:
-  version "0.21.3"
-  resolved "https://registry.yarnpkg.com/pyodide/-/pyodide-0.21.3.tgz#0be64868231fa59a5372a1191d157a9e8d83e9d7"
-  integrity sha512-5fu5P8ys8V8tKTsK9lag0HattbZQuFRdnNzv1LLOLCieM9A96OPs2cF29lPpcD9N+8GuUtfrGCWEMKiupTHUlA==
-  dependencies:
-    base-64 "^1.0.0"
-    node-fetch "^2.6.1"
-    ws "^8.5.0"
-
 qs@6.10.3:
   version "6.10.3"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.10.3.tgz#d6cde1b2ffca87b5aa57889816c5f81535e22e8e"
@@ -6409,7 +6380,7 @@ ws@^8.4.2:
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.8.1.tgz#5dbad0feb7ade8ecc99b830c1d77c913d4955ff0"
   integrity sha512-bGy2JzvzkPowEJV++hF07hAD6niYSr0JzBNo/J29WsB57A2r7Wlc1UFcTR9IzrPvuNVO4B8LGqF8qcpsVOhJCA==
 
-ws@^8.5.0, ws@^8.9.0:
+ws@^8.9.0:
   version "8.9.0"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.9.0.tgz#2a994bb67144be1b53fe2d23c53c028adeb7f45e"
   integrity sha512-Ja7nszREasGaYUYCI2k4lCKIRTt+y7XuqVoHR44YpI49TtryyqbqvDMn5eqfW7e6HzTukDRIsXqzVHScqRcafg==
