@@ -1,11 +1,8 @@
-import { VirtualDOM, attr$ } from '@youwol/flux-view'
+import { VirtualDOM } from '@youwol/flux-view'
 import { AppState } from './app.state'
 import { TopBannerView } from './top-banner'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ContentView } from './content'
-import { Carousel3dView, CarouselSide } from './carousel-3d'
-import { BehaviorSubject } from 'rxjs'
-import { filter, take } from 'rxjs/operators'
 
 /**
  *
@@ -31,39 +28,8 @@ export class AppView implements VirtualDOM {
 
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
-        const selectedSide$ = new BehaviorSubject<CarouselSide>('front')
-        const carousel = new Carousel3dView({
-            frontView: new MainContentView({ appState: this.appState }),
-            rightView: {},
-            backView: {},
-            leftView: {
-                tag: 'iframe',
-                width: '100%',
-                height: '100%',
-                src: attr$(
-                    selectedSide$.pipe(
-                        filter((d) => d != 'front'),
-                        take(1),
-                    ),
-                    () => {
-                        return '/applications/@youwol/stories/latest?id=68e053dd-6f16-4481-b141-af9047f3096f'
-                    },
-                ),
-            },
-            selectedSide$: selectedSide$,
-        })
-        document.addEventListener('keydown', logKey)
 
-        function logKey(e) {
-            if (e.altKey && e.key == 'ArrowUp') {
-                e.preventDefault()
-                selectedSide$.next('front')
-            }
-            if (e.altKey && e.key == 'ArrowDown') {
-                e.preventDefault()
-                selectedSide$.next('left')
-            }
-        }
+
         this.children = [
             new TopBannerView({ appState: this.appState }),
             {
@@ -71,7 +37,7 @@ export class AppView implements VirtualDOM {
                 style: {
                     minHeight: '0px',
                 },
-                children: [carousel],
+                children: [new MainContentView({appState: this.appState})],
             },
         ]
     }
