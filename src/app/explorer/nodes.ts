@@ -178,7 +178,7 @@ export class SourceNode extends Node {
         super({
             id: params.path,
             name: params.path.split('/').slice(-1)[0],
-            children: [],
+            children: undefined,
         })
         Object.assign(this, params)
     }
