@@ -17,6 +17,10 @@ export type NodeCategory =
     | 'SourceNode'
     | 'OutputViewNode'
 
+export const specialFiles = [
+    "./requirements",
+    "./configurations"
+]
 /**
  * Base class of workspace explorer
  *
@@ -229,12 +233,14 @@ export function createProjectRootNode(
         children: [
             new RequirementsNode({ projectState }),
             new ConfigurationsNode({ projectState }),
-            ...project.sources.map((source) => {
+            ...project.sources.filter( (source) => {
+                return !specialFiles.includes(source.path)
+            }).map((source) => {
                 return new SourceNode({
                     path: source.path,
                     projectState,
                 })
-            }),
+            })
         ],
     })
 }
