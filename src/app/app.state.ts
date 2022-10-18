@@ -3,7 +3,7 @@ import {
     raiseHTTPErrors,
     FilesBackend,
 } from '@youwol/http-clients'
-import { BehaviorSubject } from 'rxjs'
+import {BehaviorSubject, ReplaySubject} from 'rxjs'
 import { Project } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
@@ -27,7 +27,8 @@ export class AppState {
     /**
      * @group States
      */
-    public readonly sideNavState: DockableTabs.State
+    public readonly leftSideNavState: DockableTabs.State
+
 
     /**
      * @group Immutable Constants
@@ -53,7 +54,7 @@ export class AppState {
         this.projectState = new ProjectState({
             project: params.project,
         })
-        this.sideNavState = new DockableTabs.State({
+        this.leftSideNavState = new DockableTabs.State({
             disposition: 'left',
             viewState$: new BehaviorSubject<DockableTabs.DisplayMode>('pined'),
             tabs$: new BehaviorSubject([new ProjectTab({ appState: this })]),

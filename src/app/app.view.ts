@@ -105,8 +105,8 @@ export class MainContentView implements VirtualDOM {
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
-        let sideNavView = new DockableTabs.View({
-            state: this.appState.sideNavState,
+        let leftSideNavView = new DockableTabs.View({
+            state: this.appState.leftSideNavState,
             styleOptions: {
                 initialPanelSize: '300px',
             },
@@ -124,7 +124,7 @@ export class MainContentView implements VirtualDOM {
                     minHeight: '0px',
                 },
                 children: [
-                    sideNavView,
+                    leftSideNavView,
                     new ContentView({
                         appState: this.appState,
                     }),
