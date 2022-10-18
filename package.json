@@ -70,6 +70,7 @@
         ]
     },
     "dependencies": {
+        "@youwol/fv-code-mirror-editors": "^0.2.0",
         "@youwol/os-core": "^0.1.1",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
@@ -78,11 +79,11 @@
         "@youwol/flux-view": "^1.0.3",
         "@youwol/fv-tree": "^0.2.3",
         "lodash": "^4.17.15",
-        "rxjs": "^6.5.5",
-        "@youwol/fv-code-mirror-editors": "^0.1.1"
+        "rxjs": "^6.5.5"
     },
     "youwol": {
         "cdnDependencies": {
+            "@youwol/fv-code-mirror-editors": "^0.2.0",
             "@youwol/os-core": "^0.1.1",
             "@youwol/fv-tabs": "^0.2.1",
             "@youwol/os-top-banner": "^0.1.1",

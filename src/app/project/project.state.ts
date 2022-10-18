@@ -14,8 +14,6 @@ import { Common } from '@youwol/fv-code-mirror-editors'
 import { install, CdnEvent } from '@youwol/cdn-client'
 import { patchPythonSrc, registerYouwolUtilsModule } from './utils'
 
-declare type CodeEditorModule = typeof import('@youwol/fv-code-mirror-editors')
-
 export interface DisplayedElement {
     title: string
     htmlElement: HTMLElement
@@ -86,13 +84,6 @@ export class ProjectState {
     public readonly explorerState: Explorer.TreeState
 
     /**
-     * This module is fetched in due time, see [[CodeEditorView]].
-     *
-     * @group ES Modules
-     */
-    public readonly CodeEditorModule: CodeEditorModule
-
-    /**
      * @group Observables
      */
     public readonly project$: Observable<Project>
@@ -128,19 +119,12 @@ export class ProjectState {
      */
     public readonly openedPyFiles$ = new BehaviorSubject<string[]>([])
 
-    constructor({
-        project,
-        CodeEditor,
-    }: {
-        project: Project
-        CodeEditor: CodeEditorModule
-    }) {
+    constructor({ project }: { project: Project }) {
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
         })
 
-        this.CodeEditorModule = CodeEditor
         this.id = project.id
 
         const requirementsFile = {
@@ -161,7 +145,7 @@ export class ProjectState {
             project.environment.configurations[0].name,
         )
 
-        this.ideState = new CodeEditor.Common.IdeState({
+        this.ideState = new Common.IdeState({
             files: [requirementsFile, configurationsFile, ...project.sources],
             defaultFileSystem: Promise.resolve(new Map<string, string>()),
         })

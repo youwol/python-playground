@@ -40,20 +40,19 @@ export class CodeEditorView {
         refresh$?: Observable<any>
     }) {
         Object.assign(this, params)
-        const codeEditorView =
-            new this.projectState.CodeEditorModule.Common.CodeEditorView({
-                // I don't understand why any is needed on the next two lines: types definition seems correct
-                ideState: this.projectState.ideState as any,
-                path: this.sourcePath as any,
-                language: 'python',
-                config: {
-                    extraKeys: {
-                        'Ctrl-Enter': () => {
-                            params.onRun()
-                        },
+        const codeEditorView = new Common.CodeEditorView({
+            // I don't understand why any is needed on the next two lines: types definition seems correct
+            ideState: this.projectState.ideState as any,
+            path: this.sourcePath as any,
+            language: 'python',
+            config: {
+                extraKeys: {
+                    'Ctrl-Enter': () => {
+                        params.onRun()
                     },
                 },
-            })
+            },
+        })
         codeEditorView.nativeEditor$.pipe(delay(10)).subscribe((cmEditor) => {
             cmEditor.refresh()
         })

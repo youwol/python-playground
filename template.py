@@ -10,6 +10,7 @@ folder_path = Path(__file__).parent
 pkg_json = parse_json(folder_path / 'package.json')
 
 load_dependencies = {
+    '@youwol/fv-code-mirror-editors': '^0.2.0',
     '@youwol/os-core': '^0.1.1',
     '@youwol/fv-tabs': '^0.2.1',
     '@youwol/os-top-banner': '^0.1.1',
@@ -31,8 +32,7 @@ template = Template(
     dependencies=Dependencies(
         runTime=RunTimeDeps(
             externals={
-                **load_dependencies,
-                '@youwol/fv-code-mirror-editors': '^0.1.1'
+                **load_dependencies
             },
         ),
         devTime={
