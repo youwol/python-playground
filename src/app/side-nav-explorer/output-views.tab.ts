@@ -32,7 +32,7 @@ export class OutputViewsTab extends DockableTabs.Tab {
                                         }
                                     ],
                                     onclick: () => {
-                                        appState.openView(output)
+                                        appState.openTab(output)
                                     }
                                 }
                             })

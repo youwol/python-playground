@@ -1,4 +1,4 @@
-import { child$, VirtualDOM } from '@youwol/flux-view'
+import {attr$, children$, childrenWithReplace$, VirtualDOM} from '@youwol/flux-view'
 
 import { BehaviorSubject } from 'rxjs'
 
@@ -8,6 +8,7 @@ import {
     ProjectNode,
     RequirementsNode,
     SourceNode,
+    Node, NodeView
 } from '../explorer'
 import {ContentOutputView} from "./output.view";
 import { ConfigurationsView } from './configurations.view'
@@ -18,7 +19,36 @@ import { SourceView } from './source.view'
 import { RequirementsView } from './requirements.view'
 import {AppState} from "../app.state";
 
-
+function viewFactory(node: Node, appState: AppState){
+    if (node instanceof ProjectNode) {
+        return new ProjectView({
+            projectState: appState.projectState,
+        })
+    }
+    if (node instanceof SourceNode) {
+        return new SourceView({
+            sourcePath: node.path,
+            projectState: appState.projectState,
+        })
+    }
+    if (node instanceof RequirementsNode) {
+        return new RequirementsView({
+            sourcePath: './requirements',
+            projectState: appState.projectState,
+        })
+    }
+    if (node instanceof ConfigurationsNode) {
+        return new ConfigurationsView({
+            sourcePath: './configurations',
+            projectState: appState.projectState,
+        })
+    }
+    if (node instanceof OutputViewNode) {
+        return new ContentOutputView({
+            view: node
+        })
+    }
+}
 /**
  * @category View
  */
@@ -37,47 +67,30 @@ export class MainContentView implements VirtualDOM {
     /**
      * @group Immutable DOM constants
      */
-    public readonly children: VirtualDOM[]
+    public readonly children
 
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
         this.children = [
-            child$(
-                this.appState.selected$,
-                (selectedNode) => {
-                    if (selectedNode instanceof ProjectNode) {
-                        return new ProjectView({
-                            projectState: this.appState.projectState,
-                        })
-                    }
-                    if (selectedNode instanceof SourceNode) {
-                        return new SourceView({
-                            sourcePath: selectedNode.path,
-                            projectState: this.appState.projectState,
-                        })
-                    }
-                    if (selectedNode instanceof RequirementsNode) {
-                        return new RequirementsView({
-                            sourcePath: './requirements',
-                            projectState: this.appState.projectState,
-                        })
-                    }
-                    if (selectedNode instanceof ConfigurationsNode) {
-                        return new ConfigurationsView({
-                            sourcePath: './configurations',
-                            projectState: this.appState.projectState,
-                        })
-                    }
-                    if (selectedNode instanceof OutputViewNode) {
-                        return new ContentOutputView({
-                            view: selectedNode
-                        })
-                    }
-
-                    return {}
+            new FilesHeaderView({appState: this.appState}),
+            {
+                class:'w-100 flex-grow-1',
+                style:{
+                    minHeight:'0px'
                 },
-            ),
+                children: childrenWithReplace$(
+                    this.appState.openTabs$,
+                    (node) => {
+                        const view = viewFactory(node, this.appState)
+                        return {
+                            class: attr$(this.appState.selectedTab$,
+                                (selected) => selected == node ? 'w-100 h-100' : 'd-none'),
+                            children: [view]
+                        }
+                    }
+                )
+            }
         ]
     }
 }
@@ -142,5 +155,61 @@ export class ContentView implements VirtualDOM {
             },
             sideNavView,
         ]
+    }
+}
+
+
+export class FilesHeaderView implements VirtualDOM{
+    /**
+     * @group States
+     */
+    public readonly appState: AppState
+
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly class : string = "d-flex align-items-center w-100"
+
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly children
+
+    constructor(params:{appState: AppState}) {
+
+        Object.assign(this, params)
+        this.children = children$(
+            this.appState.openTabs$,
+            (tabs) => {
+                return tabs.map( tab => {
+                    return {
+                        class: attr$(this.appState.selectedTab$,
+                            (selected) : string => selected == tab ? 'fv-text-focus fv-bg-background' : 'fv-text-primary fv-bg-background-alt',
+                            {wrapper: (d) => `${d} border px-1 d-flex align-items-center px-2 fv-pointer fv-hover-xx-lighter`}),
+                        children:[
+                            {
+                                class:NodeView.NodeTypeFactory[tab.category]
+                            },
+                            {   class: 'mx-1'
+                            },
+                            {
+                                innerText: tab.name
+                            },
+                            {   class: 'mx-1'
+                            },
+                            {   class: 'fas fa-times fv-bg-background-alt rounded p-1 fv-hover-xx-lighter',
+                                onclick: (ev: MouseEvent) => {
+                                    this.appState.closeTab(tab)
+                                    ev.stopPropagation()
+                                }
+                            }
+                        ],
+                        onclick: () => {
+                            this.appState.openTab(tab)
+                        }
+                    }
+                })
+            }
+        )
     }
 }

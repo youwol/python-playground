@@ -3,7 +3,7 @@ import {
     raiseHTTPErrors,
     FilesBackend,
 } from '@youwol/http-clients'
-import {BehaviorSubject, ReplaySubject} from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { Project } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
@@ -43,7 +43,13 @@ export class AppState {
     /**
      * @group Observables
      */
-    public readonly selected$ = new ReplaySubject<Node>(1)
+    public readonly openTabs$ = new BehaviorSubject<Node[]>([])
+
+    /**
+     * @group Observables
+     */
+    public readonly selectedTab$ = new BehaviorSubject<Node>(undefined)
+
 
     constructor(params: {
         project: Project
@@ -68,7 +74,16 @@ export class AppState {
             selected$: new BehaviorSubject<string>('Views'),
         })
         this.projectState.explorerState.selectedNode$.subscribe((node) => {
-            this.selected$.next(node)
+            this.openTab(node)
+        })
+
+
+        this.projectState.runStart$.subscribe(() => {
+            const toKeep = this.openTabs$.value.filter( v => !(v instanceof OutputViewNode))
+            this.openTabs$.next(toKeep)
+            if(!toKeep.includes(this.selectedTab$.value)){
+                this.selectedTab$.next(toKeep[0])
+            }
         })
 
         ChildApplicationAPI.setProperties({
@@ -110,7 +125,23 @@ export class AppState {
             })
     }
 
-    openView( output: OutputViewNode){
-        this.selected$.next(output)
+    openTab( node: Node){
+        const opened = this.openTabs$.value
+        if(!opened.includes(node)){
+            this.openTabs$.next([...opened, node])
+        }
+        this.selectedTab$.next(node)
+    }
+
+
+    closeTab( node: Node){
+
+        const opened = this.openTabs$.value.filter( v => v!=node)
+        if(opened.length != this.openTabs$.value.length){
+            this.openTabs$.next(opened)
+        }
+        if(this.selectedTab$.value == node){
+            this.selectedTab$.next(opened[0])
+        }
     }
 }

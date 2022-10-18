@@ -181,14 +181,6 @@ export class ProjectState {
             }),
         )
 
-        this.runStart$.subscribe(() => {
-            this.createdOutputs$
-                .getValue()
-                .forEach((node) => {
-                    this.explorerState.removeNode(node)
-                })
-        })
-
         merge(this.runStart$, this.createdOutput$)
             .pipe(
                 scan(
