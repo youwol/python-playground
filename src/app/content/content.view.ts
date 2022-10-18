@@ -12,13 +12,12 @@ import {
 import {ContentOutputView} from "./output.view";
 import { ConfigurationsView } from './configurations.view'
 import { ProjectView } from './project.view'
-import { ProjectState } from '../project'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { LogsTab } from './side-nav-tools'
 import { SourceView } from './source.view'
 import { RequirementsView } from './requirements.view'
+import {AppState} from "../app.state";
 
-import { distinctUntilChanged, filter } from 'rxjs/operators'
 
 /**
  * @category View
@@ -27,7 +26,7 @@ export class MainContentView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly projectState: ProjectState
+    public readonly appState: AppState
 
     /**
      * @group Immutable DOM constants
@@ -40,7 +39,7 @@ export class MainContentView implements VirtualDOM {
      */
     public readonly children: VirtualDOM[]
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
         this.children = [
@@ -49,25 +48,25 @@ export class MainContentView implements VirtualDOM {
                 (selectedNode) => {
                     if (selectedNode instanceof ProjectNode) {
                         return new ProjectView({
-                            projectState: this.projectState,
+                            projectState: this.appState.projectState,
                         })
                     }
                     if (selectedNode instanceof SourceNode) {
                         return new SourceView({
                             sourcePath: selectedNode.path,
-                            projectState: this.projectState,
+                            projectState: this.appState.projectState,
                         })
                     }
                     if (selectedNode instanceof RequirementsNode) {
                         return new RequirementsView({
                             sourcePath: './requirements',
-                            projectState: this.projectState,
+                            projectState: this.appState.projectState,
                         })
                     }
                     if (selectedNode instanceof ConfigurationsNode) {
                         return new ConfigurationsView({
                             sourcePath: './configurations',
-                            projectState: this.projectState,
+                            projectState: this.appState.projectState,
                         })
                     }
                     if (selectedNode instanceof OutputViewNode) {
@@ -90,19 +89,28 @@ export class ContentView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly projectState: ProjectState
+    public readonly appState: AppState
 
     /**
      * @group Immutable DOM constants
      */
-    public readonly class = 'w-100 h-100 d-flex flex-column position-relative'
+    public readonly class = 'h-100 flex-grow-1 d-flex flex-column position-relative'
+
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly style = {
+        minWidth: '0px'
+    }
+
 
     /**
      * @group Immutable DOM constants
      */
     public readonly children: VirtualDOM[]
 
-    constructor(params: { projectState: ProjectState }) {
+
+    constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
         let sideNavView = new DockableTabs.View({
@@ -112,7 +120,7 @@ export class ContentView implements VirtualDOM {
                     'pined',
                 ),
                 tabs$: new BehaviorSubject([
-                    new LogsTab({ projectState: this.projectState }),
+                    new LogsTab({ projectState: this.appState.projectState }),
                 ]),
                 selected$: new BehaviorSubject<string>('Logs'),
             }),
@@ -128,7 +136,7 @@ export class ContentView implements VirtualDOM {
                 },
                 children: [
                     new MainContentView({
-                        projectState: this.projectState,
+                        appState: this.appState,
                     }),
                 ],
             },

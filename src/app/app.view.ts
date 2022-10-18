@@ -126,7 +126,7 @@ export class MainContentView implements VirtualDOM {
                 children: [
                     sideNavView,
                     new ContentView({
-                        projectState: this.appState.projectState,
+                        appState: this.appState,
                     }),
                     rightSideNavView
                 ],
