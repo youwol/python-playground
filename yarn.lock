@@ -1448,14 +1448,15 @@
   dependencies:
     rxjs "^6.5.5"
 
-"@youwol/fv-code-mirror-editors@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@youwol/fv-code-mirror-editors/-/fv-code-mirror-editors-0.1.1.tgz#65c1a40ed25ae0eda46182c79783459a5a140512"
-  integrity sha512-qaH+2fydNCEzcgXkEWZez5SihiVJSLvsoYPImANT494ABpQ7DlEYy1FhzIDTDaligb50ObAGaJnG/AuFCx4/zA==
+"@youwol/fv-code-mirror-editors@^0.2.0":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@youwol/fv-code-mirror-editors/-/fv-code-mirror-editors-0.2.1.tgz#e200d9deac78616c318ff17e6be3cf8f20a79785"
+  integrity sha512-2sJxQuWeZWgpdTqHjSjGuY4uBoWZLkJSKOxLuIMYs3OifuYokNPXnrs+ZkH7p+JQSjwjlzUk/2m8aKvRKeasAg==
   dependencies:
     "@typescript/vfs" "^1.3.5"
     "@youwol/cdn-client" "^1.0.2"
     "@youwol/flux-view" "^1.0.3"
+    "@youwol/logging" "^0.1.0"
     codemirror "^5.52.0"
     rxjs "^6.5.5"
     typescript "^4.7.4"
@@ -1482,6 +1483,11 @@
   integrity sha512-DyI4EqqoX2o0FDGgdnPHGhXYizswQ68FhjK4GUmYEwK+XjpssvNIcppQwcqpYMdER0ZabyhDjtpru3M5JjI49A==
   dependencies:
     rxjs "^6.5.5"
+
+"@youwol/logging@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@youwol/logging/-/logging-0.1.0.tgz#c5610afdc67ca1e86847ea6e6014574dfd2bee75"
+  integrity sha512-qmajvnb3x4Ad8VkmYbW+UCLn39y0NwOkg7AQPnp6YSUGcAeuJq2Ut11ZNX3tJZJXpYYR8d4IMIq/p5rcsa39BA==
 
 "@youwol/os-core@^0.1.1":
   version "0.1.1"
