@@ -10,7 +10,6 @@ export type NodeSignal = 'loading'
 
 export type NodeCategory =
     | 'Node'
-    | 'WorkspaceNode'
     | 'ProjectNode'
     | 'RequirementsNode'
     | 'ConfigurationsNode'

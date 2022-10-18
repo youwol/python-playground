@@ -37,7 +37,6 @@ export class NodeView implements VirtualDOM {
      */
     static NodeTypeFactory: Record<NodeCategory, string> = {
         Node: '',
-        WorkspaceNode: '',
         ProjectNode: 'fas fa-project-diagram',
         SourceNode: 'fab fa-python',
         RequirementsNode: 'fas fa-cubes',
