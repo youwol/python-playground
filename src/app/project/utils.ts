@@ -80,7 +80,7 @@ export function registerYouwolUtilsModule(
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
         projectModules: Array.from(fileSystem.keys()).map(
-            (k) => k.substring(1).split('.py')[0],
+            (k) => k.substring(2).split('.py')[0],
         ),
         display: (title: string, htmlElement: HTMLElement) => {
             projectState.displayElement$.next({ title, htmlElement })
