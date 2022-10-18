@@ -1,6 +1,6 @@
 import { children$, VirtualDOM } from '@youwol/flux-view'
 import { ProjectState } from '../project'
-import { CodePageView, HeaderBannerView, HeaderBtnView } from './code-editor'
+import { CodePageView } from './code-editor'
 import { combineLatest } from 'rxjs'
 
 /**
@@ -13,21 +13,7 @@ export class SourceView extends CodePageView {
         }
         super({
             ...params,
-            headerView: new HeaderBannerView({
-                children: [
-                    {
-                        class: 'ml-3 mr-2',
-                        innerText: 'Configurations',
-                    },
-                    new ConfigurationsDropDown({
-                        projectState: params.projectState,
-                    }),
-                    new HeaderBtnView({
-                        icon: 'fas fa-play',
-                        onClick: run,
-                    }),
-                ],
-            }),
+            headerView: {},
             onCtrlEnter: run,
         })
     }

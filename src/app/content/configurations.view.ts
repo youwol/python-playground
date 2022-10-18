@@ -1,5 +1,5 @@
 import { ProjectState } from '../project'
-import { CodePageView, HeaderBannerView, HeaderBtnView } from './code-editor'
+import { CodePageView } from './code-editor'
 
 /**
  * @category View
@@ -11,14 +11,7 @@ export class ConfigurationsView extends CodePageView {
         }
         super({
             ...params,
-            headerView: new HeaderBannerView({
-                children: [
-                    new HeaderBtnView({
-                        icon: 'fas fa-check',
-                        onClick: run,
-                    }),
-                ],
-            }),
+            headerView: {},
             onCtrlEnter: run,
         })
     }
