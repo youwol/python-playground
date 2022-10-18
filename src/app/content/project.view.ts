@@ -11,6 +11,10 @@ import {
  */
 export class ProjectView implements VirtualDOM {
     /**
+     * @group Immutable DOM Constants
+     */
+    public class: string = 'w-100 h-100'
+    /**
      * @group States
      */
     projectState: ProjectState
@@ -24,14 +28,12 @@ export class ProjectView implements VirtualDOM {
         Object.assign(this, params)
         this.children = [
             {
+                class: 'h-100 w-100',
                 connectedCallback: (elem: HTMLDivElement) => {
                     const loadingScreen = new LoadingScreenView({
                         container: elem,
                         logo: `<div style='font-size:xxx-large'>🐍</div>`,
                         wrapperStyle: {
-                            position: 'absolute',
-                            top: '0',
-                            left: '0',
                             width: '100%',
                             height: '100%',
                             'font-weight': 'bolder',

@@ -1,4 +1,4 @@
-import { VirtualDOM, attr$, childrenWithReplace$ } from '@youwol/flux-view'
+import { VirtualDOM, attr$ } from '@youwol/flux-view'
 import { AppState } from './app.state'
 import { TopBannerView } from './top-banner'
 import { DockableTabs } from '@youwol/fv-tabs'
@@ -120,29 +120,9 @@ export class MainContentView implements VirtualDOM {
                 },
                 children: [
                     sideNavView,
-                    {
-                        class: 'flex-grow-1 h-100 fv-bg-background',
-                        style: { minWidth: '0px' },
-                        children: childrenWithReplace$(
-                            this.appState.allProjectsState$,
-                            (projectState) => {
-                                return {
-                                    class: attr$(
-                                        this.appState.selectedProject$,
-                                        (project) =>
-                                            project.id == projectState.id
-                                                ? 'h-100 w-100'
-                                                : 'd-none',
-                                    ),
-                                    children: [
-                                        new ContentView({
-                                            projectState,
-                                        }),
-                                    ],
-                                }
-                            },
-                        ),
-                    },
+                    new ContentView({
+                        projectState: this.appState.projectState,
+                    }),
                 ],
             },
         ]

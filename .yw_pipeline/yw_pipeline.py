@@ -20,7 +20,7 @@ class PipelineFactory(IPipelineFactory):
                         match="""return (asset) => {
                             return asset.kind == 'data' && asset.name.endsWith('.pyplay.json')
                         }""",
-                        parameters={"workspaceFileId": 'rawId'}
+                        parameters={"id": 'rawId'}
                     )
                 ]
             ),

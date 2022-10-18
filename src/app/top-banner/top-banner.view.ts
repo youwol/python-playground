@@ -12,8 +12,7 @@ export class TopBannerView extends TopBannerBaseView {
                 children: [
                     {
                         class: 'w-100 text-center',
-                        innerText:
-                            appState.assetInfo.fileInfo.metadata.fileName,
+                        innerText: appState.fileInfo.metadata.fileName,
                     },
                     {
                         tag: 'a',
