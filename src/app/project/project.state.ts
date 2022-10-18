@@ -19,12 +19,6 @@ export interface DisplayedElement {
     htmlElement: HTMLElement
 }
 
-export interface OutputView {
-    name: string
-    fileName: string
-    htmlElement: HTMLElement
-    node: OutputViewNode
-}
 
 /**
  * @category State
@@ -96,12 +90,12 @@ export class ProjectState {
     /**
      * @group Observables
      */
-    public readonly createdOutput$ = new ReplaySubject<OutputView>(1)
+    public readonly createdOutput$ = new ReplaySubject<OutputViewNode>(1)
 
     /**
      * @group Observables
      */
-    public readonly createdOutputs$ = new BehaviorSubject<OutputView[]>([])
+    public readonly createdOutputs$ = new BehaviorSubject<OutputViewNode[]>([])
 
     /**
      * @group Observables
@@ -197,7 +191,6 @@ export class ProjectState {
         this.runStart$.subscribe(() => {
             this.createdOutputs$
                 .getValue()
-                .map((output) => output.node)
                 .forEach((node) => {
                     this.explorerState.removeNode(node)
                 })
@@ -206,7 +199,7 @@ export class ProjectState {
         merge(this.runStart$, this.createdOutput$)
             .pipe(
                 scan(
-                    (acc, e: true | OutputView) =>
+                    (acc, e: true | OutputViewNode) =>
                         e === true ? [] : [...acc, e],
                     [],
                 ),
@@ -286,31 +279,14 @@ export class ProjectState {
             })
     }
 
-    requestOutputViewCreation({ name, fileName, htmlElement }) {
-        const pyFileNode = this.explorerState.getNode(
-            fileName.replace('/home/pyodide', '.'),
-        )
-        if (!this.openedPyFiles$.getValue().includes(pyFileNode.id)) {
-            return
-        }
+    requestOutputViewCreation({ name, htmlElement }) {
 
         const newNode = new OutputViewNode({
             name,
             projectState: this,
             htmlElement,
         })
-        this.explorerState.selectedNode$.pipe(take(1)).subscribe((node) => {
-            this.explorerState.addChild(pyFileNode, newNode)
-            this.explorerState.selectedNode$.next(
-                this.explorerState.getNode(node.id),
-            )
-            this.createdOutput$.next({
-                name,
-                fileName,
-                htmlElement,
-                node: newNode,
-            })
-        })
+        this.createdOutput$.next(newNode)
     }
 
     private installRequirements(requirements: Requirements) {

@@ -111,7 +111,12 @@ export class MainContentView implements VirtualDOM {
                 initialPanelSize: '300px',
             },
         })
-
+        let rightSideNavView = new DockableTabs.View({
+            state: this.appState.rightSideNavState,
+            styleOptions: {
+                initialPanelSize: '300px',
+            },
+        })
         this.children = [
             {
                 class: 'w-100 flex-grow-1 d-flex position-relative',
@@ -123,6 +128,7 @@ export class MainContentView implements VirtualDOM {
                     new ContentView({
                         projectState: this.appState.projectState,
                     }),
+                    rightSideNavView
                 ],
             },
         ]

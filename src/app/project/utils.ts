@@ -87,12 +87,10 @@ export function registerYouwolUtilsModule(
         },
         createOutputView: (
             name: string,
-            htmlElement: HTMLElement,
-            fileName: string,
+            htmlElement: HTMLElement
         ) => {
             projectState.requestOutputViewCreation({
                 name,
-                fileName,
                 htmlElement,
             })
         },

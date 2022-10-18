@@ -9,6 +9,7 @@ import {
     RequirementsNode,
     SourceNode,
 } from '../explorer'
+import {ContentOutputView} from "./output.view";
 import { ConfigurationsView } from './configurations.view'
 import { ProjectView } from './project.view'
 import { ProjectState } from '../project'
@@ -44,17 +45,7 @@ export class MainContentView implements VirtualDOM {
 
         this.children = [
             child$(
-                this.projectState.explorerState.selectedNode$.pipe(
-                    distinctUntilChanged((nodePrev, nodeCurrent) => {
-                        if (nodePrev.id == nodeCurrent.id) return true
-                        return (
-                            nodePrev instanceof OutputViewNode &&
-                            nodeCurrent.children &&
-                            nodeCurrent.resolvedChildren().includes(nodePrev)
-                        )
-                    }),
-                    filter((node) => !(node instanceof OutputViewNode)),
-                ),
+                this.appState.selected$,
                 (selectedNode) => {
                     if (selectedNode instanceof ProjectNode) {
                         return new ProjectView({
@@ -79,6 +70,12 @@ export class MainContentView implements VirtualDOM {
                             projectState: this.projectState,
                         })
                     }
+                    if (selectedNode instanceof OutputViewNode) {
+                        return new ContentOutputView({
+                            view: selectedNode
+                        })
+                    }
+
                     return {}
                 },
             ),

@@ -10,12 +10,20 @@ import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab } from './side-nav-explorer'
 import { mergeMap, skip } from 'rxjs/operators'
 import { ProjectState } from './project'
-
+import { OutputViewsTab } from "./side-nav-explorer/output-views.tab";
+import { Node, OutputViewNode } from './explorer'
 /**
  *
  * @category State
  */
 export class AppState {
+
+    /**
+     * @group States
+     */
+    public readonly rightSideNavState: DockableTabs.State
+
+
     /**
      * @group States
      */
@@ -31,6 +39,11 @@ export class AppState {
      */
     public readonly fileInfo: FilesBackend.GetInfoResponse
 
+    /**
+     * @group Observables
+     */
+    public readonly selected$ = new ReplaySubject<Node>(1)
+
     constructor(params: {
         project: Project
         fileInfo: FilesBackend.GetInfoResponse
@@ -45,6 +58,16 @@ export class AppState {
             viewState$: new BehaviorSubject<DockableTabs.DisplayMode>('pined'),
             tabs$: new BehaviorSubject([new ProjectTab({ appState: this })]),
             selected$: new BehaviorSubject<string>('Project'),
+        })
+
+        this.rightSideNavState = new DockableTabs.State({
+            disposition: 'right',
+            viewState$: new BehaviorSubject<DockableTabs.DisplayMode>('collapsed'),
+            tabs$: new BehaviorSubject([new OutputViewsTab({ appState: this })]),
+            selected$: new BehaviorSubject<string>('Views'),
+        })
+        this.projectState.explorerState.selectedNode$.subscribe((node) => {
+            this.selected$.next(node)
         })
 
         ChildApplicationAPI.setProperties({
@@ -84,5 +107,9 @@ export class AppState {
             .subscribe((asset) => {
                 console.log('Saved!', asset)
             })
+    }
+
+    openView( output: OutputViewNode){
+        this.selected$.next(output)
     }
 }
