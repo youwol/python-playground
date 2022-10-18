@@ -171,13 +171,6 @@ export class ProjectState {
                         configurations,
                     },
                     sources: Array.from(fsMap.entries())
-                        .filter(
-                            ([path]) =>
-                                ![
-                                    './requirements',
-                                    './configurations',
-                                ].includes(path),
-                        )
                         .map(([name, content]) => {
                             return {
                                 path: name,
@@ -224,7 +217,7 @@ export class ProjectState {
             .pipe(take(1))
             .subscribe(([configurationName, fileSystem]) => {
                 const configurations = JSON.parse(
-                    fileSystem.get('/configurations'),
+                    fileSystem.get('./configurations'),
                 )
                 const selected = configurations.find(
                     (conf) => conf.name == configurationName,
@@ -241,7 +234,7 @@ export class ProjectState {
         const node = this.explorerState.getNode(this.id)
         this.explorerState.selectNodeAndExpand(node)
         this.ideState.fsMap$.pipe(take(1)).subscribe((fileSystem) => {
-            const requirements = JSON.parse(fileSystem.get('/requirements'))
+            const requirements = JSON.parse(fileSystem.get('./requirements'))
             this.installRequirements(requirements)
             this.requirements$.next(requirements)
         })
