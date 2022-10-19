@@ -22,18 +22,15 @@ import {
  * @category State
  */
 export class AppState {
-
     /**
      * @group States
      */
     public readonly rightSideNavState: DockableTabs.State
 
-
     /**
      * @group States
      */
     public readonly leftSideNavState: DockableTabs.State
-
 
     /**
      * @group Immutable Constants
@@ -55,7 +52,6 @@ export class AppState {
      */
     public readonly selectedTab$ = new BehaviorSubject<Node>(undefined)
 
-
     constructor(params: {
         project: Project
         fileInfo: FilesBackend.GetInfoResponse
@@ -64,6 +60,7 @@ export class AppState {
 
         this.projectState = new ProjectState({
             project: params.project,
+            appState: this,
         })
         this.leftSideNavState = new DockableTabs.State({
             disposition: 'left',
@@ -74,19 +71,24 @@ export class AppState {
 
         this.rightSideNavState = new DockableTabs.State({
             disposition: 'right',
-            viewState$: new BehaviorSubject<DockableTabs.DisplayMode>('collapsed'),
-            tabs$: new BehaviorSubject([new OutputViewsTab({ appState: this })]),
+            viewState$: new BehaviorSubject<DockableTabs.DisplayMode>(
+                'collapsed',
+            ),
+            tabs$: new BehaviorSubject([
+                new OutputViewsTab({ appState: this }),
+            ]),
             selected$: new BehaviorSubject<string>('Views'),
         })
         this.projectState.explorerState.selectedNode$.subscribe((node) => {
             this.openTab(node)
         })
 
-
         this.projectState.runStart$.subscribe(() => {
-            const toKeep = this.openTabs$.value.filter( v => !(v instanceof OutputViewNode))
+            const toKeep = this.openTabs$.value.filter(
+                (v) => !(v instanceof OutputViewNode),
+            )
             this.openTabs$.next(toKeep)
-            if(!toKeep.includes(this.selectedTab$.value)){
+            if (!toKeep.includes(this.selectedTab$.value)) {
                 this.selectedTab$.next(toKeep[0])
             }
         })

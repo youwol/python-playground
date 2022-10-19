@@ -19,7 +19,6 @@ export interface DisplayedElement {
     htmlElement: HTMLElement
 }
 
-
 /**
  * @category State
  */
@@ -178,13 +177,14 @@ export class ProjectState {
                         requirements,
                         configurations,
                     },
-                    sources: Array.from(fsMap.entries())
-                        .map(([name, content]) => {
+                    sources: Array.from(fsMap.entries()).map(
+                        ([name, content]) => {
                             return {
                                 path: name,
                                 content,
                             }
-                        }),
+                        },
+                    ),
                 }
             }),
         )
@@ -285,7 +285,6 @@ export class ProjectState {
     }
 
     requestOutputViewCreation({ name, htmlElement }) {
-
         const newNode = new OutputViewNode({
             name,
             projectState: this,

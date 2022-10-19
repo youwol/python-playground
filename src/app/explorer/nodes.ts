@@ -17,10 +17,7 @@ export type NodeCategory =
     | 'SourceNode'
     | 'OutputViewNode'
 
-export const specialFiles = [
-    "./requirements",
-    "./configurations"
-]
+export const specialFiles = ['./requirements', './configurations']
 /**
  * Base class of workspace explorer
  *
@@ -193,7 +190,6 @@ export class SourceNode extends Node {
     }
 }
 
-
 /**
  * Requirement Node of explorer
  *
@@ -209,8 +205,6 @@ export class HelpersJsSourceNode extends SourceNode {
         super(params)
     }
 }
-
-
 
 /**
  * Folder of output views Node of explorer
@@ -257,16 +251,19 @@ export function createProjectRootNode(
         children: [
             new RequirementsNode({ projectState }),
             new ConfigurationsNode({ projectState }),
-            ...project.sources.filter( (source) => {
-                return !specialFiles.includes(source.path)
-            }).map((source) => {
-
-                const factory = source.path.endsWith('.py') ? SourceNode : HelpersJsSourceNode
-                return new factory({
-                    path: source.path,
-                    projectState,
+            ...project.sources
+                .filter((source) => {
+                    return !specialFiles.includes(source.path)
                 })
-            })
+                .map((source) => {
+                    const factory = source.path.endsWith('.py')
+                        ? SourceNode
+                        : HelpersJsSourceNode
+                    return new factory({
+                        path: source.path,
+                        projectState,
+                    })
+                }),
         ],
     })
 }

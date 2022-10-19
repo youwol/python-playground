@@ -62,9 +62,9 @@ export async function registerYouwolUtilsModule(
     fileSystem: Map<string, string>,
     projectState: ProjectState,
 ) {
-    for(const key of Array.from(fileSystem.keys())) {
+    for (const key of Array.from(fileSystem.keys())) {
         const value = fileSystem.get(key)
-        if(key.endsWith('.js')){
+        if (key.endsWith('.js')) {
             const jsModule = await new Function(value)()(window)
             const name = key.substring(2).split('.js')[0]
             pyodide.registerJsModule(name, jsModule)
@@ -92,10 +92,7 @@ export async function registerYouwolUtilsModule(
         display: (title: string, htmlElement: HTMLElement) => {
             projectState.displayElement$.next({ title, htmlElement })
         },
-        createOutputView: (
-            name: string,
-            htmlElement: HTMLElement
-        ) => {
+        createOutputView: (name: string, htmlElement: HTMLElement) => {
             projectState.requestOutputViewCreation({
                 name,
                 htmlElement,
