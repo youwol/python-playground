@@ -1461,6 +1461,14 @@
     rxjs "^6.5.5"
     typescript "^4.7.4"
 
+"@youwol/fv-context-menu@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@youwol/fv-context-menu/-/fv-context-menu-0.1.1.tgz#abb6f7eb9b4b4726bdf91dd45d90b878cba6278d"
+  integrity sha512-7mXTmJHrBMBVjtIyDG0YSx9YazMyCn2ogYhgVcnVc+dbbybLgEpU0rs0k3IHp3oUy/qcYTSKi78etS5eQvceJg==
+  dependencies:
+    "@youwol/flux-view" "^1.0.3"
+    rxjs "^6.5.5"
+
 "@youwol/fv-tabs@^0.2.1":
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/@youwol/fv-tabs/-/fv-tabs-0.2.1.tgz#179efcd5d3645aac1f02c01b8202c407814e2a2d"
