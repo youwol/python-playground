@@ -8,7 +8,7 @@ import {
     Subject,
 } from 'rxjs'
 import { debounceTime, filter, map, scan, skip, take } from 'rxjs/operators'
-import { Explorer } from '..'
+import { AppState, Explorer } from '..'
 import { createProjectRootNode, OutputViewNode, SourceNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { install, CdnEvent } from '@youwol/cdn-client'
@@ -25,6 +25,7 @@ export interface DisplayedElement {
  */
 export class ProjectState {
     pyodide
+    nativeGlobals
     /**
      * @group Immutable Constants
      */
@@ -113,7 +114,13 @@ export class ProjectState {
      */
     public readonly openedPyFiles$ = new BehaviorSubject<string[]>([])
 
-    constructor({ project }: { project: Project }) {
+    constructor({
+        project,
+        appState,
+    }: {
+        project: Project
+        appState: AppState
+    }) {
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
@@ -146,6 +153,7 @@ export class ProjectState {
         const projectNode = createProjectRootNode(project, this)
         this.explorerState = new Explorer.TreeState({
             rootNode: projectNode,
+            appState: appState,
         })
 
         this.projectLoaded$.subscribe((loaded) => {
@@ -249,20 +257,30 @@ export class ProjectState {
                     (config) => config.name == selectedConfigName,
                 )
                 const sourcePath = selectedConfig.scriptPath
-                registerYouwolUtilsModule(this.pyodide, fileSystem, this).then(() => {
-                    fileSystem.forEach((value, path) => {
-                        path.endsWith('.py') &&
-                        this.pyodide.FS.writeFile(path, value, {
-                            encoding: 'utf8',
-                        })
-                    })
-                    const content = fileSystem.get(sourcePath)
-                    const patchedContent = patchPythonSrc(sourcePath, content)
-                    this.pyodide.runPythonAsync(patchedContent).then(() => {
-                        this.runDone$.next(true)
-                    })
-                })
+                registerYouwolUtilsModule(this.pyodide, fileSystem, this).then(
+                    () => {
+                        // remove files
+                        this.pyodide.FS.readdir('./')
+                            .filter((p) => !['.', '..'].includes(p))
+                            .forEach((p) => this.pyodide.FS.unlink(p))
 
+                        // add files
+                        fileSystem.forEach((value, path) => {
+                            path.endsWith('.py') &&
+                                this.pyodide.FS.writeFile(path, value, {
+                                    encoding: 'utf8',
+                                })
+                        })
+                        const content = fileSystem.get(sourcePath)
+                        const patchedContent = patchPythonSrc(
+                            sourcePath,
+                            content,
+                        )
+                        this.pyodide.runPythonAsync(patchedContent).then(() => {
+                            this.runDone$.next(true)
+                        })
+                    },
+                )
             })
     }
 
@@ -304,6 +322,13 @@ export class ProjectState {
                 const systemVersion = this.pyodide.runPython(
                     'import sys\nsys.version',
                 )
+                this.nativeGlobals = [
+                    ...this.pyodide
+                        .runPython(
+                            'import sys\nfrom pyodide.ffi import to_js\nto_js(sys.modules)',
+                        )
+                        .keys(),
+                ]
                 this.rawLog$.next({
                     level: 'info',
                     message: `Python ${systemVersion.split('\n')[0]}`,

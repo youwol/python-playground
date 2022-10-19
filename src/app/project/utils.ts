@@ -26,7 +26,7 @@ export function outputPython2Js(data) {
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
 import sys
-from youwol_utils import log_info, log_error,projectModules
+from youwol_utils import log_info, log_error, nativeGlobals
 
 __file__ = '/home/pyodide/${fileName.replace('./', '')}'
 
@@ -47,9 +47,10 @@ class LoggerError(object):
         
 sys.stdout = LoggerInfo()  
 sys.stderr = LoggerError()       
- 
-for module_name in projectModules:
-    if module_name in sys.modules:
+keys = list(sys.modules.keys())
+for module_name in keys:
+    if module_name not in nativeGlobals:
+        print(f"delete {module_name}")
         del sys.modules[module_name]
 
 ${originalSrc}
@@ -87,11 +88,7 @@ export async function registerYouwolUtilsModule(
         js: (obj) => outputPython2Js(obj),
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
-        projectModules: Array.from(fileSystem.keys()).map(
-            (k) => k.endsWith('.py')
-                ? k.substring(2).split('.py')[0]
-                : k.substring(2).split('.js')[0],
-        ),
+        nativeGlobals: ['youwol_utils', ...projectState.nativeGlobals],
         display: (title: string, htmlElement: HTMLElement) => {
             projectState.displayElement$.next({ title, htmlElement })
         },

@@ -1,12 +1,12 @@
 import { ImmutableTree } from '@youwol/fv-tree'
 import { Environment, Project } from '../models'
 import { ProjectState } from '../project'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, ReplaySubject } from 'rxjs'
 
 /**
  * Node's signal data-structure
  */
-export type NodeSignal = 'loading'
+export type NodeSignal = 'loading' | 'rename'
 
 export type NodeCategory =
     | 'Node'
@@ -33,6 +33,11 @@ export abstract class Node extends ImmutableTree.Node {
     public readonly processes$ = new BehaviorSubject<
         { id: string; type: NodeSignal }[]
     >([])
+
+    /**
+     * @group Observables
+     */
+    public readonly signal$ = new ReplaySubject<NodeSignal>(1)
 
     /**
      * @group Immutable Constants

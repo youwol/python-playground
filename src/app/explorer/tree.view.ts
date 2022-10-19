@@ -1,16 +1,39 @@
-import { Node, NodeCategory, NodeSignal, ProjectNode } from './nodes'
+import {
+    Node,
+    NodeCategory,
+    NodeSignal,
+    ProjectNode,
+    SourceNode,
+} from './nodes'
 import { ImmutableTree } from '@youwol/fv-tree'
-import { children$, VirtualDOM } from '@youwol/flux-view'
+import { child$, children$, HTMLElement$, VirtualDOM } from '@youwol/flux-view'
+import { AppState } from '../app.state'
+import { ContextMenuState } from './context-menu'
+import { ContextMenu } from '@youwol/fv-context-menu'
+import { filter } from 'rxjs/operators'
 
 /**
  * @category State
  */
 export class TreeState extends ImmutableTree.State<Node> {
-    constructor({ rootNode }: { rootNode: ProjectNode }) {
+    /**
+     *
+     * @group States
+     */
+    public readonly appState: AppState
+
+    constructor({
+        rootNode,
+        appState,
+    }: {
+        rootNode: ProjectNode
+        appState: AppState
+    }) {
         super({
             rootNode,
             expandedNodes: [rootNode.id],
         })
+        this.appState = appState
         this.selectedNode$.next(rootNode)
     }
 }
@@ -22,9 +45,25 @@ export class TreeView extends ImmutableTree.View<Node> {
     constructor({ state }: { state: TreeState }) {
         super({
             state,
-            headerView: (treeState, node) =>
+            headerView: (treeState: TreeState, node) =>
                 new NodeView({ state: treeState, node }),
         })
+        this.connectedCallback = (
+            explorerDiv: HTMLElement$ & HTMLDivElement,
+        ) => {
+            const contextState = new ContextMenuState({
+                appState: state.appState,
+                explorerState: state,
+                explorerDiv,
+            })
+            return new ContextMenu.View({
+                state: contextState,
+                class: 'fv-bg-background border fv-color-primary',
+                style: {
+                    zIndex: 20,
+                },
+            })
+        }
     }
 }
 
@@ -49,6 +88,7 @@ export class NodeView implements VirtualDOM {
      */
     static ProcessTypeFactory: Record<NodeSignal, string> = {
         loading: 'fas fa-cloud-download-alt fv-blink',
+        rename: '',
     }
     /**
      * @group States
@@ -72,9 +112,22 @@ export class NodeView implements VirtualDOM {
 
     constructor(params: { state: TreeState; node: Node }) {
         Object.assign(this, params)
+        const innerView = { innerText: this.node.name }
+
         this.children = [
             { class: `${NodeView.NodeTypeFactory[this.node.category]} mx-1` },
-            { innerText: this.node.name },
+            child$(
+                this.node.signal$.pipe(filter((signal) => signal == 'rename')),
+                () => {
+                    if (!(this.node instanceof SourceNode)) {
+                        return innerView
+                    }
+                    return headerRenamed(this.node, this.state)
+                },
+                {
+                    untilFirst: innerView,
+                },
+            ),
             {
                 children: children$(this.node.processes$, (processes) => {
                     return processes.map((process) => {
@@ -87,5 +140,33 @@ export class NodeView implements VirtualDOM {
                 }),
             },
         ]
+    }
+}
+
+/**
+ * Create renaming node's view
+ *
+ * @param node node to rename
+ * @param explorerState explorer state
+ * @returns the view
+ *
+ * @category View
+ */
+function headerRenamed(node: SourceNode, explorerState: TreeState): VirtualDOM {
+    return {
+        tag: 'input',
+        type: 'text',
+        autofocus: true,
+        style: {
+            zIndex: 200,
+        },
+        class: 'mx-2',
+        data: node.name,
+        onclick: (ev) => ev.stopPropagation(),
+        onkeydown: (ev) => {
+            if (ev.key === 'Enter') {
+                explorerState.appState.renameFile(node, ev.target.value)
+            }
+        },
     }
 }

@@ -10,8 +10,13 @@ import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab } from './side-nav-explorer'
 import { mergeMap, skip } from 'rxjs/operators'
 import { ProjectState } from './project'
-import { OutputViewsTab } from "./side-nav-explorer/output-views.tab";
-import { Node, OutputViewNode } from './explorer'
+import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
+import {
+    HelpersJsSourceNode,
+    Node,
+    OutputViewNode,
+    SourceNode,
+} from './explorer'
 /**
  *
  * @category State
@@ -125,23 +130,54 @@ export class AppState {
             })
     }
 
-    openTab( node: Node){
+    openTab(node: Node) {
         const opened = this.openTabs$.value
-        if(!opened.includes(node)){
+        if (!opened.includes(node)) {
             this.openTabs$.next([...opened, node])
         }
         this.selectedTab$.next(node)
     }
 
-
-    closeTab( node: Node){
-
-        const opened = this.openTabs$.value.filter( v => v!=node)
-        if(opened.length != this.openTabs$.value.length){
+    closeTab(node: Node) {
+        const opened = this.openTabs$.value.filter((v) => v != node)
+        if (opened.length != this.openTabs$.value.length) {
             this.openTabs$.next(opened)
         }
-        if(this.selectedTab$.value == node){
+        if (this.selectedTab$.value == node) {
             this.selectedTab$.next(opened[0])
         }
+    }
+
+    addFile(name: string, kind: 'js' | 'py') {
+        const path = `./${name}.${kind}`
+        const factory = kind == 'js' ? HelpersJsSourceNode : SourceNode
+        this.projectState.explorerState.addChild(
+            this.projectState.id,
+            new factory({
+                path,
+                projectState: this.projectState,
+            }),
+        )
+        this.projectState.ideState.addFile({ path, content: '' })
+    }
+
+    deleteFile(path: string) {
+        const node = this.projectState.explorerState.getNode(path)
+        this.projectState.explorerState.removeNode(path)
+        this.projectState.ideState.removeFile(path)
+        this.closeTab(node)
+    }
+
+    renameFile(node: SourceNode, name: string) {
+        const factory = name.endsWith('.js') ? HelpersJsSourceNode : SourceNode
+        const path = `./${name}`
+        const newNode = new factory({ path, projectState: this.projectState })
+        this.projectState.ideState.moveFile(node.id, `./${name}`)
+        this.projectState.explorerState.replaceNode(
+            node,
+            new factory({ path, projectState: this.projectState }),
+        )
+        this.closeTab(node)
+        this.openTab(newNode)
     }
 }
