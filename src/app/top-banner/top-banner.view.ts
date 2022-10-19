@@ -1,8 +1,7 @@
 import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
-import {ConfigurationsDropDown} from "../content";
-import {VirtualDOM} from "@youwol/flux-view";
-
+import { ConfigurationsDropDown } from '../content'
+import { VirtualDOM } from '@youwol/flux-view'
 
 /**
  * @category View
@@ -40,6 +39,45 @@ export class HeaderBtnView implements VirtualDOM {
     }
 }
 
+/**
+ * @category View
+ */
+export class ConfigurationSelectorView implements VirtualDOM {
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly class =
+        'd-flex align-items-center rounded fv-bg-background-alt p-1'
+
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly children: VirtualDOM[]
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly appState: AppState
+
+    constructor(params: { appState: AppState }) {
+        Object.assign(this, params)
+
+        this.children = [
+            {
+                class: 'ml-3 mr-2',
+                innerText: 'Configurations',
+            },
+            new ConfigurationsDropDown({
+                projectState: this.appState.projectState,
+            }),
+            new HeaderBtnView({
+                icon: 'fas fa-play',
+                onClick: () =>
+                    this.appState.projectState.runCurrentConfiguration(),
+            }),
+        ]
+    }
+}
 
 /**
  * @category View
@@ -51,23 +89,8 @@ export class TopBannerView extends TopBannerBaseView {
                 class: 'd-flex w-100 justify-content-center my-auto align-items-center',
                 children: [
                     {
-                        class:'rounded fv-bg-background-alt border d-flex align-items-center',
-                        children:[
-                            {
-                                class: 'ml-3 mr-2',
-                                innerText: 'Configurations',
-                            },
-                            new ConfigurationsDropDown({
-                                projectState: appState.projectState,
-                            }),
-                            new HeaderBtnView({
-                                icon: 'fas fa-play',
-                                onClick: () => appState.projectState.runCurrentConfiguration(),
-                            }),
-                        ]
-                    },
-                    {
-                        class:'flex-grow-1'
+                        class: 'flex-grow-1 d-flex justify-content-center',
+                        children: [new ConfigurationSelectorView({ appState })],
                     },
                     {
                         tag: 'a',
