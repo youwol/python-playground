@@ -11,8 +11,9 @@ import { debounceTime, filter, map, scan, skip, take } from 'rxjs/operators'
 import { AppState, Explorer } from '..'
 import { createProjectRootNode, OutputViewNode, SourceNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
-import { install, CdnEvent } from '@youwol/cdn-client'
+import { CdnEvent } from '@youwol/cdn-client'
 import { patchPythonSrc, registerYouwolUtilsModule } from './utils'
+import { installRequirements } from '../load-project'
 
 /**
  * @category Data Structure
@@ -337,47 +338,13 @@ export class ProjectState {
     }
 
     private installRequirements(requirements: Requirements) {
-        const exportedPyodideInstanceName = 'loadedPyodide'
-        const dependencies = install({
-            ...requirements.javascriptPackages,
-            customInstallers: [
-                {
-                    module: '@youwol/cdn-pyodide-loader',
-                    installInputs: {
-                        modules: requirements.pythonPackages.map(
-                            (p) => `@pyodide/${p}`,
-                        ),
-                        warmUp: true,
-                        onEvent: (cdnEvent) => this.cdnEvent$.next(cdnEvent),
-                        exportedPyodideInstanceName,
-                    },
-                },
-            ],
-            onEvent: (cdnEvent) => {
-                this.cdnEvent$.next(cdnEvent)
-            },
-        }) as unknown as Promise<{ [exportedPyodideInstanceName] }>
-
-        dependencies
-            .then((window) => {
-                const pyodide = window[exportedPyodideInstanceName]
-                Object.entries(requirements.javascriptPackages.aliases).forEach(
-                    ([alias, originalName]) => {
-                        this.rawLog$.next({
-                            level: 'info',
-                            message: `create alias '${alias}' to import '${originalName}' (version ${window[alias].__yw_set_from_version__}) `,
-                        })
-                        pyodide.registerJsModule(alias, window[alias])
-                    },
-                )
-                this.environment$.next(
-                    new Environment({
-                        pyodide,
-                    }),
-                )
-            })
-            .then(() => {
-                this.projectLoaded$.next(true)
-            })
+        installRequirements({
+            requirements,
+            cdnEvent$: this.cdnEvent$,
+            rawLog$: this.rawLog$,
+            environment$: this.environment$,
+        }).then(() => {
+            this.projectLoaded$.next(true)
+        })
     }
 }
