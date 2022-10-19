@@ -15,11 +15,44 @@ import { install, CdnEvent } from '@youwol/cdn-client'
 import { patchPythonSrc, registerYouwolUtilsModule } from './utils'
 
 /**
+ * @category Data Structure
+ */
+export class Environment {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly pyodide
+    /**
+     * @group Immutable Constants
+     */
+    public readonly pythonVersion: string
+    /**
+     * @group Immutable Constants
+     */
+    public readonly nativePythonGlobals: string[]
+
+    constructor(params: { pyodide }) {
+        Object.assign(this, params)
+        this.pythonVersion = this.pyodide.runPython('import sys\nsys.version')
+        this.nativePythonGlobals = [
+            ...this.pyodide
+                .runPython(
+                    'import sys\nfrom pyodide.ffi import to_js\nto_js(sys.modules)',
+                )
+                .keys(),
+        ]
+    }
+}
+
+/**
  * @category State
  */
 export class ProjectState {
-    pyodide
-    nativeGlobals
+    /**
+     * @group Observables
+     */
+    public readonly environment$ = new ReplaySubject<Environment>(1)
+
     /**
      * @group Immutable Constants
      */
@@ -151,6 +184,13 @@ export class ProjectState {
                 : projectNode.addProcess({ type: 'loading', id: project.id })
         })
 
+        this.environment$.subscribe((env) => {
+            this.rawLog$.next({
+                level: 'info',
+                message: `Python ${env.pythonVersion.split('\n')[0]}`,
+            })
+        })
+
         this.installRequirements(project.environment.requirements)
         this.project$ = combineLatest([
             this.requirements$,
@@ -232,32 +272,43 @@ export class ProjectState {
 
     runCurrentConfiguration() {
         this.runStart$.next(true)
-        this.pyodide.registerJsModule(
-            'cdn_client',
-            window['@youwol/cdn-client'],
-        )
+
         combineLatest([
+            this.environment$,
             this.configurations$,
             this.selectedConfiguration$,
             this.ideState.fsMap$,
         ])
             .pipe(take(1))
-            .subscribe(([configurations, selectedConfigName, fileSystem]) => {
-                const selectedConfig = configurations.find(
-                    (config) => config.name == selectedConfigName,
-                )
-                const sourcePath = selectedConfig.scriptPath
-                registerYouwolUtilsModule(this.pyodide, fileSystem, this).then(
-                    () => {
+            .subscribe(
+                ([
+                    environment,
+                    configurations,
+                    selectedConfigName,
+                    fileSystem,
+                ]) => {
+                    environment.pyodide.registerJsModule(
+                        'cdn_client',
+                        window['@youwol/cdn-client'],
+                    )
+                    const selectedConfig = configurations.find(
+                        (config) => config.name == selectedConfigName,
+                    )
+                    const sourcePath = selectedConfig.scriptPath
+                    registerYouwolUtilsModule(
+                        environment,
+                        fileSystem,
+                        this,
+                    ).then(() => {
                         // remove files
-                        this.pyodide.FS.readdir('./')
+                        environment.pyodide.FS.readdir('./')
                             .filter((p) => !['.', '..'].includes(p))
-                            .forEach((p) => this.pyodide.FS.unlink(p))
+                            .forEach((p) => environment.pyodide.FS.unlink(p))
 
                         // add files
                         fileSystem.forEach((value, path) => {
                             path.endsWith('.py') &&
-                                this.pyodide.FS.writeFile(path, value, {
+                                environment.pyodide.FS.writeFile(path, value, {
                                     encoding: 'utf8',
                                 })
                         })
@@ -266,12 +317,14 @@ export class ProjectState {
                             sourcePath,
                             content,
                         )
-                        this.pyodide.runPythonAsync(patchedContent).then(() => {
-                            this.runDone$.next(true)
-                        })
-                    },
-                )
-            })
+                        environment.pyodide
+                            .runPythonAsync(patchedContent)
+                            .then(() => {
+                                this.runDone$.next(true)
+                            })
+                    })
+                },
+            )
     }
 
     requestOutputViewCreation({ name, htmlElement }) {
@@ -307,29 +360,20 @@ export class ProjectState {
 
         dependencies
             .then((window) => {
-                this.pyodide = window[exportedPyodideInstanceName]
-                const systemVersion = this.pyodide.runPython(
-                    'import sys\nsys.version',
-                )
-                this.nativeGlobals = [
-                    ...this.pyodide
-                        .runPython(
-                            'import sys\nfrom pyodide.ffi import to_js\nto_js(sys.modules)',
-                        )
-                        .keys(),
-                ]
-                this.rawLog$.next({
-                    level: 'info',
-                    message: `Python ${systemVersion.split('\n')[0]}`,
-                })
+                const pyodide = window[exportedPyodideInstanceName]
                 Object.entries(requirements.javascriptPackages.aliases).forEach(
                     ([alias, originalName]) => {
                         this.rawLog$.next({
                             level: 'info',
                             message: `create alias '${alias}' to import '${originalName}' (version ${window[alias].__yw_set_from_version__}) `,
                         })
-                        this.pyodide.registerJsModule(alias, window[alias])
+                        pyodide.registerJsModule(alias, window[alias])
                     },
+                )
+                this.environment$.next(
+                    new Environment({
+                        pyodide,
+                    }),
                 )
             })
             .then(() => {

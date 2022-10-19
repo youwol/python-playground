@@ -1,4 +1,4 @@
-import { ProjectState } from './project.state'
+import { ProjectState, Environment } from './project.state'
 
 export function outputPython2Js(data) {
     if (!data) {
@@ -50,7 +50,6 @@ sys.stderr = LoggerError()
 keys = list(sys.modules.keys())
 for module_name in keys:
     if module_name not in nativeGlobals:
-        print(f"delete {module_name}")
         del sys.modules[module_name]
 
 ${originalSrc}
@@ -58,7 +57,7 @@ ${originalSrc}
 }
 
 export async function registerYouwolUtilsModule(
-    pyodide,
+    environment: Environment,
     fileSystem: Map<string, string>,
     projectState: ProjectState,
 ) {
@@ -67,10 +66,10 @@ export async function registerYouwolUtilsModule(
         if (key.endsWith('.js')) {
             const jsModule = await new Function(value)()(window)
             const name = key.substring(2).split('.js')[0]
-            pyodide.registerJsModule(name, jsModule)
+            environment.pyodide.registerJsModule(name, jsModule)
         }
     }
-    pyodide.registerJsModule('youwol_utils', {
+    environment.pyodide.registerJsModule('youwol_utils', {
         log_info: (message: string) => {
             message.trim() != '' &&
                 projectState.rawLog$.next({
@@ -88,7 +87,7 @@ export async function registerYouwolUtilsModule(
         js: (obj) => outputPython2Js(obj),
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
-        nativeGlobals: ['youwol_utils', ...projectState.nativeGlobals],
+        nativeGlobals: ['youwol_utils', ...environment.nativePythonGlobals],
         createOutputView: (name: string, htmlElement: HTMLElement) => {
             projectState.requestOutputViewCreation({
                 name,
