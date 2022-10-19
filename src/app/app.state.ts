@@ -67,7 +67,6 @@ export class AppState {
 
         this.projectState = new ProjectState({
             project: params.project,
-            appState: this,
         })
         const rootNode = createProjectRootNode(
             params.project,
