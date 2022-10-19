@@ -17,7 +17,6 @@ import {
     skip,
     take,
 } from 'rxjs/operators'
-import { AppState } from '..'
 import { OutputViewNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { CdnEvent } from '@youwol/cdn-client'
@@ -148,7 +147,7 @@ export class ProjectState {
      */
     public readonly runDone$ = new Subject<true>()
 
-    constructor({ project }: { project: Project; appState: AppState }) {
+    constructor({ project }: { project: Project }) {
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
