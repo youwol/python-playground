@@ -2,21 +2,19 @@ export const defaultProject = {
     name: 'Project',
     environment: {
         requirements: {
-            pythonPackages: [
-                "numpy"
-            ],
+            pythonPackages: ['numpy'],
             javascriptPackages: {
                 modules: [
-                    "d3#^5.15.0",
-                    "@youwol/flux-view#^1.0.3",
-                    "chart.js#^3.9.1"
+                    'd3#^5.15.0',
+                    '@youwol/flux-view#^1.0.3',
+                    'chart.js#^3.9.1',
                 ],
                 aliases: {
-                    "flux_view": "@youwol/flux-view",
-                    "rxjs": "rxjs",
-                    "chartJs": "chart.js"
-                }
-            }
+                    flux_view: '@youwol/flux-view',
+                    rxjs: 'rxjs',
+                    chartJs: 'chart.js',
+                },
+            },
         },
         configurations: [
             {
@@ -39,7 +37,7 @@ from rxjs import timer, BehaviorSubject, combineLatest
 from rxjs.operators import map
 
 from datetime import datetime
-from youwol_utils import createOutputView
+from yw_pyodide import create_view
 
 draws_size = (100,2)
 proxies_buffer = []
@@ -92,12 +90,12 @@ vdom = {
     "disconnectedCallback": on_disconnected
 }
 
-createOutputView("test", to_js(vdom))
+create_view("test", to_js(vdom))
 `,
         },
         {
             path: './plot.py',
-            content:`
+            content: `
 from pyodide.ffi import to_js as to_js_0
 from typing import Iterable, Tuple
 from js import Object
@@ -129,14 +127,14 @@ def create_chart(html_element, samples: Iterable[Tuple[float, float]]) -> chartJ
     
 def to_js(obj):
     return to_js_0(obj, dict_converter= Object.fromEntries)
-            `
+            `,
         },
         {
             path: './py_flux_view.py',
-            content:`
+            content: `
 from pyodide.ffi import create_proxy, to_js
 import flux_view
-from youwol_utils import call
+from yw_pyodide import call
 
 from js import Object
 
@@ -147,17 +145,17 @@ def attr(domain_observable, vdom_mapper, proxies_buffer):
 
 def render(vdom):
     return flux_view.render(to_js(vdom, dict_converter= Object.fromEntries))
-`
+`,
         },
         {
             path: './helpers_js.js',
-            content:`
+            content: `
 return async () => { 
     return {
     }
 }
-`
-        }
+`,
+        },
         /*{
             path: './main.py',
             content:
