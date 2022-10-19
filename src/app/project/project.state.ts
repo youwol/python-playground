@@ -14,11 +14,6 @@ import { Common } from '@youwol/fv-code-mirror-editors'
 import { install, CdnEvent } from '@youwol/cdn-client'
 import { patchPythonSrc, registerYouwolUtilsModule } from './utils'
 
-export interface DisplayedElement {
-    title: string
-    htmlElement: HTMLElement
-}
-
 /**
  * @category State
  */
@@ -81,11 +76,6 @@ export class ProjectState {
      * @group Observables
      */
     public readonly project$: Observable<Project>
-
-    /**
-     * @group Observables
-     */
-    public readonly displayElement$ = new ReplaySubject<DisplayedElement>(1)
 
     /**
      * @group Observables

@@ -89,9 +89,6 @@ export async function registerYouwolUtilsModule(
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
         nativeGlobals: ['youwol_utils', ...projectState.nativeGlobals],
-        display: (title: string, htmlElement: HTMLElement) => {
-            projectState.displayElement$.next({ title, htmlElement })
-        },
         createOutputView: (name: string, htmlElement: HTMLElement) => {
             projectState.requestOutputViewCreation({
                 name,
