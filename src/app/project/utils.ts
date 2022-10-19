@@ -5,7 +5,7 @@ import { VirtualDOM } from '@youwol/flux-view'
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
 import sys
-from yw_pyodide import log_info, log_error, nativeGlobals
+from yw_pyodide import log_info, log_error, native_globals
 
 class LoggerInfo(object):
     def __init__(self):
@@ -56,7 +56,9 @@ export async function registerYwPyodideModule(
                     message: message,
                 })
         },
-        nativeGlobals: ['youwol_utils', ...environment.nativePythonGlobals],
+        new: (T, ...p) => new T(...p),
+        call: (obj: unknown, method: string, ...args) => obj[method](...args),
+        native_globals: ['youwol_utils', ...environment.nativePythonGlobals],
         create_view: (name: string, htmlElement: VirtualDOM | HTMLElement) => {
             outputs.onView({
                 name,
