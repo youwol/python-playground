@@ -127,7 +127,7 @@ export async function installRequirements({
     rawLog$
     environment$: Subject<Environment>
 }) {
-    const exportedPyodideInstanceName = 'loadedPyodide'
+    const exportedPyodideInstanceName = Environment.ExportedPyodideInstanceName
     await install({
         ...requirements.javascriptPackages,
         customInstallers: [

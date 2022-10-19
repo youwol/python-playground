@@ -33,6 +33,8 @@ import { installRequirements } from '../load-project'
  * @category Data Structure
  */
 export class Environment {
+    static ExportedPyodideInstanceName = 'loadedPyodide'
+
     /**
      * @group Immutable Constants
      */
@@ -44,11 +46,17 @@ export class Environment {
     /**
      * @group Immutable Constants
      */
+    public readonly pyodideVersion: string
+    /**
+     * @group Immutable Constants
+     */
     public readonly nativePythonGlobals: string[]
 
     constructor(params: { pyodide }) {
         Object.assign(this, params)
         this.pythonVersion = this.pyodide.runPython('import sys\nsys.version')
+        this.pyodideVersion =
+            window[Environment.ExportedPyodideInstanceName].version
         this.nativePythonGlobals = [
             ...this.pyodide
                 .runPython(
@@ -197,6 +205,10 @@ export class ProjectState {
             this.rawLog$.next({
                 level: 'info',
                 message: `Python ${env.pythonVersion.split('\n')[0]}`,
+            })
+            this.rawLog$.next({
+                level: 'info',
+                message: `Pyodide ${env.pyodideVersion}`,
             })
         })
 
