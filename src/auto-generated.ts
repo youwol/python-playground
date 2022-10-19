@@ -8,6 +8,7 @@ const runTimeDependencies = {
         "@youwol/cdn-client": "^1.0.2",
         "@youwol/http-clients": "^1.0.2",
         "@youwol/flux-view": "^1.0.3",
+        "@youwol/fv-context-menu": "^0.1.1",
         "@youwol/fv-tree": "^0.2.3",
         "lodash": "^4.17.15",
         "rxjs": "^6.5.5"
@@ -22,6 +23,7 @@ const externals = {
     "@youwol/cdn-client": "window['@youwol/cdn-client_APIv1']",
     "@youwol/http-clients": "window['@youwol/http-clients_APIv1']",
     "@youwol/flux-view": "window['@youwol/flux-view_APIv1']",
+    "@youwol/fv-context-menu": "window['@youwol/fv-context-menu_APIv01']",
     "@youwol/fv-tree": "window['@youwol/fv-tree_APIv02']",
     "lodash": "window['__APIv4']",
     "rxjs": "window['rxjs_APIv6']",
@@ -56,6 +58,10 @@ const exportedSymbols = {
         "apiKey": "1",
         "exportedSymbol": "@youwol/flux-view"
     },
+    "@youwol/fv-context-menu": {
+        "apiKey": "01",
+        "exportedSymbol": "@youwol/fv-context-menu"
+    },
     "@youwol/fv-tree": {
         "apiKey": "02",
         "exportedSymbol": "@youwol/fv-tree"
@@ -81,6 +87,7 @@ const mainEntry : Object = {
         "@youwol/cdn-client",
         "@youwol/http-clients",
         "@youwol/flux-view",
+        "@youwol/fv-context-menu",
         "@youwol/fv-tree",
         "lodash",
         "rxjs"
