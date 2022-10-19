@@ -18,7 +18,7 @@ import {
     take,
 } from 'rxjs/operators'
 import { AppState, Explorer } from '..'
-import { createProjectRootNode, OutputViewNode, SourceNode } from '../explorer'
+import { createProjectRootNode, OutputViewNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { CdnEvent } from '@youwol/cdn-client'
 import {
@@ -145,12 +145,6 @@ export class ProjectState {
      */
     public readonly runDone$ = new Subject<true>()
 
-    /**
-     *
-     * @group Observables
-     */
-    public readonly openedPyFiles$ = new BehaviorSubject<string[]>([])
-
     constructor({
         project,
         appState,
@@ -245,12 +239,6 @@ export class ProjectState {
             .subscribe((outputs) => {
                 this.createdOutputs$.next(outputs)
             })
-
-        this.explorerState.selectedNode$.subscribe((node) => {
-            if (node instanceof SourceNode) {
-                this.openedPyFiles$.next([node.id])
-            }
-        })
     }
 
     selectConfiguration(name: string) {
