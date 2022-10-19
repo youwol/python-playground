@@ -1,3 +1,5 @@
+import { VirtualDOM } from '@youwol/flux-view'
+
 export interface Source {
     path: string
     content: string
@@ -34,4 +36,9 @@ export interface RawLog {
     level: 'info' | 'warning' | 'error'
     message: string
     data?: unknown
+}
+
+export interface View {
+    name: string
+    htmlElement: VirtualDOM | HTMLElement
 }

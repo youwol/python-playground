@@ -2,6 +2,7 @@ import { ImmutableTree } from '@youwol/fv-tree'
 import { Environment, Project } from '../models'
 import { ProjectState } from '../project'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
+import { VirtualDOM } from '@youwol/flux-view'
 
 /**
  * Node's signal data-structure
@@ -225,12 +226,12 @@ export class OutputViewNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly htmlElement: HTMLElement
+    public readonly htmlElement: HTMLElement | VirtualDOM
 
     constructor(params: {
         projectState: ProjectState
         name: string
-        htmlElement: HTMLElement
+        htmlElement: HTMLElement | VirtualDOM
     }) {
         super({
             id: `${params.projectState.id}.folder-views.${params.name}`,

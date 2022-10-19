@@ -2,17 +2,31 @@ import { Project, RawLog, Requirements, RunConfiguration } from '../models'
 import {
     BehaviorSubject,
     combineLatest,
+    from,
     merge,
     Observable,
     ReplaySubject,
     Subject,
 } from 'rxjs'
-import { debounceTime, filter, map, scan, skip, take } from 'rxjs/operators'
+import {
+    debounceTime,
+    filter,
+    map,
+    mergeMap,
+    scan,
+    skip,
+    take,
+} from 'rxjs/operators'
 import { AppState, Explorer } from '..'
 import { createProjectRootNode, OutputViewNode, SourceNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { CdnEvent } from '@youwol/cdn-client'
-import { patchPythonSrc, registerYouwolUtilsModule } from './utils'
+import {
+    patchPythonSrc,
+    registerJsModules,
+    registerYwPyodideModule,
+    syncFileSystem,
+} from './utils'
 import { installRequirements } from '../load-project'
 
 /**
@@ -273,68 +287,72 @@ export class ProjectState {
 
     runCurrentConfiguration() {
         this.runStart$.next(true)
-
         combineLatest([
             this.environment$,
             this.configurations$,
             this.selectedConfiguration$,
             this.ideState.fsMap$,
         ])
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                mergeMap((params) => this.initializeBeforeRun(params)),
+            )
             .subscribe(
-                ([
+                ({
                     environment,
+                    fileSystem,
                     configurations,
                     selectedConfigName,
-                    fileSystem,
-                ]) => {
-                    environment.pyodide.registerJsModule(
-                        'cdn_client',
-                        window['@youwol/cdn-client'],
-                    )
+                }) => {
                     const selectedConfig = configurations.find(
                         (config) => config.name == selectedConfigName,
                     )
                     const sourcePath = selectedConfig.scriptPath
-                    registerYouwolUtilsModule(
-                        environment,
-                        fileSystem,
-                        this,
-                    ).then(() => {
-                        // remove files
-                        environment.pyodide.FS.readdir('./')
-                            .filter((p) => !['.', '..'].includes(p))
-                            .forEach((p) => environment.pyodide.FS.unlink(p))
-
-                        // add files
-                        fileSystem.forEach((value, path) => {
-                            path.endsWith('.py') &&
-                                environment.pyodide.FS.writeFile(path, value, {
-                                    encoding: 'utf8',
-                                })
+                    const patchedContent = patchPythonSrc(
+                        sourcePath,
+                        fileSystem.get(sourcePath),
+                    )
+                    return environment.pyodide
+                        .runPythonAsync(patchedContent)
+                        .then(() => {
+                            this.runDone$.next(true)
                         })
-                        const content = fileSystem.get(sourcePath)
-                        const patchedContent = patchPythonSrc(
-                            sourcePath,
-                            content,
-                        )
-                        environment.pyodide
-                            .runPythonAsync(patchedContent)
-                            .then(() => {
-                                this.runDone$.next(true)
-                            })
-                    })
                 },
             )
     }
 
-    requestOutputViewCreation({ name, htmlElement }) {
-        const newNode = new OutputViewNode({
-            name,
-            projectState: this,
-            htmlElement,
-        })
-        this.createdOutput$.next(newNode)
+    private initializeBeforeRun([
+        environment,
+        configurations,
+        selectedConfigName,
+        fileSystem,
+    ]) {
+        const outputs = {
+            onLog: (log) => this.rawLog$.next(log),
+            onView: (view) => {
+                const newNode = new OutputViewNode({
+                    ...view,
+                    projectState: this,
+                })
+                this.createdOutput$.next(newNode)
+            },
+        }
+        return from(
+            Promise.all([
+                registerYwPyodideModule(environment, fileSystem, outputs),
+                registerJsModules(environment, fileSystem),
+                syncFileSystem(environment, fileSystem),
+            ]),
+        ).pipe(
+            map(() => {
+                return {
+                    environment,
+                    configurations,
+                    selectedConfigName,
+                    fileSystem,
+                }
+            }),
+        )
     }
 
     private installRequirements(requirements: Requirements) {

@@ -1,34 +1,11 @@
-import { ProjectState, Environment } from './project.state'
-
-export function outputPython2Js(data) {
-    if (!data) {
-        return data
-    }
-    const recFct = (d) => {
-        if (d instanceof Map) {
-            const converted = {}
-            d.forEach((v, k) => {
-                converted[k] = recFct(v)
-            })
-            return converted
-        }
-        if (Array.isArray(d)) {
-            return d.map((v) => {
-                return recFct(v)
-            })
-        }
-        return d
-    }
-    const jsData = data.toJs && data.toJs()
-    return recFct(jsData || data)
-}
+import { Environment } from './project.state'
+import { RawLog, View } from '../models'
+import { VirtualDOM } from '@youwol/flux-view'
 
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
 import sys
-from youwol_utils import log_info, log_error, nativeGlobals
-
-__file__ = '/home/pyodide/${fileName.replace('./', '')}'
+from yw_pyodide import log_info, log_error, nativeGlobals
 
 class LoggerInfo(object):
     def __init__(self):
@@ -56,10 +33,43 @@ ${originalSrc}
 `
 }
 
-export async function registerYouwolUtilsModule(
+export async function registerYwPyodideModule(
     environment: Environment,
     fileSystem: Map<string, string>,
-    projectState: ProjectState,
+    outputs: {
+        onLog: (log: RawLog) => void
+        onView: (view: View) => void
+    },
+) {
+    environment.pyodide.registerJsModule('yw_pyodide', {
+        log_info: (message: string) => {
+            message.trim() != '' &&
+                outputs.onLog({
+                    level: 'info',
+                    message: message,
+                })
+        },
+        log_error: (message: string) => {
+            message.trim() != '' &&
+                outputs.onLog({
+                    level: 'error',
+                    message: message,
+                })
+        },
+        nativeGlobals: ['youwol_utils', ...environment.nativePythonGlobals],
+        create_view: (name: string, htmlElement: VirtualDOM | HTMLElement) => {
+            outputs.onView({
+                name,
+                htmlElement,
+            })
+        },
+        cdn_client: window['@youwol/cdn-client'],
+    })
+}
+
+export async function registerJsModules(
+    environment: Environment,
+    fileSystem: Map<string, string>,
 ) {
     for (const key of Array.from(fileSystem.keys())) {
         const value = fileSystem.get(key)
@@ -69,30 +79,20 @@ export async function registerYouwolUtilsModule(
             environment.pyodide.registerJsModule(name, jsModule)
         }
     }
-    environment.pyodide.registerJsModule('youwol_utils', {
-        log_info: (message: string) => {
-            message.trim() != '' &&
-                projectState.rawLog$.next({
-                    level: 'info',
-                    message: message,
-                })
-        },
-        log_error: (message: string) => {
-            message.trim() != '' &&
-                projectState.rawLog$.next({
-                    level: 'error',
-                    message: message,
-                })
-        },
-        js: (obj) => outputPython2Js(obj),
-        new: (T, ...p) => new T(...p),
-        call: (obj: unknown, method: string, ...args) => obj[method](...args),
-        nativeGlobals: ['youwol_utils', ...environment.nativePythonGlobals],
-        createOutputView: (name: string, htmlElement: HTMLElement) => {
-            projectState.requestOutputViewCreation({
-                name,
-                htmlElement,
+}
+
+export async function syncFileSystem(
+    environment: Environment,
+    fileSystem: Map<string, string>,
+) {
+    environment.pyodide.FS.readdir('./')
+        .filter((p) => !['.', '..'].includes(p))
+        .forEach((p) => environment.pyodide.FS.unlink(p))
+
+    fileSystem.forEach((value, path) => {
+        path.endsWith('.py') &&
+            environment.pyodide.FS.writeFile(path, value, {
+                encoding: 'utf8',
             })
-        },
     })
 }
