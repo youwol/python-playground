@@ -13,6 +13,7 @@ export type NodeCategory =
     | 'ProjectNode'
     | 'RequirementsNode'
     | 'ConfigurationsNode'
+    | 'HelpersJsSourceNode'
     | 'SourceNode'
     | 'OutputViewNode'
 
@@ -187,6 +188,25 @@ export class SourceNode extends Node {
     }
 }
 
+
+/**
+ * Requirement Node of explorer
+ *
+ * @category Nodes
+ */
+export class HelpersJsSourceNode extends SourceNode {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly category: NodeCategory = 'HelpersJsSourceNode'
+
+    constructor(params: { path: string; projectState: ProjectState }) {
+        super(params)
+    }
+}
+
+
+
 /**
  * Folder of output views Node of explorer
  *
@@ -235,7 +255,9 @@ export function createProjectRootNode(
             ...project.sources.filter( (source) => {
                 return !specialFiles.includes(source.path)
             }).map((source) => {
-                return new SourceNode({
+
+                const factory = source.path.endsWith('.py') ? SourceNode : HelpersJsSourceNode
+                return new factory({
                     path: source.path,
                     projectState,
                 })

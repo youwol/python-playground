@@ -44,7 +44,7 @@ export class CodeEditorView {
             // I don't understand why any is needed on the next two lines: types definition seems correct
             ideState: this.projectState.ideState as any,
             path: this.sourcePath as any,
-            language: 'python',
+            language: this.sourcePath.endsWith('.py') ? 'python' : 'javascript',
             config: {
                 extraKeys: {
                     'Ctrl-Enter': () => {

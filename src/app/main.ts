@@ -26,7 +26,10 @@ await setup.installMainModule({
             'codemirror#5.52.0~codemirror.min.css',
             'codemirror#5.52.0~theme/blackboard.min.css',
         ],
-        scripts: ['codemirror#5.52.0~mode/python.min.js'],
+        scripts: [
+            'codemirror#5.52.0~mode/python.min.js',
+            'codemirror#5.52.0~mode/javascript.min.js'
+        ],
         displayLoadingScreen: true,
         onEvent: (ev) => {
             loadingScreen.next(ev)

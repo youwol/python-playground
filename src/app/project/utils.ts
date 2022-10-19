@@ -56,11 +56,19 @@ ${originalSrc}
 `
 }
 
-export function registerYouwolUtilsModule(
+export async function registerYouwolUtilsModule(
     pyodide,
     fileSystem: Map<string, string>,
     projectState: ProjectState,
 ) {
+    for(const key of Array.from(fileSystem.keys())) {
+        const value = fileSystem.get(key)
+        if(key.endsWith('.js')){
+            const jsModule = await new Function(value)()(window)
+            const name = key.substring(2).split('.js')[0]
+            pyodide.registerJsModule(name, jsModule)
+        }
+    }
     pyodide.registerJsModule('youwol_utils', {
         log_info: (message: string) => {
             message.trim() != '' &&
@@ -80,7 +88,9 @@ export function registerYouwolUtilsModule(
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
         projectModules: Array.from(fileSystem.keys()).map(
-            (k) => k.substring(2).split('.py')[0],
+            (k) => k.endsWith('.py')
+                ? k.substring(2).split('.py')[0]
+                : k.substring(2).split('.js')[0],
         ),
         display: (title: string, htmlElement: HTMLElement) => {
             projectState.displayElement$.next({ title, htmlElement })

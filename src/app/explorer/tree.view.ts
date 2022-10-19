@@ -39,6 +39,7 @@ export class NodeView implements VirtualDOM {
         Node: '',
         ProjectNode: 'fas fa-project-diagram',
         SourceNode: 'fab fa-python',
+        HelpersJsSourceNode: 'fab fa-js-square',
         RequirementsNode: 'fas fa-cubes',
         ConfigurationsNode: 'fas fa-tools',
         OutputViewNode: 'fas fa-code',

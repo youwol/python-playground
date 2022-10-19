@@ -249,18 +249,20 @@ export class ProjectState {
                     (config) => config.name == selectedConfigName,
                 )
                 const sourcePath = selectedConfig.scriptPath
-                registerYouwolUtilsModule(this.pyodide, fileSystem, this)
-                fileSystem.forEach((value, path) => {
-                    path.endsWith('.py') &&
+                registerYouwolUtilsModule(this.pyodide, fileSystem, this).then(() => {
+                    fileSystem.forEach((value, path) => {
+                        path.endsWith('.py') &&
                         this.pyodide.FS.writeFile(path, value, {
                             encoding: 'utf8',
                         })
+                    })
+                    const content = fileSystem.get(sourcePath)
+                    const patchedContent = patchPythonSrc(sourcePath, content)
+                    this.pyodide.runPythonAsync(patchedContent).then(() => {
+                        this.runDone$.next(true)
+                    })
                 })
-                const content = fileSystem.get(sourcePath)
-                const patchedContent = patchPythonSrc(sourcePath, content)
-                this.pyodide.runPythonAsync(patchedContent).then(() => {
-                    this.runDone$.next(true)
-                })
+
             })
     }
 
