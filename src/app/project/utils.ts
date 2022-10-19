@@ -26,7 +26,7 @@ sys.stdout = LoggerInfo()
 sys.stderr = LoggerError()       
 keys = list(sys.modules.keys())
 for module_name in keys:
-    if module_name not in nativeGlobals:
+    if module_name not in native_globals:
         del sys.modules[module_name]
 
 ${originalSrc}
