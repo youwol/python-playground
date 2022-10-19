@@ -18,7 +18,7 @@ export class ProjectTab extends DockableTabs.Tab {
                     },
                     children: [
                         new TreeView({
-                            state: appState.projectState.explorerState,
+                            state: appState.explorerState,
                         }),
                     ],
                 }

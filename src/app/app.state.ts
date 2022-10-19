@@ -12,11 +12,13 @@ import { mergeMap, skip } from 'rxjs/operators'
 import { ProjectState } from './project'
 import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
+    createProjectRootNode,
     HelpersJsSourceNode,
     Node,
     OutputViewNode,
     SourceNode,
 } from './explorer'
+import { Explorer } from '.'
 /**
  *
  * @category State
@@ -31,6 +33,11 @@ export class AppState {
      * @group States
      */
     public readonly leftSideNavState: DockableTabs.State
+
+    /**
+     * @group States
+     */
+    public readonly explorerState: Explorer.TreeState
 
     /**
      * @group Immutable Constants
@@ -62,6 +69,24 @@ export class AppState {
             project: params.project,
             appState: this,
         })
+        const rootNode = createProjectRootNode(
+            params.project,
+            this.projectState,
+        )
+        this.explorerState = new Explorer.TreeState({
+            rootNode,
+            appState: this,
+        })
+
+        this.projectState.projectLoaded$.subscribe((loaded) => {
+            loaded
+                ? rootNode.removeProcess(params.project.id)
+                : rootNode.addProcess({
+                      type: 'loading',
+                      id: params.project.id,
+                  })
+        })
+
         this.leftSideNavState = new DockableTabs.State({
             disposition: 'left',
             viewState$: new BehaviorSubject<DockableTabs.DisplayMode>('pined'),
@@ -79,7 +104,7 @@ export class AppState {
             ]),
             selected$: new BehaviorSubject<string>('Views'),
         })
-        this.projectState.explorerState.selectedNode$.subscribe((node) => {
+        this.explorerState.selectedNode$.subscribe((node) => {
             this.openTab(node)
         })
 
@@ -153,7 +178,7 @@ export class AppState {
     addFile(name: string, kind: 'js' | 'py') {
         const path = `./${name}.${kind}`
         const factory = kind == 'js' ? HelpersJsSourceNode : SourceNode
-        this.projectState.explorerState.addChild(
+        this.explorerState.addChild(
             this.projectState.id,
             new factory({
                 path,
@@ -164,8 +189,8 @@ export class AppState {
     }
 
     deleteFile(path: string) {
-        const node = this.projectState.explorerState.getNode(path)
-        this.projectState.explorerState.removeNode(path)
+        const node = this.explorerState.getNode(path)
+        this.explorerState.removeNode(path)
         this.projectState.ideState.removeFile(path)
         this.closeTab(node)
     }
@@ -175,7 +200,7 @@ export class AppState {
         const path = `./${name}`
         const newNode = new factory({ path, projectState: this.projectState })
         this.projectState.ideState.moveFile(node.id, `./${name}`)
-        this.projectState.explorerState.replaceNode(
+        this.explorerState.replaceNode(
             node,
             new factory({ path, projectState: this.projectState }),
         )

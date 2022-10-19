@@ -17,8 +17,8 @@ import {
     skip,
     take,
 } from 'rxjs/operators'
-import { AppState, Explorer } from '..'
-import { createProjectRootNode, OutputViewNode } from '../explorer'
+import { AppState } from '..'
+import { OutputViewNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { CdnEvent } from '@youwol/cdn-client'
 import {
@@ -124,11 +124,6 @@ export class ProjectState {
     public readonly rawLog$ = new ReplaySubject<RawLog>()
 
     /**
-     * @group States
-     */
-    public readonly explorerState: Explorer.TreeState
-
-    /**
      * @group Observables
      */
     public readonly project$: Observable<Project>
@@ -153,13 +148,7 @@ export class ProjectState {
      */
     public readonly runDone$ = new Subject<true>()
 
-    constructor({
-        project,
-        appState,
-    }: {
-        project: Project
-        appState: AppState
-    }) {
+    constructor({ project }: { project: Project; appState: AppState }) {
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
@@ -188,17 +177,6 @@ export class ProjectState {
         this.ideState = new Common.IdeState({
             files: [requirementsFile, configurationsFile, ...project.sources],
             defaultFileSystem: Promise.resolve(new Map<string, string>()),
-        })
-        const projectNode = createProjectRootNode(project, this)
-        this.explorerState = new Explorer.TreeState({
-            rootNode: projectNode,
-            appState: appState,
-        })
-
-        this.projectLoaded$.subscribe((loaded) => {
-            loaded
-                ? projectNode.removeProcess(project.id)
-                : projectNode.addProcess({ type: 'loading', id: project.id })
         })
 
         this.environment$.subscribe((env) => {
@@ -276,8 +254,6 @@ export class ProjectState {
 
     applyRequirements() {
         this.projectLoaded$.next(false)
-        const node = this.explorerState.getNode(this.id)
-        this.explorerState.selectNodeAndExpand(node)
         this.ideState.fsMap$.pipe(take(1)).subscribe((fileSystem) => {
             const requirements = JSON.parse(fileSystem.get('./requirements'))
             this.installRequirements(requirements)
