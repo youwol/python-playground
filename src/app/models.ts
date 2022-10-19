@@ -28,10 +28,6 @@ export interface Project {
     sources: Source[]
 }
 
-export interface Workspace {
-    projects: Project[]
-}
-
 export interface RawLog {
     level: 'info' | 'warning' | 'error'
     message: string
