@@ -47,11 +47,6 @@ export class AppState {
     public readonly projectState: ProjectState
 
     /**
-     * @group Immutable Constants
-     */
-    public readonly fileInfo: FilesBackend.GetInfoResponse
-
-    /**
      * @group Observables
      */
     public readonly openTabs$ = new BehaviorSubject<Node[]>([])
@@ -72,6 +67,7 @@ export class AppState {
     constructor(params: {
         project: Project
         fileInfo: FilesBackend.GetInfoResponse
+        explorerInfo: ExplorerBackend.GetItemResponse
     }) {
         Object.assign(this, params)
 
@@ -135,7 +131,7 @@ export class AppState {
                         class: '<i class="fab fa-python"></i> mr-1',
                     },
                     {
-                        innerText: this.fileInfo.metadata.fileName,
+                        innerText: params.explorerInfo.name,
                     },
                 ],
             },
@@ -170,7 +166,7 @@ export class AppState {
                     })
                     return filesClient.upload$({
                         body: {
-                            fileName: this.fileInfo.metadata.fileName,
+                            fileName: params.fileInfo.metadata.fileName,
                             fileId: project.id,
                             content: blob,
                         },

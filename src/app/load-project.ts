@@ -2,6 +2,7 @@ import { CdnMessageEvent, install, LoadingScreenView } from '@youwol/cdn-client'
 import {
     AssetsGateway,
     FilesBackend,
+    ExplorerBackend,
     downloadBlob,
     raiseHTTPErrors,
 } from '@youwol/http-clients'
@@ -23,6 +24,7 @@ export function load$(
 ): Observable<{
     project: Project
     fileInfo: FilesBackend.GetInfoResponse
+    explorerInfo: ExplorerBackend.GetItemResponse
 }> {
     const filesClient = new AssetsGateway.Client().files
 
@@ -47,7 +49,7 @@ export function load$(
                 new CdnMessageEvent('fetch_project', 'Project retrieved'),
             )
         }),
-        mergeMap(([fileInfo, assetsInfo, blob]) => {
+        mergeMap(([fileInfo, explorerInfo, blob]) => {
             const jsonResp = new Subject()
             const reader = new FileReader()
             reader.onload = (ev) => {
@@ -57,8 +59,9 @@ export function load$(
             return jsonResp.pipe(
                 take(1),
                 map((project: Project) => ({
-                    project: { ...project, id: assetsInfo.rawId },
+                    project: { ...project, id: explorerInfo.rawId },
                     fileInfo,
+                    explorerInfo,
                 })),
             )
         }),
@@ -72,7 +75,11 @@ export function load$(
  */
 export function new$(
     loadingScreen: LoadingScreenView,
-): Observable<{ project: Project; fileInfo: FilesBackend.GetInfoResponse }> {
+): Observable<{
+    project: Project
+    fileInfo: FilesBackend.GetInfoResponse
+    explorerInfo: ExplorerBackend.GetItemResponse
+}> {
     const client = new AssetsGateway.AssetsGatewayClient()
     loadingScreen.next(
         new CdnMessageEvent(

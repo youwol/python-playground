@@ -1,10 +1,8 @@
 import { child$, render } from '@youwol/flux-view'
 import { AppView } from './app.view'
 import { Client } from '@youwol/cdn-client'
-import { Project } from './models'
 import { AppState } from './app.state'
 import { load$, new$ } from './load-project'
-import { FilesBackend } from '@youwol/http-clients'
 
 require('./style.css')
 
@@ -18,16 +16,11 @@ const vDOM = {
                 ? load$(projectId, Client['initialLoadingScreen'])
                 : new$(Client['initialLoadingScreen']),
 
-            ({
-                project,
-                fileInfo,
-            }: {
-                project: Project
-                fileInfo: FilesBackend.GetInfoResponse
-            }) => {
+            ({ project, fileInfo, explorerInfo }) => {
                 const state = new AppState({
                     fileInfo,
                     project,
+                    explorerInfo,
                 })
                 return new AppView({ appState: state })
             },
