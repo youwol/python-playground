@@ -10,7 +10,7 @@ export class ContentOutputView{
      *
      * @group Immutable DOM Constants
      */
-    public readonly class : string = ""
+    public readonly class: string = 'w-100 h-100 overflow-auto'
 
     /**
      *
