@@ -105,7 +105,8 @@ export class NodeView implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public readonly class: string = 'd-flex align-items-center my-1 fv-pointer'
+    public readonly class: string =
+        'w-100 d-flex align-items-center my-1 fv-pointer'
 
     /**
      * @group Immutable DOM Constants
@@ -131,12 +132,15 @@ export class NodeView implements VirtualDOM {
                 },
             ),
             {
+                class: 'flex-grow-1',
+            },
+            {
                 children: children$(this.node.processes$, (processes) => {
                     return processes.map((process) => {
                         return {
                             class: `${
                                 NodeView.ProcessTypeFactory[process.type]
-                            } mx-1`,
+                            } mx-3`,
                         }
                     })
                 }),
