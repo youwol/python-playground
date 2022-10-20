@@ -89,6 +89,8 @@ export class NodeView implements VirtualDOM {
     static ProcessTypeFactory: Record<NodeSignal, string> = {
         loading: 'fas fa-cloud-download-alt fv-blink',
         rename: '',
+        saving: 'fas fa-save fv-blink',
+        errorSaving: 'fas fa-save fv-text-error',
     }
     /**
      * @group States

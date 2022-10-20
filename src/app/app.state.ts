@@ -1,14 +1,16 @@
 import {
     AssetsGateway,
-    raiseHTTPErrors,
+    dispatchHTTPErrors,
     FilesBackend,
+    ExplorerBackend,
+    HTTPError,
 } from '@youwol/http-clients'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { Project } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab } from './side-nav-explorer'
-import { mergeMap, skip } from 'rxjs/operators'
+import { debounceTime, mergeMap, tap } from 'rxjs/operators'
 import { ProjectState } from './project'
 import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
@@ -58,6 +60,14 @@ export class AppState {
      * @group Observables
      */
     public readonly selectedTab$ = new BehaviorSubject<Node>(undefined)
+
+    /**
+     *
+     * @group Observables
+     */
+    public readonly errors = {
+        savingErrors$: new ReplaySubject<HTTPError>(1),
+    }
 
     constructor(params: {
         project: Project
@@ -130,9 +140,27 @@ export class AppState {
                 ],
             },
         })
+        this.errors.savingErrors$.subscribe(() => {
+            const projectNode = this.explorerState.getNode(params.project.id)
+            projectNode.removeProcess('saving')
+            projectNode.addProcess({
+                type: 'errorSaving',
+                id: 'errorSaving',
+            })
+        })
         this.projectState.project$
             .pipe(
-                skip(1),
+                tap(() => {
+                    const projectNode = this.explorerState.getNode(
+                        params.project.id,
+                    )
+                    projectNode.removeProcess('errorSaving')
+                    projectNode.addProcess({
+                        type: 'saving',
+                        id: 'saving',
+                    })
+                }),
+                debounceTime(1000),
                 mergeMap((project) => {
                     const filesClient = new AssetsGateway.Client().files
                     const str = JSON.stringify(project, null, 4)
@@ -149,10 +177,13 @@ export class AppState {
                         queryParameters: {},
                     })
                 }),
-                raiseHTTPErrors(),
+                dispatchHTTPErrors(this.errors.savingErrors$),
             )
-            .subscribe((asset) => {
-                console.log('Saved!', asset)
+            .subscribe(() => {
+                const projectNode = this.explorerState.getNode(
+                    params.project.id,
+                )
+                projectNode.removeProcess('saving')
             })
     }
 

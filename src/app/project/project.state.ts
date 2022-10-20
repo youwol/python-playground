@@ -8,15 +8,7 @@ import {
     ReplaySubject,
     Subject,
 } from 'rxjs'
-import {
-    debounceTime,
-    filter,
-    map,
-    mergeMap,
-    scan,
-    skip,
-    take,
-} from 'rxjs/operators'
+import { filter, map, mergeMap, scan, skip, take } from 'rxjs/operators'
 import { OutputViewNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { CdnEvent } from '@youwol/cdn-client'
@@ -196,7 +188,6 @@ export class ProjectState {
             this.ideState.fsMap$.pipe(filter((fsMap) => fsMap != undefined)),
         ]).pipe(
             skip(1),
-            debounceTime(1000),
             map(([requirements, configurations, fsMap]) => {
                 return {
                     id: project.id,

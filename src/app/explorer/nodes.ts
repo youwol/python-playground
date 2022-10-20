@@ -7,7 +7,7 @@ import { VirtualDOM } from '@youwol/flux-view'
 /**
  * Node's signal data-structure
  */
-export type NodeSignal = 'loading' | 'rename'
+export type NodeSignal = 'loading' | 'saving' | 'rename' | 'errorSaving'
 
 export type NodeCategory =
     | 'Node'
