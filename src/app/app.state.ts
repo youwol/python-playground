@@ -217,7 +217,7 @@ export class AppState {
     deleteFile(path: string) {
         const node = this.explorerState.getNode(path)
         this.explorerState.removeNode(path)
-        this.projectState.ideState.removeFile(path)
+        this.projectState.removeFile(path)
         this.closeTab(node)
     }
 

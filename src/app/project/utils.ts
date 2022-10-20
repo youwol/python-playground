@@ -5,7 +5,7 @@ import { VirtualDOM } from '@youwol/flux-view'
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
 import sys
-from yw_pyodide import log_info, log_error, native_globals
+from yw_pyodide import log_info, log_error, project_modules
 
 class LoggerInfo(object):
     def __init__(self):
@@ -25,8 +25,8 @@ class LoggerError(object):
 sys.stdout = LoggerInfo()  
 sys.stderr = LoggerError()       
 keys = list(sys.modules.keys())
-for module_name in keys:
-    if module_name not in native_globals:
+for module_name in project_modules:
+    if module_name in sys.modules:
         del sys.modules[module_name]
 
 ${originalSrc}
@@ -58,7 +58,9 @@ export async function registerYwPyodideModule(
         },
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
-        native_globals: ['youwol_utils', ...environment.nativePythonGlobals],
+        project_modules: [...fileSystem.keys()].map((path) => {
+            return getModuleNameFromFile(path)
+        }),
         create_view: (name: string, htmlElement: VirtualDOM | HTMLElement) => {
             outputs.onView({
                 name,
@@ -87,14 +89,15 @@ export async function syncFileSystem(
     environment: Environment,
     fileSystem: Map<string, string>,
 ) {
-    environment.pyodide.FS.readdir('./')
-        .filter((p) => !['.', '..'].includes(p))
-        .forEach((p) => environment.pyodide.FS.unlink(p))
-
+    // No need to delete files: those are deleted explicitly from user's action 'delete file'
     fileSystem.forEach((value, path) => {
         path.endsWith('.py') &&
             environment.pyodide.FS.writeFile(path, value, {
                 encoding: 'utf8',
             })
     })
+}
+
+export function getModuleNameFromFile(path: string) {
+    return path.replace('.js', '').replace('.py', '').replace('./', '')
 }

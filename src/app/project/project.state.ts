@@ -13,6 +13,7 @@ import { OutputViewNode } from '../explorer'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { CdnEvent } from '@youwol/cdn-client'
 import {
+    getModuleNameFromFile,
     patchPythonSrc,
     registerJsModules,
     registerYwPyodideModule,
@@ -219,6 +220,17 @@ export class ProjectState {
             .subscribe((outputs) => {
                 this.createdOutputs$.next(outputs)
             })
+    }
+
+    removeFile(path: string) {
+        this.ideState.removeFile(path)
+        this.environment$.pipe(take(1)).subscribe(({ pyodide }) => {
+            const moduleName = getModuleNameFromFile(path)
+            pyodide.FS.unlink(path)
+            pyodide.runPython(
+                `import sys\n${moduleName} in sys.modules and del sys.modules[${moduleName}]`,
+            )
+        })
     }
 
     selectConfiguration(name: string) {
