@@ -1,11 +1,10 @@
-import {VirtualDOM} from "@youwol/flux-view";
-import {OutputViewNode} from "../explorer";
+import { VirtualDOM } from '@youwol/flux-view'
+import { OutputViewNode } from '../explorer'
 
 /**
  * @category View
  */
-export class ContentOutputView{
-
+export class ContentOutputView {
     /**
      *
      * @group Immutable DOM Constants
@@ -16,12 +15,9 @@ export class ContentOutputView{
      *
      * @group Immutable DOM Constants
      */
-    public readonly children : VirtualDOM[]
-
+    public readonly children: VirtualDOM[]
 
     constructor(params: { view: OutputViewNode }) {
-        this.children = [
-            params.view.htmlElement
-        ]
+        this.children = [params.view.htmlElement]
     }
 }
