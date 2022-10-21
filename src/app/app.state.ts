@@ -21,6 +21,10 @@ import {
     SourceNode,
 } from './explorer'
 import { Explorer } from '.'
+import { logFactory } from './log-factory.conf'
+
+const log = logFactory().getChildLogger('app.state.ts')
+
 /**
  *
  * @category State
@@ -180,10 +184,12 @@ export class AppState {
                     params.project.id,
                 )
                 projectNode.removeProcess('saving')
+                log.info('Project saved successfully')
             })
     }
 
     openTab(node: Node) {
+        log.info(`openTab: node ${node.name} (id=${node.id})`)
         const opened = this.openTabs$.value
         if (!opened.includes(node)) {
             this.openTabs$.next([...opened, node])
@@ -192,6 +198,7 @@ export class AppState {
     }
 
     closeTab(node: Node) {
+        log.info(`closeTab: node ${node.id}`)
         const opened = this.openTabs$.value.filter((v) => v != node)
         if (opened.length != this.openTabs$.value.length) {
             this.openTabs$.next(opened)
@@ -202,6 +209,7 @@ export class AppState {
     }
 
     addFile(name: string, kind: 'js' | 'py') {
+        log.info(`addFile: ${name} of kind ${kind}`)
         const path = `./${name}.${kind}`
         const factory = kind == 'js' ? HelpersJsSourceNode : SourceNode
         this.explorerState.addChild(
@@ -215,6 +223,7 @@ export class AppState {
     }
 
     deleteFile(path: string) {
+        log.info(`deleteFile: ${path}`)
         const node = this.explorerState.getNode(path)
         this.explorerState.removeNode(path)
         this.projectState.removeFile(path)
@@ -222,6 +231,7 @@ export class AppState {
     }
 
     renameFile(node: SourceNode, name: string) {
+        log.info(`renameFile: ${node.id} with name ${name}`)
         const factory = name.endsWith('.js') ? HelpersJsSourceNode : SourceNode
         const path = `./${name}`
         const newNode = new factory({ path, projectState: this.projectState })
