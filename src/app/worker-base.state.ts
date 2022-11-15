@@ -7,13 +7,7 @@ import {
     Subject,
 } from 'rxjs'
 import { Common } from '@youwol/fv-code-mirror-editors'
-import {
-    Project,
-    RawLog,
-    Requirements,
-    RunConfiguration,
-    WorkerCommon,
-} from './models'
+import { RawLog, Requirements, RunConfiguration, WorkerCommon } from './models'
 import { CdnEvent } from '@youwol/cdn-client'
 import { filter, map, mergeMap, skip, take } from 'rxjs/operators'
 import {
@@ -122,7 +116,7 @@ export class WorkerBaseState {
     /**
      * @group Observables
      */
-    public readonly serialized$: Observable<Project>
+    public readonly serialized$: Observable<WorkerCommon>
 
     /**
      * @group Observables
