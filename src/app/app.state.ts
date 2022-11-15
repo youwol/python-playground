@@ -23,6 +23,7 @@ import {
 } from './explorer'
 import { Explorer, PyWorkers } from '.'
 import { logFactory } from './log-factory.conf'
+import { PyWorkerState } from './py-workers/py-worker.state'
 
 const log = logFactory().getChildLogger('app.state.ts')
 
@@ -52,6 +53,11 @@ export class AppState {
     public readonly projectState: ProjectState
 
     /**
+     * @group Immutable Constants
+     */
+    public readonly pyWorkersState$: BehaviorSubject<PyWorkerState[]>
+
+    /**
      * @group Observables
      */
     public readonly openTabs$ = new BehaviorSubject<Node[]>([])
@@ -79,9 +85,19 @@ export class AppState {
         this.projectState = new ProjectState({
             project: params.project,
         })
+        const initialWorkers = (params.project.pyWorkers || []).map(
+            (pyWorker) => {
+                return new PyWorkerState({ pyWorker })
+            },
+        )
+        this.pyWorkersState$ = new BehaviorSubject<PyWorkerState[]>(
+            initialWorkers,
+        )
+
         const rootNode = createProjectRootNode(
             params.project,
             this.projectState,
+            initialWorkers,
         )
         this.explorerState = new Explorer.TreeState({
             rootNode,
@@ -217,7 +233,7 @@ export class AppState {
             this.projectState.id,
             new factory({
                 path,
-                projectState: this.projectState,
+                state: this.projectState,
             }),
         )
         this.projectState.ideState.addFile({ path, content: '' })
@@ -235,11 +251,11 @@ export class AppState {
         log.info(`renameFile: ${node.id} with name ${name}`)
         const factory = name.endsWith('.js') ? HelpersJsSourceNode : SourceNode
         const path = `./${name}`
-        const newNode = new factory({ path, projectState: this.projectState })
+        const newNode = new factory({ path, state: this.projectState })
         this.projectState.ideState.moveFile(node.id, `./${name}`)
         this.explorerState.replaceNode(
             node,
-            new factory({ path, projectState: this.projectState }),
+            new factory({ path, state: this.projectState }),
         )
         this.closeTab(node)
         this.openTab(newNode)
@@ -253,9 +269,10 @@ export class AppState {
         const pyWorker = PyWorkers.getDefaultWorker({
             name: `Worker ${workerNodes.length}`,
         })
+        const state = new PyWorkerState({ pyWorker })
         const node = new PyWorkerNode({
             pyWorker,
-            projectState: this.projectState,
+            state,
         })
         this.explorerState.addChild(this.projectState.id, node)
     }

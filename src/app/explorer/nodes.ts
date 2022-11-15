@@ -9,6 +9,8 @@ import {
 import { ProjectState } from '../project'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
+import { WorkerBaseState } from '../worker-base.state'
+import { PyWorkerState } from '../py-workers/py-worker.state'
 
 /**
  * Node's signal data-structure
@@ -136,11 +138,11 @@ export class RequirementsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: WorkerBaseState
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { state: WorkerBaseState }) {
         super({
-            id: `${params.projectState.id}#requirements`,
+            id: `${params.state.id}#requirements`,
             name: 'Requirements',
         })
         Object.assign(this, params)
@@ -161,11 +163,11 @@ export class ConfigurationsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: WorkerBaseState
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { state: WorkerBaseState }) {
         super({
-            id: `${params.projectState.id}#configurations`,
+            id: `${params.state.id}#configurations`,
             name: 'Configurations',
         })
         Object.assign(this, params)
@@ -191,9 +193,9 @@ export class SourceNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: WorkerBaseState
 
-    constructor(params: { path: string; projectState: ProjectState }) {
+    constructor(params: { path: string; state: WorkerBaseState }) {
         super({
             id: params.path,
             name: params.path.split('/').slice(-1)[0],
@@ -214,7 +216,7 @@ export class HelpersJsSourceNode extends SourceNode {
      */
     public readonly category: NodeCategory = 'HelpersJsSourceNode'
 
-    constructor(params: { path: string; projectState: ProjectState }) {
+    constructor(params: { path: string; state: WorkerBaseState }) {
         super(params)
     }
 }
@@ -233,7 +235,7 @@ export class OutputViewNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: ProjectState
 
     /**
      * @group Immutable Constants
@@ -248,36 +250,6 @@ export class OutputViewNode extends Node {
         super({
             id: `${params.projectState.id}.folder-views.${params.name}`,
             name: params.name,
-        })
-        Object.assign(this, params)
-    }
-}
-
-/**
- * Requirement Node of explorer for worker
- *
- * @category Nodes
- */
-export class WorkerRequirementsNode extends Node {
-    /**
-     * @group Immutable Constants
-     */
-    public readonly category: NodeCategory = 'WorkerRequirementsNode'
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly projectState: ProjectState
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly workerId: string
-
-    constructor(params: { workerId: string; projectState: ProjectState }) {
-        super({
-            id: `${params.projectState.id}#${params.workerId}#requirements`,
-            name: 'Requirements',
         })
         Object.assign(this, params)
     }
@@ -299,14 +271,18 @@ export class WorkerIONode extends Node {
      */
     public readonly type: string
 
+    /**
+     * @group Immutable Constants
+     */
+    public readonly state: PyWorkerState
+
     constructor(params: {
-        workerId: string
         name: string
         type: 'input' | 'output'
-        projectState: ProjectState
+        state: PyWorkerState
     }) {
         super({
-            id: `${params.workerId}#${params.name}`,
+            id: `${params.state.id}#${params.name}`,
             name: params.name,
             children: undefined,
         })
@@ -320,20 +296,20 @@ export class WorkerInputsNode extends Node {
      */
     public readonly category: NodeCategory = 'WorkerInputsNode'
 
-    constructor(params: {
-        inputs: WorkerInput$[]
-        workerId: string
-        projectState: ProjectState
-    }) {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly state: PyWorkerState
+
+    constructor(params: { inputs: WorkerInput$[]; state: PyWorkerState }) {
         super({
-            id: `${params.workerId}#inputs`,
+            id: `${params.state.id}#inputs`,
             name: 'Inputs',
             children: params.inputs.map((input) => {
                 return new WorkerIONode({
-                    workerId: params.workerId,
                     name: input.name,
                     type: 'input',
-                    projectState: params.projectState,
+                    state: params.state,
                 })
             }),
         })
@@ -347,62 +323,22 @@ export class WorkerOutputsNode extends Node {
      */
     public readonly category: NodeCategory = 'WorkerOutputsNode'
 
-    constructor(params: {
-        outputs: WorkerOutput$[]
-        workerId: string
-        projectState: ProjectState
-    }) {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly state: PyWorkerState
+
+    constructor(params: { outputs: WorkerOutput$[]; state: PyWorkerState }) {
         super({
-            id: `${params.workerId}#outputs`,
+            id: `${params.state.id}#outputs`,
             name: 'Outputs',
             children: params.outputs.map((input) => {
                 return new WorkerIONode({
-                    workerId: params.workerId,
                     name: input.name,
                     type: 'output',
-                    projectState: params.projectState,
+                    state: params.state,
                 })
             }),
-        })
-        Object.assign(this, params)
-    }
-}
-
-/**
- * Source Node of a worker
- *
- * @category Nodes
- */
-export class WorkerSourceNode extends Node {
-    /**
-     * @group Immutable Constants
-     */
-    public readonly category: NodeCategory = 'WorkerSourceNode'
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly path: string
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly projectState: ProjectState
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly workerId: string
-
-    constructor(params: {
-        workerId: string
-        path: string
-        projectState: ProjectState
-    }) {
-        super({
-            id: params.path,
-            name: params.path.split('/').slice(-1)[0],
-            children: undefined,
         })
         Object.assign(this, params)
     }
@@ -422,38 +358,29 @@ export class PyWorkerNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly pyWorker: PyWorker
+    public readonly state: PyWorkerState
 
-    /**
-     * @group Immutable Constants
-     */
-    public readonly projectState: ProjectState
-
-    constructor(params: { pyWorker: PyWorker; projectState: ProjectState }) {
+    constructor(params: { pyWorker: PyWorker; state: PyWorkerState }) {
         super({
             id: params.pyWorker.id,
             name: params.pyWorker.name,
             children: [
-                new WorkerRequirementsNode({
-                    projectState: params.projectState,
-                    workerId: params.pyWorker.id,
+                new RequirementsNode({
+                    state: params.state,
                 }),
                 ...params.pyWorker.sources.map((source) => {
-                    return new WorkerSourceNode({
-                        workerId: params.pyWorker.id,
+                    return new SourceNode({
                         path: source.path,
-                        projectState: params.projectState,
+                        state: params.state,
                     })
                 }),
                 new WorkerInputsNode({
-                    workerId: params.pyWorker.id,
                     inputs: params.pyWorker.inputs,
-                    projectState: params.projectState,
+                    state: params.state,
                 }),
                 new WorkerOutputsNode({
-                    workerId: params.pyWorker.id,
                     outputs: params.pyWorker.outputs,
-                    projectState: params.projectState,
+                    state: params.state,
                 }),
             ],
         })
@@ -464,16 +391,24 @@ export class PyWorkerNode extends Node {
 export function createProjectRootNode(
     project: Project,
     projectState: ProjectState,
+    workersState: PyWorkerState[],
 ) {
+    const workersStateById = workersState.reduce(
+        (acc, e) => ({ ...acc, [e.id]: e }),
+        {},
+    )
     return new ProjectNode({
         id: project.id,
         name: project.name,
         environment: project.environment,
         children: [
-            new RequirementsNode({ projectState }),
-            new ConfigurationsNode({ projectState }),
+            new RequirementsNode({ state: projectState }),
+            new ConfigurationsNode({ state: projectState }),
             ...(project.pyWorkers || []).map((pyWorker) => {
-                return new PyWorkerNode({ pyWorker, projectState })
+                return new PyWorkerNode({
+                    pyWorker,
+                    state: workersStateById[pyWorker.id],
+                })
             }),
             ...project.sources
                 .filter((source) => {
@@ -485,7 +420,7 @@ export function createProjectRootNode(
                         : HelpersJsSourceNode
                     return new factory({
                         path: source.path,
-                        projectState,
+                        state: projectState,
                     })
                 }),
         ],
