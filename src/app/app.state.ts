@@ -286,6 +286,8 @@ export class AppState {
             pyWorker,
             state,
         })
+        const actualWorkers = this.pyWorkersState$.getValue()
+        this.pyWorkersState$.next([...actualWorkers, state])
         this.explorerState.addChild(this.projectState.id, node)
     }
 }
