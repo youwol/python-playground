@@ -12,7 +12,8 @@ const runTimeDependencies = {
         "@youwol/fv-tree": "^0.2.3",
         "lodash": "^4.17.15",
         "rxjs": "^6.5.5",
-        "@youwol/logging": "^0.1.0"
+        "@youwol/logging": "^0.1.0",
+        "uuid": "^8.3.2"
     },
     "includedInBundle": {}
 }
@@ -29,6 +30,7 @@ const externals = {
     "lodash": "window['__APIv4']",
     "rxjs": "window['rxjs_APIv6']",
     "@youwol/logging": "window['@youwol/logging_APIv01']",
+    "uuid": "window['uuid_APIv8']",
     "rxjs/operators": "window['rxjs_APIv6']['operators']"
 }
 const exportedSymbols = {
@@ -79,6 +81,10 @@ const exportedSymbols = {
     "@youwol/logging": {
         "apiKey": "01",
         "exportedSymbol": "@youwol/logging"
+    },
+    "uuid": {
+        "apiKey": "8",
+        "exportedSymbol": "uuid"
     }
 }
 
@@ -97,7 +103,8 @@ const mainEntry : Object = {
         "@youwol/fv-tree",
         "lodash",
         "rxjs",
-        "@youwol/logging"
+        "@youwol/logging",
+        "uuid"
     ]
 }
 

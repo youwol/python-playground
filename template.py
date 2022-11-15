@@ -21,7 +21,8 @@ load_dependencies = {
     '@youwol/fv-tree': '^0.2.3',
     'lodash': '^4.17.15',
     'rxjs': '^6.5.5',
-    "@youwol/logging": "^0.1.0"
+    "@youwol/logging": "^0.1.0",
+    'uuid': '^8.3.2',
 }
 
 template = Template(
