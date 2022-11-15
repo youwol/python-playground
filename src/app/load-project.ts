@@ -73,9 +73,7 @@ export function load$(
  * @param loadingScreen loading screen to append loading events
  * @returns application state & application view
  */
-export function new$(
-    loadingScreen: LoadingScreenView,
-): Observable<{
+export function new$(loadingScreen: LoadingScreenView): Observable<{
     project: Project
     fileInfo: FilesBackend.GetInfoResponse
     explorerInfo: ExplorerBackend.GetItemResponse
