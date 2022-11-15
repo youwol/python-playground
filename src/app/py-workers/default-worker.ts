@@ -2,12 +2,12 @@ import { PyWorker } from '../models'
 import { v4 as uuidv4 } from 'uuid'
 
 export const defaultWorkerSrc = `
-from yw_pyodide import input_stream, output_compute
+from yw_pyodide.worker.IO import input_stream, output_stream
 
 def compute(d, output):
-    output.send(len(d))
+    output_stream.send_data(len(d))
     
-input_stream.on_input( lambda d: compute(d, output_compute) )
+input_stream.on_data( lambda d: compute(d, output_compute) )
 `
 
 export function getDefaultWorker({ name }: { name: string }): PyWorker {
@@ -31,12 +31,12 @@ export function getDefaultWorker({ name }: { name: string }): PyWorker {
         },
         inputs: [
             {
-                name: 'input',
+                name: 'input_stream',
             },
         ],
         outputs: [
             {
-                name: 'output',
+                name: 'output_stream',
             },
         ],
         sources: [
