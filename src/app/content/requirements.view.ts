@@ -1,13 +1,13 @@
-import { ProjectState } from '../project'
 import { CodePageView } from './code-editor'
+import { WorkerBaseState } from '../worker-base.state'
 
 /**
  * @category View
  */
 export class RequirementsView extends CodePageView {
-    constructor(params: { sourcePath: string; projectState: ProjectState }) {
+    constructor(params: { sourcePath: string; state: WorkerBaseState }) {
         const run = () => {
-            this.projectState.applyRequirements()
+            this.state.applyRequirements()
         }
         super({
             ...params,

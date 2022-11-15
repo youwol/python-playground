@@ -15,6 +15,7 @@ import {
     SourceNode,
     Node,
     NodeView,
+    PyWorkerNode,
 } from '../explorer'
 import { ContentOutputView } from './output.view'
 import { ConfigurationsView } from './configurations.view'
@@ -34,19 +35,20 @@ function viewFactory(node: Node, appState: AppState) {
     if (node instanceof SourceNode) {
         return new SourceView({
             sourcePath: node.path,
-            projectState: appState.projectState,
+            state: node.state,
+            appState,
         })
     }
     if (node instanceof RequirementsNode) {
         return new RequirementsView({
             sourcePath: './requirements',
-            projectState: appState.projectState,
+            state: node.state,
         })
     }
     if (node instanceof ConfigurationsNode) {
         return new ConfigurationsView({
             sourcePath: './configurations',
-            projectState: appState.projectState,
+            state: node.state,
         })
     }
     if (node instanceof OutputViewNode) {
@@ -186,6 +188,13 @@ export class FilesHeaderView implements VirtualDOM {
         Object.assign(this, params)
         this.children = children$(this.appState.openTabs$, (tabs) => {
             return tabs.map((tab) => {
+                const parentWorker = this.appState.explorerState.getParent(
+                    tab.id,
+                )
+                const prefix =
+                    parentWorker instanceof PyWorkerNode
+                        ? `${parentWorker.name}:`
+                        : ''
                 return {
                     class: attr$(
                         this.appState.selectedTab$,
@@ -204,7 +213,7 @@ export class FilesHeaderView implements VirtualDOM {
                         },
                         { class: 'mx-1' },
                         {
-                            innerText: tab.name,
+                            innerText: `${prefix}${tab.name}`,
                         },
                         { class: 'mx-1' },
                         {

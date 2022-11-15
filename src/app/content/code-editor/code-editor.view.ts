@@ -1,8 +1,8 @@
 import { VirtualDOM } from '@youwol/flux-view'
-import { ProjectState } from '../../project'
 import { delay, withLatestFrom } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { Common } from '@youwol/fv-code-mirror-editors'
+import { WorkerBaseState } from '../../worker-base.state'
 
 /**
  * @category View
@@ -11,7 +11,7 @@ export class CodeEditorView {
     /**
      * @group States
      */
-    public readonly projectState: ProjectState
+    public readonly state: WorkerBaseState
 
     /**
      * @group Immutable DOM constants
@@ -35,14 +35,14 @@ export class CodeEditorView {
 
     constructor(params: {
         sourcePath: Common.SourcePath
-        projectState: ProjectState
+        state: WorkerBaseState
         onRun: () => void
         refresh$?: Observable<any>
     }) {
         Object.assign(this, params)
         const codeEditorView = new Common.CodeEditorView({
             // I don't understand why any is needed on the next two lines: types definition seems correct
-            ideState: this.projectState.ideState as any,
+            ideState: this.state.ideState as any,
             path: this.sourcePath as any,
             language: this.sourcePath.endsWith('.py') ? 'python' : 'javascript',
             config: {
