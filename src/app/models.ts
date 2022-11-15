@@ -21,11 +21,33 @@ export interface Environment {
     configurations: RunConfiguration[]
 }
 
+export interface WorkerEnvironment {
+    requirements: Requirements
+}
+
+export interface WorkerInput$ {
+    name: string
+}
+
+export interface WorkerOutput$ {
+    name: string
+}
+
+export interface PyWorker {
+    id: string
+    name: string
+    environment: WorkerEnvironment
+    inputs: WorkerInput$[]
+    outputs: WorkerOutput$[]
+    sources: Source[]
+}
+
 export interface Project {
     id: string
     name: string
     environment: Environment
     sources: Source[]
+    pyWorkers?: PyWorker[]
 }
 
 export interface RawLog {
