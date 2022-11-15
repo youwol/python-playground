@@ -1,6 +1,6 @@
-import { Environment } from './project.state'
 import { RawLog, View } from '../models'
 import { VirtualDOM } from '@youwol/flux-view'
+import { Environment } from '../worker-base.state'
 
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `

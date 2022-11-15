@@ -13,16 +13,12 @@ export interface Requirements {
 export interface RunConfiguration {
     name: string
     scriptPath: string
-    parameters: string
+    parameters?: string
 }
 
 export interface Environment {
     requirements: Requirements
     configurations: RunConfiguration[]
-}
-
-export interface WorkerEnvironment {
-    requirements: Requirements
 }
 
 export interface WorkerInput$ {
@@ -36,7 +32,7 @@ export interface WorkerOutput$ {
 export interface PyWorker {
     id: string
     name: string
-    environment: WorkerEnvironment
+    environment: Environment
     inputs: WorkerInput$[]
     outputs: WorkerOutput$[]
     sources: Source[]
@@ -48,6 +44,13 @@ export interface Project {
     environment: Environment
     sources: Source[]
     pyWorkers?: PyWorker[]
+}
+
+export interface WorkerCommon {
+    id: string
+    name: string
+    environment: Environment
+    sources: Source[]
 }
 
 export interface RawLog {

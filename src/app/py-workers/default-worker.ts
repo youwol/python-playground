@@ -22,6 +22,12 @@ export function getDefaultWorker({ name }: { name: string }): PyWorker {
                     aliases: {},
                 },
             },
+            configurations: [
+                {
+                    name: 'default',
+                    scriptPath: './worker_entry.py',
+                },
+            ],
         },
         inputs: [
             {
