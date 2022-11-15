@@ -1,16 +1,23 @@
 import {
-    AssetsGateway,
-    dispatchHTTPErrors,
     FilesBackend,
     ExplorerBackend,
     HTTPError,
+    AssetsGateway,
+    dispatchHTTPErrors,
 } from '@youwol/http-clients'
-import { BehaviorSubject, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, combineLatest, ReplaySubject } from 'rxjs'
 import { Project } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab } from './side-nav-explorer'
-import { debounceTime, mergeMap, tap } from 'rxjs/operators'
+import {
+    debounceTime,
+    map,
+    mergeMap,
+    skip,
+    switchMap,
+    tap,
+} from 'rxjs/operators'
 import { ProjectState } from './project'
 import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
@@ -168,8 +175,15 @@ export class AppState {
                 id: 'errorSaving',
             })
         })
-        this.projectState.project$
+        this.pyWorkersState$
             .pipe(
+                switchMap((workers) => {
+                    return combineLatest([
+                        this.projectState.project$,
+                        ...workers.map((w) => w.pyWorker$),
+                    ])
+                }),
+                skip(1),
                 tap(() => {
                     const projectNode = this.explorerState.getNode(
                         params.project.id,
@@ -181,6 +195,12 @@ export class AppState {
                     })
                 }),
                 debounceTime(1000),
+                map(([project, ...workers]) => {
+                    return {
+                        ...project,
+                        pyWorkers: workers,
+                    }
+                }),
                 mergeMap((project) => {
                     const filesClient = new AssetsGateway.Client().files
                     const str = JSON.stringify(project, null, 4)

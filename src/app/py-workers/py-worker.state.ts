@@ -18,8 +18,16 @@ export class PyWorkerState extends WorkerBaseState {
             map((workerCommon) => {
                 return {
                     ...workerCommon,
-                    inputs: [],
-                    outputs: [],
+                    inputs: [
+                        {
+                            name: 'input_stream',
+                        },
+                    ],
+                    outputs: [
+                        {
+                            name: 'output_stream',
+                        },
+                    ],
                 }
             }),
         )

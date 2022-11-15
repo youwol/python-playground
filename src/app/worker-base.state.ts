@@ -9,7 +9,7 @@ import {
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { RawLog, Requirements, RunConfiguration, WorkerCommon } from './models'
 import { CdnEvent } from '@youwol/cdn-client'
-import { filter, map, mergeMap, skip, take } from 'rxjs/operators'
+import { filter, map, mergeMap, shareReplay, take } from 'rxjs/operators'
 import {
     getModuleNameFromFile,
     patchPythonSrc,
@@ -177,7 +177,6 @@ export class WorkerBaseState {
             this.configurations$,
             this.ideState.fsMap$.pipe(filter((fsMap) => fsMap != undefined)),
         ]).pipe(
-            skip(1),
             map(([requirements, configurations, fsMap]) => {
                 return {
                     id: worker.id,
@@ -196,6 +195,7 @@ export class WorkerBaseState {
                     ),
                 }
             }),
+            shareReplay({ bufferSize: 1, refCount: true }),
         )
     }
 
