@@ -31,13 +31,13 @@ export class CodeEditorView {
     /**
      * @group Observables
      */
-    public readonly refresh$: Observable<any>
+    public readonly refresh$: Observable<unknown>
 
     constructor(params: {
         sourcePath: Common.SourcePath
         state: WorkerBaseState
         onRun: () => void
-        refresh$?: Observable<any>
+        refresh$?: Observable<unknown>
     }) {
         Object.assign(this, params)
         const codeEditorView = new Common.CodeEditorView({
