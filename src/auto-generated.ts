@@ -1,11 +1,11 @@
 
 const runTimeDependencies = {
     "externals": {
-        "@youwol/fv-code-mirror-editors": "^0.2.0",
+        "@youwol/fv-code-mirror-editors": "^0.2.2",
         "@youwol/os-core": "^0.1.1",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
-        "@youwol/cdn-client": "^1.0.2",
+        "@youwol/cdn-client": "^1.0.6",
         "@youwol/http-clients": "^1.0.2",
         "@youwol/flux-view": "^1.0.3",
         "@youwol/fv-context-menu": "^0.1.1",
@@ -110,7 +110,7 @@ const entries = {
 export const setup = {
     name:'@youwol/python-playground',
         assetId:'QHlvdXdvbC9weXRob24tcGxheWdyb3VuZA==',
-    version:'0.1.1-wip',
+    version:'0.1.1',
     shortDescription:"Python playground application",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground',
     npmPackage:'https://www.npmjs.com/package/@youwol/python-playground',
@@ -145,7 +145,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/python-playground#0.1.1-wip~dist/@youwol/python-playground/${entry.name}.js`
+            `@youwol/python-playground#0.1.1~dist/@youwol/python-playground/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),

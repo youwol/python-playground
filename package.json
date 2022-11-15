@@ -1,7 +1,7 @@
 {
     "name": "@youwol/python-playground",
     "description": "Python playground application",
-    "version": "0.1.1-wip",
+    "version": "0.1.1",
     "author": "greinisch@youwol.com",
     "homepage": "https://github.com/youwol/python-playground#README.md",
     "main": "dist/index.html",
@@ -43,8 +43,9 @@
         "webpack-bundle-analyzer": "^4.5.0",
         "@types/webpack": "^5.28.0",
         "del-cli": "^5.0.0",
-        "@youwol/prettier-config": "^0.0.1",
-        "@youwol/eslint-config": "^0.0.1",
+        "@youwol/prettier-config": "^0.0.2",
+        "@youwol/eslint-config": "^0.0.2",
+        "@youwol/tsconfig": "^0.0.1",
         "prettier": "^2.7.1",
         "prettier-plugin-properties": "^0.2.0",
         "@typescript-eslint/eslint-plugin": "^5.33.1",
@@ -70,11 +71,11 @@
         ]
     },
     "dependencies": {
-        "@youwol/fv-code-mirror-editors": "^0.2.0",
+        "@youwol/fv-code-mirror-editors": "^0.2.2",
         "@youwol/os-core": "^0.1.1",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
-        "@youwol/cdn-client": "^1.0.2",
+        "@youwol/cdn-client": "^1.0.6",
         "@youwol/http-clients": "^1.0.2",
         "@youwol/flux-view": "^1.0.3",
         "@youwol/fv-context-menu": "^0.1.1",
@@ -85,11 +86,11 @@
     },
     "youwol": {
         "cdnDependencies": {
-            "@youwol/fv-code-mirror-editors": "^0.2.0",
+            "@youwol/fv-code-mirror-editors": "^0.2.2",
             "@youwol/os-core": "^0.1.1",
             "@youwol/fv-tabs": "^0.2.1",
             "@youwol/os-top-banner": "^0.1.1",
-            "@youwol/cdn-client": "^1.0.2",
+            "@youwol/cdn-client": "^1.0.6",
             "@youwol/http-clients": "^1.0.2",
             "@youwol/flux-view": "^1.0.3",
             "@youwol/fv-context-menu": "^0.1.1",
