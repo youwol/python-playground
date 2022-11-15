@@ -18,7 +18,9 @@ import {
     syncFileSystem,
 } from './project'
 import { installRequirements } from './load-project'
+import { logFactory } from './log-factory.conf'
 
+const log = logFactory().getChildLogger('worker-base.state.ts')
 /**
  * @category Data Structure
  */
@@ -136,6 +138,9 @@ export class WorkerBaseState {
 
         this.id = worker.id
 
+        log.info(`Initialize state for worker ${worker.id}`, () => {
+            return worker.environment.requirements
+        })
         const requirementsFile = {
             path: './requirements',
             content: JSON.stringify(worker.environment.requirements, null, 4),
