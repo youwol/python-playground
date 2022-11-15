@@ -18,9 +18,10 @@ import {
     HelpersJsSourceNode,
     Node,
     OutputViewNode,
+    PyWorkerNode,
     SourceNode,
 } from './explorer'
-import { Explorer } from '.'
+import { Explorer, PyWorkers } from '.'
 import { logFactory } from './log-factory.conf'
 
 const log = logFactory().getChildLogger('app.state.ts')
@@ -242,5 +243,20 @@ export class AppState {
         )
         this.closeTab(node)
         this.openTab(newNode)
+    }
+
+    addPyWorker() {
+        const projectNode = this.explorerState.getNode(this.projectState.id)
+        const workerNodes = projectNode
+            .resolvedChildren()
+            .filter((node) => node instanceof PyWorkerNode)
+        const pyWorker = PyWorkers.getDefaultWorker({
+            name: `Worker ${workerNodes.length}`,
+        })
+        const node = new PyWorkerNode({
+            pyWorker,
+            projectState: this.projectState,
+        })
+        this.explorerState.addChild(this.projectState.id, node)
     }
 }

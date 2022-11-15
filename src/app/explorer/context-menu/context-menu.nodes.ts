@@ -40,6 +40,14 @@ export const ALL_ACTIONS = {
                 explorerState,
             }),
     },
+    newWorker: {
+        applicable: (selectedNode) => selectedNode instanceof ProjectNode,
+        createNode: (node: ProjectNode, explorerState: TreeState) =>
+            new NewWorkerNode({
+                node,
+                explorerState,
+            }),
+    },
 }
 
 export interface ExecutableNode {
@@ -154,5 +162,24 @@ export class DeleteFileNode extends ContextTreeNode implements ExecutableNode {
 
     execute(_state: ContextMenuState) {
         this.explorerState.appState.deleteFile(this.deletedNode.id)
+    }
+}
+
+export class NewWorkerNode extends ContextTreeNode implements ExecutableNode {
+    public readonly explorerState: TreeState
+    public readonly parentNode: ProjectNode
+
+    constructor(params: { explorerState: TreeState; node: ProjectNode }) {
+        super({
+            id: 'new-worker',
+            children: undefined,
+            name: 'New worker',
+            faIcon: 'fas fa-play',
+        })
+        Object.assign(this, params)
+    }
+
+    execute(_state: ContextMenuState) {
+        this.explorerState.appState.addPyWorker()
     }
 }
