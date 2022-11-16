@@ -197,14 +197,16 @@ export abstract class WorkerBaseState {
                         requirements,
                         configurations,
                     },
-                    sources: Array.from(fsMap.entries()).map(
-                        ([name, content]) => {
+                    sources: Array.from(fsMap.entries())
+                        .filter(([name]) => {
+                            return name.endsWith('.py') || name.endsWith('.js')
+                        })
+                        .map(([name, content]) => {
                             return {
                                 path: name,
                                 content,
                             }
-                        },
-                    ),
+                        }),
                 }
             }),
             shareReplay({ bufferSize: 1, refCount: true }),
