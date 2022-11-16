@@ -1,9 +1,13 @@
 import { WorkerBaseState } from '../worker-base.state'
 import { PyWorker, Requirements } from '../models'
 import { BehaviorSubject, Observable } from 'rxjs'
-import { filter, map, take } from 'rxjs/operators'
-import { EntryPointArguments, WorkerPool } from './worker-pool'
-import { getCdnClientSrc$ } from './utils'
+import { filter, map, take, tap } from 'rxjs/operators'
+import {
+    EntryPointArguments,
+    MessageEventData,
+    WorkerPool,
+} from './worker-pool'
+import { getCdnClientSrc$, isCdnEventMessage } from './utils'
 import { Context } from '../context'
 
 interface EntryPointInstallArgs {
@@ -26,8 +30,8 @@ function entryPointInstall(input: EntryPointArguments<EntryPointInstallArgs>) {
                         warmUp: true,
                         onEvent: (cdnEvent) => {
                             const message = {
-                                type: 'installEvent',
-                                value: cdnEvent,
+                                type: 'CdnEvent',
+                                event: cdnEvent,
                             }
                             input.context.sendData(message)
                         },
@@ -107,7 +111,15 @@ export class PyWorkerState extends WorkerBaseState {
                     },
                     context,
                 })
-                .pipe(filter((d) => d.type == 'Exit'))
+                .pipe(
+                    tap((message: MessageEventData) => {
+                        const cdnEvent = isCdnEventMessage(message)
+                        if (cdnEvent) {
+                            this.cdnEvent$.next(cdnEvent)
+                        }
+                    }),
+                    filter((d) => d.type == 'Exit'),
+                )
                 .subscribe(() => {
                     this.projectLoaded$.next(true)
                     this.workersPool$.next(workersPool)

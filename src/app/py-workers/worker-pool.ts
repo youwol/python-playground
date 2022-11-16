@@ -58,7 +58,13 @@ interface MessageDataLog {
     json: unknown // Json
 }
 
-interface MessageEventData {
+export interface MessageDataData {
+    taskId: string
+    workerId: string
+    [k: string]: unknown
+}
+
+export interface MessageEventData {
     type:
         | 'Execute'
         | 'installVariables'
@@ -68,7 +74,12 @@ interface MessageEventData {
         | 'Start'
         | 'Log'
         | 'DependencyInstalled'
-    data: MessageDataExecute | MessageDataVariables | MessageDataFunctions
+        | 'Data'
+    data:
+        | MessageDataExecute
+        | MessageDataVariables
+        | MessageDataFunctions
+        | MessageDataData
 }
 
 export interface EntryPointArguments<TArgs> {
@@ -103,7 +114,7 @@ function entryPointWorker(messageEvent: MessageEvent) {
                     type: 'Data',
                     data: {
                         ...consumerData,
-                        ...{ taskId: data.taskId },
+                        ...{ taskId: data.taskId, workerId: data.workerId },
                     },
                 })
             },
