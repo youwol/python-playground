@@ -9,7 +9,7 @@ import {
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { RawLog, Requirements, RunConfiguration, WorkerCommon } from './models'
 import { CdnEvent } from '@youwol/cdn-client'
-import { filter, map, mergeMap, shareReplay, take } from 'rxjs/operators'
+import { filter, map, mergeMap, shareReplay, skip, take } from 'rxjs/operators'
 import {
     getModuleNameFromFile,
     patchPythonSrc,
@@ -144,11 +144,14 @@ export class WorkerBaseState {
         const requirementsFile = {
             path: './requirements',
             content: JSON.stringify(worker.environment.requirements, null, 4),
+            subject: this.requirements$,
         }
         const configurationsFile = {
             path: './configurations',
             content: JSON.stringify(worker.environment.configurations, null, 4),
+            subject: this.configurations$,
         }
+        const nativeFiles = [requirementsFile, configurationsFile]
         this.configurations$.next(worker.environment.configurations)
         this.requirements$.next(worker.environment.requirements)
         this.selectedConfiguration$.next(
@@ -158,6 +161,17 @@ export class WorkerBaseState {
         this.ideState = new Common.IdeState({
             files: [requirementsFile, configurationsFile, ...worker.sources],
             defaultFileSystem: Promise.resolve(new Map<string, string>()),
+        })
+        nativeFiles.map((nativeFile) => {
+            return this.ideState.updates$[nativeFile.path]
+                .pipe(skip(1))
+                .subscribe(({ content }) => {
+                    try {
+                        nativeFile.subject.next(JSON.parse(content))
+                    } catch (_) {
+                        //no op: when modifying content it is not usually a valid JSON
+                    }
+                })
         })
 
         this.environment$.subscribe((env) => {
@@ -233,10 +247,8 @@ export class WorkerBaseState {
 
     applyRequirements() {
         this.projectLoaded$.next(false)
-        this.ideState.fsMap$.pipe(take(1)).subscribe((fileSystem) => {
-            const requirements = JSON.parse(fileSystem.get('./requirements'))
+        this.requirements$.pipe(take(1)).subscribe((requirements) => {
             this.installRequirements(requirements)
-            this.requirements$.next(requirements)
         })
     }
 
