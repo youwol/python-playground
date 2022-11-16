@@ -13,7 +13,7 @@ export class ProjectView implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public class: string = 'w-100 h-100'
+    public class = 'w-100 h-100'
     /**
      * @group States
      */
