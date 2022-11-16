@@ -1,7 +1,6 @@
 import {
     BehaviorSubject,
     combineLatest,
-    from,
     Observable,
     ReplaySubject,
     Subject,
@@ -12,6 +11,7 @@ import { CdnEvent } from '@youwol/cdn-client'
 import {
     filter,
     map,
+    mapTo,
     mergeMap,
     scan,
     shareReplay,
