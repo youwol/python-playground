@@ -9,7 +9,15 @@ import {
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { RawLog, Requirements, RunConfiguration, WorkerCommon } from './models'
 import { CdnEvent } from '@youwol/cdn-client'
-import { filter, map, mergeMap, shareReplay, skip, take } from 'rxjs/operators'
+import {
+    filter,
+    map,
+    mergeMap,
+    scan,
+    shareReplay,
+    skip,
+    take,
+} from 'rxjs/operators'
 import {
     getModuleNameFromFile,
     patchPythonSrc,
@@ -103,6 +111,11 @@ export abstract class WorkerBaseState {
      * @group Observables
      */
     public readonly cdnEvent$ = new ReplaySubject<CdnEvent>()
+
+    /**
+     * @group Observables
+     */
+    public readonly cdnEvents$: Observable<CdnEvent[]>
 
     /**
      * @group Observables
@@ -211,6 +224,15 @@ export abstract class WorkerBaseState {
             }),
             shareReplay({ bufferSize: 1, refCount: true }),
         )
+        this.cdnEvents$ = this.cdnEvent$.pipe(
+            scan((acc, e) => {
+                if (e == 'reset') {
+                    return []
+                }
+                return [...acc, e]
+            }, []),
+            shareReplay({ bufferSize: 1, refCount: true }),
+        )
     }
 
     removeFile(path: string) {
@@ -247,6 +269,7 @@ export abstract class WorkerBaseState {
 
     applyRequirements() {
         this.projectLoaded$.next(false)
+        this.cdnEvent$.next('reset')
         this.requirements$.pipe(take(1)).subscribe((requirements) => {
             this.installRequirements(requirements)
         })
