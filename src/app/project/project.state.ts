@@ -47,10 +47,6 @@ export class ProjectState extends WorkerBaseState {
         this.installRequirements(project.environment.requirements)
     }
 
-    run() {
-        return super.runCurrentConfiguration()
-    }
-
     installRequirements(requirements: Requirements) {
         installRequirements({
             requirements,
@@ -93,7 +89,7 @@ export class ProjectState extends WorkerBaseState {
         )
     }
 
-    runPythonSrc(patchedContent: string) {
+    execPythonSrc(patchedContent: string) {
         return self[Environment.ExportedPyodideInstanceName]
             .runPythonAsync(patchedContent)
             .then(() => {

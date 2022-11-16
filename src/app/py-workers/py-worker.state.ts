@@ -104,10 +104,6 @@ export class PyWorkerState extends WorkerBaseState {
         this.installRequirements(pyWorker.environment.requirements)
     }
 
-    run() {
-        super.runCurrentConfiguration()
-    }
-
     installRequirements(requirements: Requirements) {
         this.projectLoaded$.next(false)
         this.workersPool$.next(undefined)
@@ -174,7 +170,7 @@ export class PyWorkerState extends WorkerBaseState {
         )
     }
 
-    runPythonSrc(patchedContent: string) {
-        console.log('runPythonSrc', patchedContent)
+    execPythonSrc(patchedContent: string) {
+        console.log('execPythonSrc', patchedContent)
     }
 }

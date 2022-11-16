@@ -268,9 +268,8 @@ export abstract class WorkerBaseState {
             this.installRequirements(requirements)
         })
     }
-    abstract run()
 
-    runCurrentConfiguration() {
+    run() {
         this.runStart$.next(true)
         combineLatest([
             this.configurations$,
@@ -302,7 +301,7 @@ export abstract class WorkerBaseState {
             })
     }
 
-    abstract runPythonSrc(patchedContent: string)
+    abstract execPythonSrc(patchedContent: string)
 
     abstract initializeBeforeRun(
         fileSystem: Map<string, string>,
