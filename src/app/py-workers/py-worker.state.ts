@@ -50,8 +50,14 @@ export class PyWorkerState extends WorkerBaseState {
      */
     public readonly pyWorker$: Observable<PyWorker>
 
-    public readonly workersPool = new BehaviorSubject<WorkerPool>(undefined)
+    /**
+     * @group Observables
+     */
+    public readonly workersPool$ = new BehaviorSubject<WorkerPool>(undefined)
 
+    /**
+     * @group Observables
+     */
     static cdnSrc$ = getCdnClientSrc$()
 
     constructor({ pyWorker }: { pyWorker: PyWorker }) {
@@ -82,7 +88,7 @@ export class PyWorkerState extends WorkerBaseState {
 
     installRequirements(requirements: Requirements) {
         this.projectLoaded$.next(false)
-        this.workersPool.next(undefined)
+        this.workersPool$.next(undefined)
         PyWorkerState.cdnSrc$.pipe(take(1)).subscribe((src) => {
             const title = 'install requirements'
             const context = new Context(title)
@@ -104,7 +110,7 @@ export class PyWorkerState extends WorkerBaseState {
                 .pipe(filter((d) => d.type == 'Exit'))
                 .subscribe(() => {
                     this.projectLoaded$.next(true)
-                    this.workersPool.next(workersPool)
+                    this.workersPool$.next(workersPool)
                 })
         })
     }
