@@ -5,7 +5,7 @@ import {
     AssetsGateway,
     dispatchHTTPErrors,
 } from '@youwol/http-clients'
-import { BehaviorSubject, combineLatest, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { Project } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
@@ -34,6 +34,7 @@ import {
 import { Explorer, PyWorkers } from '.'
 import { logFactory } from './log-factory.conf'
 import { PyWorkerState } from './py-workers/py-worker.state'
+import { WorkerBaseState } from './worker-base.state'
 
 const log = logFactory().getChildLogger('app.state.ts')
 
@@ -113,14 +114,30 @@ export class AppState {
             rootNode,
             appState: this,
         })
-
-        this.projectState.projectLoaded$.subscribe((loaded) => {
-            loaded
-                ? rootNode.removeProcess(params.project.id)
-                : rootNode.addProcess({
-                      type: 'loading',
-                      id: params.project.id,
-                  })
+        const mergeWorkerBaseObs = (
+            toObs: (state: WorkerBaseState) => Observable<unknown>,
+        ) => {
+            return this.pyWorkersState$.pipe(
+                switchMap((workers) => {
+                    return combineLatest([
+                        toObs(this.projectState),
+                        ...workers.map((w) => toObs(w)),
+                    ])
+                }),
+            )
+        }
+        mergeWorkerBaseObs((state) =>
+            state.projectLoaded$.pipe(map((loaded) => ({ loaded, state }))),
+        ).subscribe((loadeds) => {
+            loadeds.forEach(({ loaded, state }) => {
+                const node = this.explorerState.getNode(state.id)
+                loaded
+                    ? node.removeProcess(params.project.id)
+                    : node.addProcess({
+                          type: 'loading',
+                          id: params.project.id,
+                      })
+            })
         })
 
         this.leftSideNavState = new DockableTabs.State({
