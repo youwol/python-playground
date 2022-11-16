@@ -25,6 +25,7 @@ import { LogsTab } from './side-nav-tools'
 import { SourceView } from './source.view'
 import { RequirementsView } from './requirements.view'
 import { AppState } from '../app.state'
+import { WorkerView } from './worker.view'
 
 function viewFactory(node: Node, appState: AppState) {
     if (node instanceof ProjectNode) {
@@ -54,6 +55,11 @@ function viewFactory(node: Node, appState: AppState) {
     if (node instanceof OutputViewNode) {
         return new ContentOutputView({
             view: node,
+        })
+    }
+    if (node instanceof PyWorkerNode) {
+        return new WorkerView({
+            workerState: node.state,
         })
     }
 }

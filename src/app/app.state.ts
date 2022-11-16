@@ -246,12 +246,7 @@ export class AppState {
     }
 
     openTab(node: Node) {
-        const noTabNodes = [
-            WorkerIONode,
-            WorkerInputsNode,
-            WorkerOutputsNode,
-            PyWorkerNode,
-        ]
+        const noTabNodes = [WorkerIONode, WorkerInputsNode, WorkerOutputsNode]
         if (noTabNodes.map((type) => node instanceof type).find((v) => v)) {
             return
         }
