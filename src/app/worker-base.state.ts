@@ -18,13 +18,7 @@ import {
     skip,
     take,
 } from 'rxjs/operators'
-import {
-    getModuleNameFromFile,
-    patchPythonSrc,
-    registerJsModules,
-    registerYwPyodideModule,
-    syncFileSystem,
-} from './project'
+import { getModuleNameFromFile, patchPythonSrc } from './project'
 import { logFactory } from './log-factory.conf'
 
 const log = logFactory().getChildLogger('worker-base.state.ts')
@@ -276,68 +270,43 @@ export abstract class WorkerBaseState {
     }
     abstract run()
 
-    runCurrentConfiguration(output: { onLog; onView }) {
+    runCurrentConfiguration() {
         this.runStart$.next(true)
         combineLatest([
-            this.environment$,
             this.configurations$,
             this.selectedConfiguration$,
             this.ideState.fsMap$,
         ])
             .pipe(
                 take(1),
-                mergeMap((params) =>
-                    this.initializeBeforeRun([...params, output]),
-                ),
-            )
-            .subscribe(
-                ({
-                    environment,
-                    fileSystem,
-                    configurations,
-                    selectedConfigName,
-                }) => {
+                mergeMap(([configurations, selectedConfigName, fsMap]) => {
                     const selectedConfig = configurations.find(
                         (config) => config.name == selectedConfigName,
                     )
-                    const sourcePath = selectedConfig.scriptPath
-                    const patchedContent = patchPythonSrc(
-                        sourcePath,
-                        fileSystem.get(sourcePath),
+                    return this.initializeBeforeRun(fsMap).pipe(
+                        mapTo({ selectedConfig, fileSystem: fsMap }),
                     )
-                    return environment.pyodide
-                        .runPythonAsync(patchedContent)
-                        .then(() => {
-                            this.runDone$.next(true)
-                        })
-                },
+                }),
             )
+            .subscribe(({ fileSystem, selectedConfig }) => {
+                const sourcePath = selectedConfig.scriptPath
+                const patchedContent = patchPythonSrc(
+                    sourcePath,
+                    fileSystem.get(sourcePath),
+                )
+                return global[Environment.ExportedPyodideInstanceName]
+                    .runPythonAsync(patchedContent)
+                    .then(() => {
+                        this.runDone$.next(true)
+                    })
+            })
     }
 
-    protected initializeBeforeRun([
-        environment,
-        configurations,
-        selectedConfigName,
-        fileSystem,
-        outputs,
-    ]) {
-        return from(
-            Promise.all([
-                registerYwPyodideModule(environment, fileSystem, outputs),
-                registerJsModules(environment, fileSystem),
-                syncFileSystem(environment, fileSystem),
-            ]),
-        ).pipe(
-            map(() => {
-                return {
-                    environment,
-                    configurations,
-                    selectedConfigName,
-                    fileSystem,
-                }
-            }),
-        )
-    }
+    abstract runPythonSrc(patchedContent: string)
+
+    abstract initializeBeforeRun(
+        fileSystem: Map<string, string>,
+    ): Observable<unknown>
 
     abstract installRequirements(requirements: Requirements)
 }

@@ -1,7 +1,7 @@
-import { WorkerBaseState } from '../worker-base.state'
+import { Environment, WorkerBaseState } from '../worker-base.state'
 import { PyWorker, Requirements } from '../models'
 import { BehaviorSubject, Observable } from 'rxjs'
-import { filter, map, take, tap } from 'rxjs/operators'
+import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
     MessageEventData,
@@ -9,9 +9,11 @@ import {
 } from './worker-pool'
 import { getCdnClientSrc$, isCdnEventMessage } from './utils'
 import { Context } from '../context'
+import { registerJsModules, syncFileSystem } from '../project'
 
 interface EntryPointInstallArgs {
     requirements: Requirements
+    exportedPyodideInstanceName: string
 }
 
 function entryPointInstall(input: EntryPointArguments<EntryPointInstallArgs>) {
@@ -35,7 +37,8 @@ function entryPointInstall(input: EntryPointArguments<EntryPointInstallArgs>) {
                             }
                             input.context.sendData(message)
                         },
-                        exportedPyodideInstanceName: 'tutu',
+                        exportedPyodideInstanceName:
+                            input.args.exportedPyodideInstanceName,
                     },
                 },
             ],
@@ -44,6 +47,21 @@ function entryPointInstall(input: EntryPointArguments<EntryPointInstallArgs>) {
             const message = { type: 'installEvent', value: 'install done' }
             input.context.sendData(message)
         })
+}
+
+interface EntryPointSyncFsMapArgs {
+    fsMap: Map<string, string>
+    exportedPyodideInstanceName: string
+}
+
+function entryPointSyncFileSystem(
+    input: EntryPointArguments<EntryPointSyncFsMapArgs>,
+) {
+    const pyodide = self[input.args.exportedPyodideInstanceName]
+    console.log('entryPointSyncFileSystem', {
+        pyodide,
+        fsMap: input.args.fsMap,
+    })
 }
 /**
  * @category State
@@ -87,7 +105,7 @@ export class PyWorkerState extends WorkerBaseState {
     }
 
     run() {
-        // no op for now
+        super.runCurrentConfiguration()
     }
 
     installRequirements(requirements: Requirements) {
@@ -99,7 +117,10 @@ export class PyWorkerState extends WorkerBaseState {
             const workersPool = new WorkerPool()
             workersPool.import({
                 sources: [{ id: '@youwol/cdn-client', src }],
-                functions: [],
+                functions: [
+                    { id: 'syncFileSystem', target: syncFileSystem },
+                    { id: 'registerJsModules', target: registerJsModules },
+                ],
                 variables: [],
             })
             workersPool
@@ -108,6 +129,8 @@ export class PyWorkerState extends WorkerBaseState {
                     entryPoint: entryPointInstall,
                     args: {
                         requirements,
+                        exportedPyodideInstanceName:
+                            Environment.ExportedPyodideInstanceName,
                     },
                     context,
                 })
@@ -119,11 +142,39 @@ export class PyWorkerState extends WorkerBaseState {
                         }
                     }),
                     filter((d) => d.type == 'Exit'),
+                    take(1),
                 )
                 .subscribe(() => {
                     this.projectLoaded$.next(true)
                     this.workersPool$.next(workersPool)
                 })
         })
+    }
+
+    initializeBeforeRun(fileSystem: Map<string, string>) {
+        return this.workersPool$.pipe(
+            filter((pool) => pool != undefined),
+            take(1),
+            mergeMap((workersPool) => {
+                const title = 'Synchronize file-system'
+                const context = new Context(title)
+                return workersPool.schedule({
+                    title,
+                    entryPoint: entryPointSyncFileSystem,
+                    args: {
+                        fsMap: fileSystem,
+                        exportedPyodideInstanceName:
+                            Environment.ExportedPyodideInstanceName,
+                    },
+                    context,
+                })
+            }),
+            filter((d) => d.type == 'Exit'),
+            take(1),
+        )
+    }
+
+    runPythonSrc(patchedContent: string) {
+        console.log('runPythonSrc', patchedContent)
     }
 }

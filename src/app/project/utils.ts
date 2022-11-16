@@ -1,6 +1,5 @@
 import { RawLog, View } from '../models'
 import { VirtualDOM } from '@youwol/flux-view'
-import { Environment } from '../worker-base.state'
 
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
@@ -34,14 +33,14 @@ ${originalSrc}
 }
 
 export async function registerYwPyodideModule(
-    environment: Environment,
+    pyodideExportedName: string,
     fileSystem: Map<string, string>,
     outputs: {
         onLog: (log: RawLog) => void
         onView: (view: View) => void
     },
 ) {
-    environment.pyodide.registerJsModule('yw_pyodide', {
+    self[pyodideExportedName].registerJsModule('yw_pyodide', {
         log_info: (message: string) => {
             message.trim() != '' &&
                 outputs.onLog({
@@ -72,7 +71,7 @@ export async function registerYwPyodideModule(
 }
 
 export async function registerJsModules(
-    environment: Environment,
+    pyodideExportedName: string,
     fileSystem: Map<string, string>,
 ) {
     for (const key of Array.from(fileSystem.keys())) {
@@ -80,19 +79,19 @@ export async function registerJsModules(
         if (key.endsWith('.js')) {
             const jsModule = await new Function(value)()(window)
             const name = key.substring(2).split('.js')[0]
-            environment.pyodide.registerJsModule(name, jsModule)
+            self[pyodideExportedName].registerJsModule(name, jsModule)
         }
     }
 }
 
 export async function syncFileSystem(
-    environment: Environment,
+    pyodideExportedName: string,
     fileSystem: Map<string, string>,
 ) {
     // No need to delete files: those are deleted explicitly from user's action 'delete file'
     fileSystem.forEach((value, path) => {
         path.endsWith('.py') &&
-            environment.pyodide.FS.writeFile(path, value, {
+            self[pyodideExportedName].FS.writeFile(path, value, {
                 encoding: 'utf8',
             })
     })

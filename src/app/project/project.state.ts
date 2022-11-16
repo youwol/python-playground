@@ -1,9 +1,14 @@
 import { Project, Requirements } from '../models'
-import { BehaviorSubject, merge, Observable, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, from, merge, Observable, ReplaySubject } from 'rxjs'
 import { scan } from 'rxjs/operators'
 import { OutputViewNode } from '../explorer'
-import { WorkerBaseState } from '../worker-base.state'
+import { Environment, WorkerBaseState } from '../worker-base.state'
 import { installRequirements } from '../load-project'
+import {
+    registerJsModules,
+    registerYwPyodideModule,
+    syncFileSystem,
+} from './utils'
 
 /**
  * @category State
@@ -43,7 +48,7 @@ export class ProjectState extends WorkerBaseState {
     }
 
     run() {
-        return this.runCurrentConfiguration()
+        return super.runCurrentConfiguration()
     }
 
     installRequirements(requirements: Requirements) {
@@ -57,7 +62,7 @@ export class ProjectState extends WorkerBaseState {
         })
     }
 
-    runCurrentConfiguration() {
+    initializeBeforeRun(fileSystem: Map<string, string>) {
         const outputs = {
             onLog: (log) => this.rawLog$.next(log),
             onView: (view) => {
@@ -68,6 +73,31 @@ export class ProjectState extends WorkerBaseState {
                 this.createdOutput$.next(newNode)
             },
         }
-        super.runCurrentConfiguration(outputs)
+
+        return from(
+            Promise.all([
+                registerYwPyodideModule(
+                    Environment.ExportedPyodideInstanceName,
+                    fileSystem,
+                    outputs,
+                ),
+                registerJsModules(
+                    Environment.ExportedPyodideInstanceName,
+                    fileSystem,
+                ),
+                syncFileSystem(
+                    Environment.ExportedPyodideInstanceName,
+                    fileSystem,
+                ),
+            ]),
+        )
+    }
+
+    runPythonSrc(patchedContent: string) {
+        return self[Environment.ExportedPyodideInstanceName]
+            .runPythonAsync(patchedContent)
+            .then(() => {
+                this.runDone$.next(true)
+            })
     }
 }
