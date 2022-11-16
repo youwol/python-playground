@@ -17,7 +17,6 @@ import {
     registerYwPyodideModule,
     syncFileSystem,
 } from './project'
-import { installRequirements } from './load-project'
 import { logFactory } from './log-factory.conf'
 
 const log = logFactory().getChildLogger('worker-base.state.ts')
@@ -62,7 +61,7 @@ export class Environment {
 /**
  * @category State
  */
-export class WorkerBaseState {
+export abstract class WorkerBaseState {
     /**
      * @group Observables
      */
@@ -130,7 +129,7 @@ export class WorkerBaseState {
      */
     public readonly runDone$ = new Subject<true>()
 
-    constructor({ worker }: { worker: WorkerCommon }) {
+    protected constructor({ worker }: { worker: WorkerCommon }) {
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
@@ -185,7 +184,6 @@ export class WorkerBaseState {
             })
         })
 
-        this.installRequirements(worker.environment.requirements)
         this.serialized$ = combineLatest([
             this.requirements$,
             this.configurations$,
@@ -251,6 +249,7 @@ export class WorkerBaseState {
             this.installRequirements(requirements)
         })
     }
+    abstract run()
 
     runCurrentConfiguration(output: { onLog; onView }) {
         this.runStart$.next(true)
@@ -315,14 +314,5 @@ export class WorkerBaseState {
         )
     }
 
-    private installRequirements(requirements: Requirements) {
-        installRequirements({
-            requirements,
-            cdnEvent$: this.cdnEvent$,
-            rawLog$: this.rawLog$,
-            environment$: this.environment$,
-        }).then(() => {
-            this.projectLoaded$.next(true)
-        })
-    }
+    abstract installRequirements(requirements: Requirements)
 }

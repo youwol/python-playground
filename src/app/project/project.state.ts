@@ -1,8 +1,9 @@
-import { Project } from '../models'
+import { Project, Requirements } from '../models'
 import { BehaviorSubject, merge, Observable, ReplaySubject } from 'rxjs'
 import { scan } from 'rxjs/operators'
 import { OutputViewNode } from '../explorer'
 import { WorkerBaseState } from '../worker-base.state'
+import { installRequirements } from '../load-project'
 
 /**
  * @category State
@@ -37,6 +38,23 @@ export class ProjectState extends WorkerBaseState {
             .subscribe((outputs) => {
                 this.createdOutputs$.next(outputs)
             })
+
+        this.installRequirements(project.environment.requirements)
+    }
+
+    run() {
+        return this.runCurrentConfiguration()
+    }
+
+    installRequirements(requirements: Requirements) {
+        installRequirements({
+            requirements,
+            cdnEvent$: this.cdnEvent$,
+            rawLog$: this.rawLog$,
+            environment$: this.environment$,
+        }).then(() => {
+            this.projectLoaded$.next(true)
+        })
     }
 
     runCurrentConfiguration() {

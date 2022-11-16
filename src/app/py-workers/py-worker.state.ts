@@ -31,5 +31,14 @@ export class PyWorkerState extends WorkerBaseState {
                 }
             }),
         )
+        this.installRequirements(pyWorker.environment.requirements)
+    }
+
+    run() {
+        // no op for now
+    }
+
+    installRequirements(requirements: Requirements) {
+        //no-op
     }
 }
