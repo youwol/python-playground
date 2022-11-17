@@ -73,8 +73,7 @@ export class ConfigurationSelectorView implements VirtualDOM {
             }),
             new HeaderBtnView({
                 icon: 'fas fa-play',
-                onClick: () =>
-                    this.appState.projectState.runCurrentConfiguration(),
+                onClick: () => this.appState.run(),
             }),
         ]
     }

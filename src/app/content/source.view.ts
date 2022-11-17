@@ -1,7 +1,4 @@
-import { children$, VirtualDOM } from '@youwol/flux-view'
-import { ProjectState } from '../project'
 import { CodePageView } from './code-editor'
-import { combineLatest } from 'rxjs'
 import { WorkerBaseState } from '../worker-base.state'
 import { AppState } from '../app.state'
 
@@ -15,7 +12,7 @@ export class SourceView extends CodePageView {
         appState: AppState
     }) {
         const run = () => {
-            params.appState.projectState.runCurrentConfiguration()
+            params.appState.run()
         }
         super({
             ...params,
