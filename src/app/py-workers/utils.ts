@@ -2,6 +2,9 @@ import { fromFetch } from 'rxjs/fetch'
 import { shareReplay } from 'rxjs/operators'
 import { getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
 import { MessageEventData } from './worker-pool'
+import { RawLog } from '../models'
+import { Subject } from 'rxjs'
+import { WorkerListener } from '../project'
 
 export interface CdnEventWorker {
     text: string
@@ -29,6 +32,12 @@ export interface MessagePythonStdOutData {
     log: {
         message: string
     }
+}
+
+export interface MessageUserData {
+    type: string
+    workerId: string
+    data: unknown
 }
 
 export function getCdnClientSrc$() {
@@ -62,4 +71,37 @@ export function isPythonStdOutMessage(
         return { workerId: data.workerId, message: data.log.message }
     }
     return undefined
+}
+
+export function isUserDataMessage(
+    message: MessageEventData,
+): undefined | unknown {
+    if (message.type != 'Data') {
+        return undefined
+    }
+    const data = message.data as unknown as MessageUserData
+    if (data.type == 'WorkerData') {
+        return data.data
+    }
+    return undefined
+}
+
+export function dispatchWorkerMessage(
+    message: MessageEventData,
+    rawLog$: Subject<RawLog>,
+    workerListener: WorkerListener,
+) {
+    const stdOut = isPythonStdOutMessage(message)
+    if (stdOut) {
+        rawLog$.next({
+            level: 'info',
+            message: `${stdOut.workerId}:${stdOut.message}`,
+        })
+        return
+    }
+    const userData = isUserDataMessage(message)
+    if (userData) {
+        workerListener.emit(userData)
+        return
+    }
 }

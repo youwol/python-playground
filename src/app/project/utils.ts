@@ -1,5 +1,7 @@
 import { RawLog, View } from '../models'
 import { VirtualDOM } from '@youwol/flux-view'
+import { AppState } from '../app.state'
+import { Environment } from '../worker-base.state'
 
 export function patchPythonSrc(fileName: string, originalSrc: string) {
     return `
@@ -38,6 +40,7 @@ export async function registerYwPyodideModule(
     outputs: {
         onLog: (log: RawLog) => void
         onView: (view: View) => void
+        onData: (d: unknown) => void
     },
 ) {
     pyodide.registerJsModule('yw_pyodide', {
@@ -74,6 +77,19 @@ export async function registerYwPyodideModule(
     })
 }
 
+export async function registerPyPlayModule(pyodide, appState: AppState) {
+    pyodide.registerJsModule('python_playground', {
+        main_thread: {
+            application: appState.getPythonProxy(),
+            worker: {
+                Listener: (cb) => {
+                    return new WorkerListener(cb)
+                },
+            },
+        },
+    })
+}
+
 export async function registerJsModules(
     pyodide,
     fileSystem: Map<string, string>,
@@ -100,4 +116,26 @@ export async function syncFileSystem(pyodide, fileSystem: Map<string, string>) {
 
 export function getModuleNameFromFile(path: string) {
     return path.replace('.js', '').replace('.py', '').replace('./', '')
+}
+
+export class WorkerListener {
+    callback: (d) => void
+
+    constructor(onData) {
+        const pyodide = self[Environment.ExportedPyodideInstanceName]
+        const namespace = pyodide.toPy({ onData })
+        this.callback = pyodide.runPython(
+            `
+from pyodide.ffi import create_proxy
+create_proxy(onData)
+        `,
+            {
+                globals: namespace,
+            },
+        )
+    }
+
+    emit(d) {
+        this.callback(d)
+    }
 }

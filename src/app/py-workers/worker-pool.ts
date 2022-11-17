@@ -46,7 +46,7 @@ interface MessageDataScript {
     sideEffects: string
 }
 
-interface MessageDataExit {
+export interface MessageDataExit {
     taskId: string
     error: boolean
     result: unknown

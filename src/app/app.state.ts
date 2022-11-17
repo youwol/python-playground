@@ -8,6 +8,7 @@ import {
 import {
     BehaviorSubject,
     combineLatest,
+    from,
     Observable,
     ReplaySubject,
     Subject,
@@ -20,6 +21,7 @@ import {
     debounceTime,
     map,
     mergeMap,
+    reduce,
     skip,
     switchMap,
     take,
@@ -46,7 +48,9 @@ import { WorkerBaseState } from './worker-base.state'
 const log = logFactory().getChildLogger('app.state.ts')
 
 /**
+ * See https://github.com/pyodide/pyodide/blob/main/docs/usage/faq.md for eventual improvements
  *
+ * Regarding interruption of e.g. running worker: https://pyodide.org/en/stable/usage/keyboard-interrupts.html
  * @category State
  */
 export class AppState {
@@ -108,6 +112,7 @@ export class AppState {
         this.projectState = new ProjectState({
             project: params.project,
             rawLog$: this.rawLog$,
+            appState: this,
         })
         const initialWorkers = (params.project.pyWorkers || []).map(
             (pyWorker) => {
@@ -259,10 +264,26 @@ export class AppState {
     }
 
     run() {
-        this.pyWorkersState$.pipe(take(1)).subscribe((pyWorkers) => {
-            this.projectState.run()
-            pyWorkers.forEach((w) => w.run())
-        })
+        this.pyWorkersState$
+            .pipe(
+                take(1),
+                mergeMap((pyWorkers) => {
+                    return from(pyWorkers)
+                }),
+                mergeMap((pyWorker) => {
+                    return pyWorker.ideState.fsMap$.pipe(
+                        take(1),
+                        map((fsMap) => ({ fsMap, pyWorker })),
+                    )
+                }),
+                mergeMap(({ fsMap, pyWorker }) => {
+                    return pyWorker.initializeBeforeRun(fsMap)
+                }),
+                reduce((acc, e) => [...acc, e], []),
+            )
+            .subscribe(() => {
+                this.projectState.run()
+            })
     }
 
     openTab(node: Node) {
@@ -326,12 +347,8 @@ export class AppState {
     }
 
     addPyWorker() {
-        const projectNode = this.explorerState.getNode(this.projectState.id)
-        const workerNodes = projectNode
-            .resolvedChildren()
-            .filter((node) => node instanceof PyWorkerNode)
         const pyWorker = PyWorkers.getDefaultWorker({
-            name: `Worker ${workerNodes.length}`,
+            name: `Worker ${this.getWorkersPoolNodes().length}`,
         })
         const state = new PyWorkerState({ pyWorker, rawLog$: this.rawLog$ })
         const node = new PyWorkerNode({
@@ -341,5 +358,26 @@ export class AppState {
         const actualWorkers = this.pyWorkersState$.getValue()
         this.pyWorkersState$.next([...actualWorkers, state])
         this.explorerState.addChild(this.projectState.id, node)
+    }
+
+    getPythonProxy() {
+        return {
+            get_worker_pool: (name: string) => {
+                const id = this.getWorkersPoolNodes().find(
+                    (node: PyWorkerNode) => node.name == name,
+                ).id
+                return this.pyWorkersState$
+                    .getValue()
+                    .find((pool) => pool.id == id)
+                    .getPythonProxy()
+            },
+        }
+    }
+
+    private getWorkersPoolNodes() {
+        const projectNode = this.explorerState.getNode(this.projectState.id)
+        return projectNode
+            .resolvedChildren()
+            .filter((node) => node instanceof PyWorkerNode)
     }
 }

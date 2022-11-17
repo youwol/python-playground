@@ -4,20 +4,23 @@ import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
+    MessageDataExit,
     MessageEventData,
     WorkerPool,
 } from './worker-pool'
 import {
+    dispatchWorkerMessage,
     getCdnClientSrc$,
     isCdnEventMessage,
-    isPythonStdOutMessage,
 } from './utils'
 import { Context } from '../context'
 import {
     getModuleNameFromFile,
+    patchPythonSrc,
     registerJsModules,
     registerYwPyodideModule,
     syncFileSystem,
+    WorkerListener,
 } from '../project'
 
 interface EntryPointInstallArgs {
@@ -73,6 +76,7 @@ function entryPointSyncFileSystem(
     const pyodide = self[input.args.exportedPyodideInstanceName]
     const syncFileSystem = self['syncFileSystem']
     const registerYwPyodideModule = self['registerYwPyodideModule']
+
     const outputs = {
         onLog: (log) => {
             self['getPythonChannel$']().next({ type: 'PythonStdOut', log })
@@ -80,27 +84,46 @@ function entryPointSyncFileSystem(
         onView: (view) => {
             self['getPythonChannel$']().next({ type: 'PythonViewOut', view })
         },
+        onData: (data) => {
+            self['getPythonChannel$']().next({ type: 'WorkerData', data })
+        },
     }
+
+    pyodide.registerJsModule('python_playground', {
+        worker_thread: {
+            Emitter: {
+                send: (d: unknown) => {
+                    outputs.onData(d)
+                },
+            },
+        },
+    })
 
     return Promise.all([
         syncFileSystem(pyodide, input.args.fsMap),
         registerYwPyodideModule(pyodide, input.args.fsMap, outputs),
-    ]).then(() => console.log('In worker: Done entryPointSyncFileSystem'))
+    ])
 }
 
 interface EntryPointExeArgs {
     content: string
     exportedPyodideInstanceName: string
+    pythonGlobals: Record<string, unknown>
 }
 
 function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
     const pythonChannel$ = new self['rxjs_APIv6'].ReplaySubject(1)
     self['getPythonChannel$'] = () => pythonChannel$
-    pythonChannel$.subscribe((log) => {
-        input.context.sendData(log)
+
+    // Need to unsubscribe following subscription at the end of the run
+    pythonChannel$.subscribe((message) => {
+        input.context.sendData(message)
     })
-    return pyodide.runPythonAsync(input.args.content)
+    const namespace = pyodide.toPy(input.args.pythonGlobals)
+    return pyodide.runPythonAsync(input.args.content, {
+        globals: namespace,
+    })
 }
 
 /**
@@ -224,37 +247,85 @@ export class PyWorkerState extends WorkerBaseState {
         )
     }
 
-    execPythonSrc(patchedContent: string) {
-        return this.workersPool$
-            .pipe(
-                filter((pool) => pool != undefined),
-                take(1),
-                mergeMap((workersPool) => {
-                    const title = 'Execute python'
-                    const context = new Context(title)
-                    return workersPool.schedule({
-                        title,
-                        entryPoint: entryPointExe,
-                        args: {
-                            content: patchedContent,
-                            exportedPyodideInstanceName:
-                                Environment.ExportedPyodideInstanceName,
-                        },
-                        context,
-                    })
-                }),
-                tap((message) => {
-                    const stdOut = isPythonStdOutMessage(message)
-                    if (stdOut) {
-                        this.rawLog$.next({
-                            level: 'info',
-                            message: `${stdOut.workerId}:${stdOut.message}`,
-                        })
-                    }
-                }),
-                filter((d) => d.type == 'Exit'),
-                take(1),
-            )
-            .subscribe()
+    execPythonSrc(
+        patchedContent: string,
+        pythonGlobals: Record<string, unknown> = {},
+        workerListener: WorkerListener = undefined,
+    ): Observable<MessageDataExit> {
+        return this.workersPool$.pipe(
+            filter((pool) => pool != undefined),
+            take(1),
+            mergeMap((workersPool) => {
+                const title = 'Execute python'
+                const context = new Context(title)
+                return workersPool.schedule({
+                    title,
+                    entryPoint: entryPointExe,
+                    args: {
+                        content: patchedContent,
+                        exportedPyodideInstanceName:
+                            Environment.ExportedPyodideInstanceName,
+                        pythonGlobals,
+                    },
+                    context,
+                })
+            }),
+            tap((message) => {
+                dispatchWorkerMessage(message, this.rawLog$, workerListener)
+            }),
+            filter((d) => d.type == 'Exit'),
+            map((result) => result.data as unknown as MessageDataExit),
+            take(1),
+        )
+    }
+
+    getPythonProxy() {
+        return new WorkerPoolPythonProxy({ state: this })
+    }
+}
+
+interface PythonProxyScheduleInput {
+    title: string
+    entryPoint: {
+        file: string
+        function: string
+    }
+    argument: unknown
+}
+
+export class WorkerPoolPythonProxy {
+    /**
+     * @group States
+     */
+    public readonly state: PyWorkerState
+
+    constructor(params: { state: PyWorkerState }) {
+        Object.assign(this, params)
+    }
+
+    async schedule(
+        input: PythonProxyScheduleInput,
+        workerChannel: WorkerListener,
+    ) {
+        const src = patchPythonSrc(
+            '',
+            `
+from ${input.entryPoint.file} import ${input.entryPoint.function}       
+
+result = ${input.entryPoint.function}(test_glob_var)
+result
+        `,
+        )
+        return new Promise((resolve) => {
+            this.state
+                .execPythonSrc(
+                    src,
+                    { test_glob_var: input.argument },
+                    workerChannel,
+                )
+                .subscribe((messageResult: MessageDataExit) => {
+                    resolve(messageResult.result)
+                })
+        })
     }
 }

@@ -13,14 +13,22 @@ import { Environment, WorkerBaseState } from '../worker-base.state'
 import { installRequirements } from '../load-project'
 import {
     registerJsModules,
+    registerPyPlayModule,
     registerYwPyodideModule,
     syncFileSystem,
 } from './utils'
+import { AppState } from '../app.state'
 
 /**
  * @category State
  */
 export class ProjectState extends WorkerBaseState {
+    /**
+     *
+     * @group States
+     */
+    public readonly appState: AppState
+
     /**
      * @group Observables
      */
@@ -39,11 +47,14 @@ export class ProjectState extends WorkerBaseState {
     constructor({
         project,
         rawLog$,
+        appState,
     }: {
         project: Project
         rawLog$: Subject<RawLog>
+        appState: AppState
     }) {
         super({ worker: project, rawLog$ })
+        this.appState = appState
         this.project$ = this.serialized$
         merge(this.runStart$, this.createdOutput$)
             .pipe(
@@ -81,23 +92,17 @@ export class ProjectState extends WorkerBaseState {
                 })
                 this.createdOutput$.next(newNode)
             },
+            onData: () => {
+                /*no op on main thread*/
+            },
         }
-
+        const pyodide = self[Environment.ExportedPyodideInstanceName]
         return from(
             Promise.all([
-                registerYwPyodideModule(
-                    self[Environment.ExportedPyodideInstanceName],
-                    fileSystem,
-                    outputs,
-                ),
-                registerJsModules(
-                    self[Environment.ExportedPyodideInstanceName],
-                    fileSystem,
-                ),
-                syncFileSystem(
-                    self[Environment.ExportedPyodideInstanceName],
-                    fileSystem,
-                ),
+                registerYwPyodideModule(pyodide, fileSystem, outputs),
+                registerPyPlayModule(pyodide, this.appState),
+                registerJsModules(pyodide, fileSystem),
+                syncFileSystem(pyodide, fileSystem),
             ]),
         )
     }
