@@ -22,6 +22,7 @@ import {
     mergeMap,
     skip,
     switchMap,
+    take,
     tap,
 } from 'rxjs/operators'
 import { ProjectState } from './project'
@@ -255,6 +256,13 @@ export class AppState {
                 projectNode.removeProcess('saving')
                 log.info('Project saved successfully')
             })
+    }
+
+    run() {
+        this.pyWorkersState$.pipe(take(1)).subscribe((pyWorkers) => {
+            this.projectState.run()
+            pyWorkers.forEach((w) => w.run())
+        })
     }
 
     openTab(node: Node) {
