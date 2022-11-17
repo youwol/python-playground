@@ -24,39 +24,3 @@ export class SourceView extends CodePageView {
         })
     }
 }
-
-/**
- * @category View
- */
-export class ConfigurationsDropDown implements VirtualDOM {
-    /**
-     * @group Immutable DOM Constants
-     */
-    public readonly children: VirtualDOM[]
-    constructor({ projectState }: { projectState: ProjectState }) {
-        this.children = [
-            {
-                tag: 'select',
-                onchange: (ev) => {
-                    projectState.selectConfiguration(ev.target.value)
-                },
-                children: children$(
-                    combineLatest([
-                        projectState.configurations$,
-                        projectState.selectedConfiguration$,
-                    ]),
-                    ([configurations, selectedName]) => {
-                        return configurations.map((config) => {
-                            return {
-                                tag: 'option',
-                                value: config.name,
-                                innerText: config.name,
-                                selected: config.name == selectedName,
-                            }
-                        })
-                    },
-                ),
-            },
-        ]
-    }
-}
