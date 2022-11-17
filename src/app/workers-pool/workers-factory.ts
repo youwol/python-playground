@@ -312,7 +312,7 @@ export class Process {
     }
 }
 
-export class WorkerPool {
+export class WorkersFactory {
     poolSize = navigator.hardwareConcurrency - 2
 
     workers: { [key: string]: Worker } = {}

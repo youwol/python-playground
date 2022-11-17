@@ -1,7 +1,7 @@
 import { fromFetch } from 'rxjs/fetch'
 import { shareReplay } from 'rxjs/operators'
 import { getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
-import { MessageEventData } from './worker-pool'
+import { MessageEventData } from './workers-factory'
 import { RawLog } from '../models'
 import { Subject } from 'rxjs'
 import { WorkerListener } from '../main-thread'

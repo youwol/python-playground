@@ -6,8 +6,8 @@ import {
     EntryPointArguments,
     MessageDataExit,
     MessageEventData,
-    WorkerPool,
-} from './worker-pool'
+    WorkersFactory,
+} from './workers-factory'
 import {
     dispatchWorkerMessage,
     getCdnClientSrc$,
@@ -138,7 +138,9 @@ export class WorkersPoolState extends EnvironmentState {
     /**
      * @group Observables
      */
-    public readonly workersPool$ = new BehaviorSubject<WorkerPool>(undefined)
+    public readonly workersPool$ = new BehaviorSubject<WorkersFactory>(
+        undefined,
+    )
 
     /**
      * @group Observables
@@ -179,7 +181,7 @@ export class WorkersPoolState extends EnvironmentState {
         WorkersPoolState.cdnSrc$.pipe(take(1)).subscribe((src) => {
             const title = 'install requirements'
             const context = new Context(title)
-            const workersPool = new WorkerPool()
+            const workersPool = new WorkersFactory()
             workersPool.import({
                 sources: [{ id: '@youwol/cdn-client', src }],
                 functions: [
