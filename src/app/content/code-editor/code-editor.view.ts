@@ -5,7 +5,7 @@ import { Common } from '@youwol/fv-code-mirror-editors'
 import {
     EnvironmentState,
     ExecutingImplementation,
-} from '../../environment.state'
+} from '../../environments/environment.state'
 
 /**
  * @category View

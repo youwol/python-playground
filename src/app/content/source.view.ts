@@ -1,5 +1,8 @@
 import { CodePageView } from './code-editor'
-import { EnvironmentState, ExecutingImplementation } from '../environment.state'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
 import { AppState } from '../app.state'
 
 /**

@@ -1,8 +1,11 @@
 import { children$, childrenWithReplace$, VirtualDOM } from '@youwol/flux-view'
 
-import { WorkersPoolImplementation, CdnEventWorker } from '../workers-pool'
+import {
+    WorkersPoolImplementation,
+    CdnEventWorker,
+} from '../environments/workers-pool'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { EnvironmentState } from '../environment.state'
+import { EnvironmentState } from '../environments/environment.state'
 
 /**
  * @category View

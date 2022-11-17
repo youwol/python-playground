@@ -1,5 +1,5 @@
 import { Environment, ExecutingImplementation } from '../environment.state'
-import { RawLog, Requirements } from '../models'
+import { RawLog, Requirements } from '../../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
@@ -13,7 +13,7 @@ import {
     getCdnClientSrc$,
     isCdnEventMessage,
 } from './utils'
-import { Context } from '../context'
+import { Context } from '../../context'
 import {
     getModuleNameFromFile,
     patchPythonSrc,

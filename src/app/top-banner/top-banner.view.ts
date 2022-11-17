@@ -1,9 +1,9 @@
 import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
 import { children$, VirtualDOM } from '@youwol/flux-view'
-import { MainThreadImplementation } from '../main-thread'
+import { MainThreadImplementation } from '../environments/main-thread'
 import { combineLatest } from 'rxjs'
-import { EnvironmentState } from '../environment.state'
+import { EnvironmentState } from '../environments/environment.state'
 
 /**
  * @category View

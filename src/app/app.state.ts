@@ -26,7 +26,7 @@ import {
     take,
     tap,
 } from 'rxjs/operators'
-import { MainThreadImplementation } from './main-thread'
+import { MainThreadImplementation } from './environments/main-thread'
 import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
     createProjectRootNode,
@@ -38,8 +38,14 @@ import {
 } from './explorer'
 import { Explorer } from '.'
 import { logFactory } from './log-factory.conf'
-import { getDefaultWorker, WorkersPoolImplementation } from './workers-pool'
-import { EnvironmentState, ExecutingImplementation } from './environment.state'
+import {
+    getDefaultWorker,
+    WorkersPoolImplementation,
+} from './environments/workers-pool'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from './environments/environment.state'
 
 const log = logFactory().getChildLogger('app.state.ts')
 
@@ -233,7 +239,7 @@ export class AppState {
                 map(([project, ...workers]: [Project, WorkersPool[]]) => {
                     return {
                         ...project,
-                        workersPool: workers,
+                        workersPools: workers,
                     }
                 }),
                 mergeMap((project) => {

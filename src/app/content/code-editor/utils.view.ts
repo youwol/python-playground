@@ -6,7 +6,7 @@ import { CarouselSide } from '../../carousel-3d'
 import {
     EnvironmentState,
     ExecutingImplementation,
-} from '../../environment.state'
+} from '../../environments/environment.state'
 
 /**
  * @category View

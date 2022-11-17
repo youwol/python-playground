@@ -1,11 +1,11 @@
 import { VirtualDOM } from '@youwol/flux-view'
-import { MainThreadImplementation } from '../main-thread'
+import { MainThreadImplementation } from '../environments/main-thread'
 import {
     LoadingScreenView,
     InstallDoneEvent,
     CdnMessageEvent,
 } from '@youwol/cdn-client'
-import { EnvironmentState } from '../environment.state'
+import { EnvironmentState } from '../environments/environment.state'
 
 /**
  * @category View

@@ -1,4 +1,4 @@
-import { WorkersPool } from '../models'
+import { WorkersPool } from '../../models'
 import { v4 as uuidv4 } from 'uuid'
 
 export const defaultWorkerSrc = `

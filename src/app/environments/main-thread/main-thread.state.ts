@@ -1,7 +1,7 @@
-import { RawLog, Requirements } from '../models'
+import { RawLog, Requirements } from '../../models'
 import { BehaviorSubject, from, merge, ReplaySubject, Subject } from 'rxjs'
 import { map, scan } from 'rxjs/operators'
-import { OutputViewNode } from '../explorer'
+import { OutputViewNode } from '../../explorer'
 import { Environment, ExecutingImplementation } from '../environment.state'
 import {
     registerJsModules,
@@ -9,7 +9,7 @@ import {
     registerYwPyodideModule,
     syncFileSystem,
 } from '../in-worker-executable'
-import { AppState } from '../app.state'
+import { AppState } from '../../app.state'
 import { CdnEvent, install } from '@youwol/cdn-client'
 
 /**

@@ -2,7 +2,7 @@
 
 import { Observable, of, Subject } from 'rxjs'
 import { filter, map, reduce, take, takeWhile, tap } from 'rxjs/operators'
-import { Context } from '../context'
+import { Context } from '../../context'
 
 type WorkerId = string
 

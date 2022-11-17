@@ -1,10 +1,13 @@
 import { ImmutableTree } from '@youwol/fv-tree'
 import { Environment, Project, WorkersPool } from '../models'
-import { MainThreadImplementation } from '../main-thread'
+import { MainThreadImplementation } from '../environments/main-thread'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
-import { EnvironmentState, ExecutingImplementation } from '../environment.state'
-import { WorkersPoolImplementation } from '../workers-pool'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
+import { WorkersPoolImplementation } from '../environments/workers-pool'
 
 type MainThreadState = EnvironmentState<MainThreadImplementation>
 type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>

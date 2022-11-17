@@ -6,7 +6,7 @@ import {
     Subject,
 } from 'rxjs'
 import { Common } from '@youwol/fv-code-mirror-editors'
-import { RawLog, Requirements, RunConfiguration, WorkerCommon } from './models'
+import { RawLog, Requirements, RunConfiguration, WorkerCommon } from '../models'
 import { CdnEvent } from '@youwol/cdn-client'
 import {
     filter,
@@ -24,7 +24,7 @@ import {
     patchPythonSrc,
     WorkerListener,
 } from './in-worker-executable'
-import { logFactory } from './log-factory.conf'
+import { logFactory } from '../log-factory.conf'
 
 const log = logFactory().getChildLogger('environment.state.ts')
 

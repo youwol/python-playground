@@ -1,6 +1,6 @@
-import { RawLog, View } from '../models'
+import { RawLog, View } from '../../models'
 import { VirtualDOM } from '@youwol/flux-view'
-import { AppState } from '../app.state'
+import { AppState } from '../../app.state'
 import { Environment } from '../environment.state'
 
 export function patchPythonSrc(fileName: string, originalSrc: string) {
