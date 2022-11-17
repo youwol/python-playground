@@ -58,7 +58,11 @@ export async function registerYwPyodideModule(
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
         project_modules: [...fileSystem.keys()].map((path) => {
-            return self['getModuleNameFromFile'](path)
+            // in a worker only self['getModuleNameFromFile'] is defined
+            // in main thread only 'getModuleNameFromFile' is defined
+            return (self['getModuleNameFromFile'] || getModuleNameFromFile)(
+                path,
+            )
         }),
         create_view: (name: string, htmlElement: VirtualDOM | HTMLElement) => {
             outputs.onView({
