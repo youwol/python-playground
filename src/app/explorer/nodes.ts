@@ -20,7 +20,7 @@ export type NodeCategory =
     | 'SourceNode'
     | 'OutputViewNode'
     | 'WorkerRequirementsNode'
-    | 'PyWorkerNode'
+    | 'WorkersPoolNode'
     | 'WorkerSourceNode'
 
 export const specialFiles = ['./requirements', './configurations']
@@ -251,11 +251,11 @@ export class OutputViewNode extends Node {
  *
  * @category Nodes
  */
-export class PyWorkerNode extends Node {
+export class WorkersPoolNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly category: NodeCategory = 'PyWorkerNode'
+    public readonly category: NodeCategory = 'WorkersPoolNode'
 
     /**
      * @group Immutable Constants
@@ -299,7 +299,7 @@ export function createProjectRootNode(
             new RequirementsNode({ state: projectState }),
             new ConfigurationsNode({ state: projectState }),
             ...(project.workersPools || []).map((pyWorker) => {
-                return new PyWorkerNode({
+                return new WorkersPoolNode({
                     pyWorker,
                     state: workersStateById[pyWorker.id],
                 })

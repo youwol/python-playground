@@ -15,7 +15,7 @@ import {
     SourceNode,
     Node,
     NodeView,
-    PyWorkerNode,
+    WorkersPoolNode,
 } from '../explorer'
 import { ContentOutputView } from './output.view'
 import { ConfigurationsView } from './configurations.view'
@@ -57,7 +57,7 @@ function viewFactory(node: Node, appState: AppState) {
             view: node,
         })
     }
-    if (node instanceof PyWorkerNode) {
+    if (node instanceof WorkersPoolNode) {
         return new WorkerView({
             workerState: node.state,
         })
@@ -200,7 +200,7 @@ export class FilesHeaderView implements VirtualDOM {
                     tab.id,
                 )
                 const prefix =
-                    parentWorker instanceof PyWorkerNode
+                    parentWorker instanceof WorkersPoolNode
                         ? `${parentWorker.name}:`
                         : ''
                 return {

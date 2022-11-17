@@ -34,7 +34,7 @@ import {
     HelpersJsSourceNode,
     Node,
     OutputViewNode,
-    PyWorkerNode,
+    WorkersPoolNode,
     SourceNode,
 } from './explorer'
 import { Explorer, WorkersPool } from '.'
@@ -344,7 +344,7 @@ export class AppState {
             name: `Worker ${this.getWorkersPoolNodes().length}`,
         })
         const state = new WorkersPoolState({ pyWorker, rawLog$: this.rawLog$ })
-        const node = new PyWorkerNode({
+        const node = new WorkersPoolNode({
             pyWorker,
             state,
         })
@@ -357,7 +357,7 @@ export class AppState {
         return {
             get_worker_pool: (name: string) => {
                 const id = this.getWorkersPoolNodes().find(
-                    (node: PyWorkerNode) => node.name == name,
+                    (node: WorkersPoolNode) => node.name == name,
                 ).id
                 return this.pyWorkersState$
                     .getValue()
@@ -371,6 +371,6 @@ export class AppState {
         const projectNode = this.explorerState.getNode(this.projectState.id)
         return projectNode
             .resolvedChildren()
-            .filter((node) => node instanceof PyWorkerNode)
+            .filter((node) => node instanceof WorkersPoolNode)
     }
 }
