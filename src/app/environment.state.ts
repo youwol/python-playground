@@ -63,7 +63,7 @@ export class Environment {
 /**
  * @category State
  */
-export abstract class WorkerBaseState {
+export abstract class EnvironmentState {
     /**
      * @group Observables
      */

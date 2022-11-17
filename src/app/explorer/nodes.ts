@@ -9,7 +9,7 @@ import {
 import { MainThreadState } from '../main-thread'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
-import { WorkerBaseState } from '../worker-base.state'
+import { EnvironmentState } from '../environment.state'
 import { WorkersPoolState } from '../workers-pool'
 
 /**
@@ -138,9 +138,9 @@ export class RequirementsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: WorkerBaseState
+    public readonly state: EnvironmentState
 
-    constructor(params: { state: WorkerBaseState }) {
+    constructor(params: { state: EnvironmentState }) {
         super({
             id: `${params.state.id}#requirements`,
             name: 'Requirements',
@@ -163,9 +163,9 @@ export class ConfigurationsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: WorkerBaseState
+    public readonly state: EnvironmentState
 
-    constructor(params: { state: WorkerBaseState }) {
+    constructor(params: { state: EnvironmentState }) {
         super({
             id: `${params.state.id}#configurations`,
             name: 'Configurations',
@@ -193,9 +193,9 @@ export class SourceNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: WorkerBaseState
+    public readonly state: EnvironmentState
 
-    constructor(params: { path: string; state: WorkerBaseState }) {
+    constructor(params: { path: string; state: EnvironmentState }) {
         super({
             id: params.path,
             name: params.path.split('/').slice(-1)[0],
@@ -216,7 +216,7 @@ export class HelpersJsSourceNode extends SourceNode {
      */
     public readonly category: NodeCategory = 'HelpersJsSourceNode'
 
-    constructor(params: { path: string; state: WorkerBaseState }) {
+    constructor(params: { path: string; state: EnvironmentState }) {
         super(params)
     }
 }

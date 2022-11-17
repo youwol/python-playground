@@ -1,4 +1,4 @@
-import { Environment, WorkerBaseState } from '../worker-base.state'
+import { Environment, EnvironmentState } from '../environment.state'
 import { PyWorker, RawLog, Requirements } from '../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
@@ -129,7 +129,7 @@ function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
 /**
  * @category State
  */
-export class WorkersPoolState extends WorkerBaseState {
+export class WorkersPoolState extends EnvironmentState {
     /**
      * @group Observables
      */

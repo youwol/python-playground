@@ -10,7 +10,7 @@ import { forkJoin, Observable, Subject } from 'rxjs'
 import { map, mergeMap, take, tap } from 'rxjs/operators'
 import { Project, Requirements } from './models'
 import { defaultProject } from './default-project'
-import { Environment } from './worker-base.state'
+import { Environment } from './environment.state'
 
 /**
  *

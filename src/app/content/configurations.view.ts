@@ -1,11 +1,11 @@
 import { CodePageView } from './code-editor'
-import { WorkerBaseState } from '../worker-base.state'
+import { EnvironmentState } from '../environment.state'
 
 /**
  * @category View
  */
 export class ConfigurationsView extends CodePageView {
-    constructor(params: { sourcePath: string; state: WorkerBaseState }) {
+    constructor(params: { sourcePath: string; state: EnvironmentState }) {
         const run = () => {
             this.state.applyConfigurations()
         }

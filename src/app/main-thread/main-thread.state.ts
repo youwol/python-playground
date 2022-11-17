@@ -9,7 +9,7 @@ import {
 } from 'rxjs'
 import { scan } from 'rxjs/operators'
 import { OutputViewNode } from '../explorer'
-import { Environment, WorkerBaseState } from '../worker-base.state'
+import { Environment, EnvironmentState } from '../environment.state'
 import { installRequirements } from '../load-project'
 import {
     registerJsModules,
@@ -22,7 +22,7 @@ import { AppState } from '../app.state'
 /**
  * @category State
  */
-export class MainThreadState extends WorkerBaseState {
+export class MainThreadState extends EnvironmentState {
     /**
      *
      * @group States

@@ -3,7 +3,7 @@ import { CodeEditorView } from './code-editor.view'
 import { BehaviorSubject } from 'rxjs'
 import { delay, filter } from 'rxjs/operators'
 import { CarouselSide } from '../../carousel-3d'
-import { WorkerBaseState } from '../../worker-base.state'
+import { EnvironmentState } from '../../environment.state'
 
 /**
  * @category View
@@ -12,7 +12,7 @@ export class CodePageView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly state: WorkerBaseState
+    public readonly state: EnvironmentState
 
     /**
      * @group Immutable DOM Constants
@@ -46,7 +46,7 @@ export class CodePageView implements VirtualDOM {
 
     constructor(params: {
         sourcePath: string
-        state: WorkerBaseState
+        state: EnvironmentState
         headerView: VirtualDOM
         onCtrlEnter: () => void
     }) {

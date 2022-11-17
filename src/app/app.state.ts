@@ -43,7 +43,7 @@ import {
 import { Explorer, WorkersPool } from '.'
 import { logFactory } from './log-factory.conf'
 import { WorkersPoolState } from './workers-pool'
-import { WorkerBaseState } from './worker-base.state'
+import { EnvironmentState } from './environment.state'
 
 const log = logFactory().getChildLogger('app.state.ts')
 
@@ -133,7 +133,7 @@ export class AppState {
             appState: this,
         })
         const mergeWorkerBaseObs = (
-            toObs: (state: WorkerBaseState) => Observable<unknown>,
+            toObs: (state: EnvironmentState) => Observable<unknown>,
         ) => {
             return this.pyWorkersState$.pipe(
                 switchMap((workers) => {
