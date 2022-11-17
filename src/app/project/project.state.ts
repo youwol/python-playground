@@ -86,16 +86,16 @@ export class ProjectState extends WorkerBaseState {
         return from(
             Promise.all([
                 registerYwPyodideModule(
-                    Environment.ExportedPyodideInstanceName,
+                    self[Environment.ExportedPyodideInstanceName],
                     fileSystem,
                     outputs,
                 ),
                 registerJsModules(
-                    Environment.ExportedPyodideInstanceName,
+                    self[Environment.ExportedPyodideInstanceName],
                     fileSystem,
                 ),
                 syncFileSystem(
-                    Environment.ExportedPyodideInstanceName,
+                    self[Environment.ExportedPyodideInstanceName],
                     fileSystem,
                 ),
             ]),

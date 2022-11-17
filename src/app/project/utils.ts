@@ -33,14 +33,14 @@ ${originalSrc}
 }
 
 export async function registerYwPyodideModule(
-    pyodideExportedName: string,
+    pyodide,
     fileSystem: Map<string, string>,
     outputs: {
         onLog: (log: RawLog) => void
         onView: (view: View) => void
     },
 ) {
-    self[pyodideExportedName].registerJsModule('yw_pyodide', {
+    pyodide.registerJsModule('yw_pyodide', {
         log_info: (message: string) => {
             message.trim() != '' &&
                 outputs.onLog({
@@ -58,7 +58,7 @@ export async function registerYwPyodideModule(
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
         project_modules: [...fileSystem.keys()].map((path) => {
-            return getModuleNameFromFile(path)
+            return self['getModuleNameFromFile'](path)
         }),
         create_view: (name: string, htmlElement: VirtualDOM | HTMLElement) => {
             outputs.onView({
@@ -71,7 +71,7 @@ export async function registerYwPyodideModule(
 }
 
 export async function registerJsModules(
-    pyodideExportedName: string,
+    pyodide,
     fileSystem: Map<string, string>,
 ) {
     for (const key of Array.from(fileSystem.keys())) {
@@ -79,19 +79,16 @@ export async function registerJsModules(
         if (key.endsWith('.js')) {
             const jsModule = await new Function(value)()(window)
             const name = key.substring(2).split('.js')[0]
-            self[pyodideExportedName].registerJsModule(name, jsModule)
+            pyodide.registerJsModule(name, jsModule)
         }
     }
 }
 
-export async function syncFileSystem(
-    pyodideExportedName: string,
-    fileSystem: Map<string, string>,
-) {
+export async function syncFileSystem(pyodide, fileSystem: Map<string, string>) {
     // No need to delete files: those are deleted explicitly from user's action 'delete file'
     fileSystem.forEach((value, path) => {
         path.endsWith('.py') &&
-            self[pyodideExportedName].FS.writeFile(path, value, {
+            pyodide.FS.writeFile(path, value, {
                 encoding: 'utf8',
             })
     })
