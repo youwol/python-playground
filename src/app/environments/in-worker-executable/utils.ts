@@ -3,7 +3,7 @@ import { VirtualDOM } from '@youwol/flux-view'
 import { AppState } from '../../app.state'
 import { Environment } from '../environment.state'
 
-export function patchPythonSrc(fileName: string, originalSrc: string) {
+export function patchPythonSrc(originalSrc: string) {
     return `
 import sys
 from yw_pyodide import log_info, log_error, project_modules

@@ -291,15 +291,11 @@ export class WorkerPoolPythonProxy {
         input: PythonProxyScheduleInput,
         workerChannel: WorkerListener,
     ) {
-        const src = patchPythonSrc(
-            '',
-            `
+        const src = patchPythonSrc(`
 from ${input.entryPoint.file} import ${input.entryPoint.function}       
-
 result = ${input.entryPoint.function}(test_glob_var)
 result
-        `,
-        )
+        `)
         return new Promise((resolve) => {
             this.exeEnv
                 .execPythonCode(

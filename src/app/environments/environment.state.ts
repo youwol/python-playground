@@ -342,7 +342,6 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             .subscribe(({ fileSystem, selectedConfig }) => {
                 const sourcePath = selectedConfig.scriptPath
                 const patchedContent = patchPythonSrc(
-                    sourcePath,
                     fileSystem.get(sourcePath),
                 )
                 this.runDone$.next(true)
