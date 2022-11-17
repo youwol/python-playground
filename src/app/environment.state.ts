@@ -23,7 +23,7 @@ import {
     getModuleNameFromFile,
     patchPythonSrc,
     WorkerListener,
-} from './main-thread'
+} from './in-worker-executable'
 import { logFactory } from './log-factory.conf'
 
 const log = logFactory().getChildLogger('environment.state.ts')

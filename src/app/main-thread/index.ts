@@ -4,4 +4,3 @@
  * @module Project
  */
 export * from './main-thread.state'
-export * from './utils'

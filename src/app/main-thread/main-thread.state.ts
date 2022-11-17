@@ -8,7 +8,7 @@ import {
     registerPyPlayModule,
     registerYwPyodideModule,
     syncFileSystem,
-} from './utils'
+} from '../in-worker-executable'
 import { AppState } from '../app.state'
 import { CdnEvent, install } from '@youwol/cdn-client'
 

@@ -21,7 +21,7 @@ import {
     registerYwPyodideModule,
     syncFileSystem,
     WorkerListener,
-} from '../main-thread'
+} from '../in-worker-executable'
 import { CdnEvent } from '@youwol/cdn-client'
 
 interface EntryPointInstallArgs {
