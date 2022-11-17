@@ -17,6 +17,20 @@ export interface MessageCdnEventData {
         text: string
     }
 }
+
+export interface PythonStdOut {
+    message: string
+    workerId: string
+}
+
+export interface MessagePythonStdOutData {
+    type: string
+    workerId: string
+    log: {
+        message: string
+    }
+}
+
 export function getCdnClientSrc$() {
     const cdnUrl = getUrlBase('@youwol/cdn-client', cdnSetup.version)
     return fromFetch(cdnUrl, {
@@ -33,6 +47,19 @@ export function isCdnEventMessage(
     const data = message.data as unknown as MessageCdnEventData
     if (data.type == 'CdnEvent') {
         return { ...data.event, workerId: data.workerId }
+    }
+    return undefined
+}
+
+export function isPythonStdOutMessage(
+    message: MessageEventData,
+): undefined | PythonStdOut {
+    if (message.type != 'Data') {
+        return undefined
+    }
+    const data = message.data as unknown as MessagePythonStdOutData
+    if (data.type == 'PythonStdOut') {
+        return { workerId: data.workerId, message: data.log.message }
     }
     return undefined
 }

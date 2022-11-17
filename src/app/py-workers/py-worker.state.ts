@@ -7,9 +7,18 @@ import {
     MessageEventData,
     WorkerPool,
 } from './worker-pool'
-import { getCdnClientSrc$, isCdnEventMessage } from './utils'
+import {
+    getCdnClientSrc$,
+    isCdnEventMessage,
+    isPythonStdOutMessage,
+} from './utils'
 import { Context } from '../context'
-import { registerJsModules, syncFileSystem } from '../project'
+import {
+    getModuleNameFromFile,
+    registerJsModules,
+    registerYwPyodideModule,
+    syncFileSystem,
+} from '../project'
 
 interface EntryPointInstallArgs {
     requirements: Requirements
@@ -21,7 +30,11 @@ function entryPointInstall(input: EntryPointArguments<EntryPointInstallArgs>) {
     cdn.Client.HostName = window.location.origin
     return cdn
         .install({
-            ...input.args.requirements.javascriptPackages,
+            modules: [
+                'rxjs#^6.5.5',
+                ...input.args.requirements.javascriptPackages.modules,
+            ],
+            aliases: input.args.requirements.javascriptPackages.aliases,
             customInstallers: [
                 {
                     module: '@youwol/cdn-pyodide-loader',
@@ -58,11 +71,38 @@ function entryPointSyncFileSystem(
     input: EntryPointArguments<EntryPointSyncFsMapArgs>,
 ) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
-    console.log('entryPointSyncFileSystem', {
-        pyodide,
-        fsMap: input.args.fsMap,
-    })
+    const syncFileSystem = self['syncFileSystem']
+    const registerYwPyodideModule = self['registerYwPyodideModule']
+    const outputs = {
+        onLog: (log) => {
+            self['getPythonChannel$']().next({ type: 'PythonStdOut', log })
+        },
+        onView: (view) => {
+            self['getPythonChannel$']().next({ type: 'PythonViewOut', view })
+        },
+    }
+
+    return Promise.all([
+        syncFileSystem(pyodide, input.args.fsMap),
+        registerYwPyodideModule(pyodide, input.args.fsMap, outputs),
+    ]).then(() => console.log('In worker: Done entryPointSyncFileSystem'))
 }
+
+interface EntryPointExeArgs {
+    content: string
+    exportedPyodideInstanceName: string
+}
+
+function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
+    const pyodide = self[input.args.exportedPyodideInstanceName]
+    const pythonChannel$ = new self['rxjs_APIv6'].ReplaySubject(1)
+    self['getPythonChannel$'] = () => pythonChannel$
+    pythonChannel$.subscribe((log) => {
+        input.context.sendData(log)
+    })
+    return pyodide.runPythonAsync(input.args.content)
+}
+
 /**
  * @category State
  */
@@ -122,6 +162,14 @@ export class PyWorkerState extends WorkerBaseState {
                 functions: [
                     { id: 'syncFileSystem', target: syncFileSystem },
                     { id: 'registerJsModules', target: registerJsModules },
+                    {
+                        id: 'registerYwPyodideModule',
+                        target: registerYwPyodideModule,
+                    },
+                    {
+                        id: 'getModuleNameFromFile',
+                        target: getModuleNameFromFile,
+                    },
                 ],
                 variables: [],
             })
@@ -177,6 +225,36 @@ export class PyWorkerState extends WorkerBaseState {
     }
 
     execPythonSrc(patchedContent: string) {
-        console.log('execPythonSrc', patchedContent)
+        return this.workersPool$
+            .pipe(
+                filter((pool) => pool != undefined),
+                take(1),
+                mergeMap((workersPool) => {
+                    const title = 'Execute python'
+                    const context = new Context(title)
+                    return workersPool.schedule({
+                        title,
+                        entryPoint: entryPointExe,
+                        args: {
+                            content: patchedContent,
+                            exportedPyodideInstanceName:
+                                Environment.ExportedPyodideInstanceName,
+                        },
+                        context,
+                    })
+                }),
+                tap((message) => {
+                    const stdOut = isPythonStdOutMessage(message)
+                    if (stdOut) {
+                        this.rawLog$.next({
+                            level: 'info',
+                            message: `${stdOut.workerId}:${stdOut.message}`,
+                        })
+                    }
+                }),
+                filter((d) => d.type == 'Exit'),
+                take(1),
+            )
+            .subscribe()
     }
 }
