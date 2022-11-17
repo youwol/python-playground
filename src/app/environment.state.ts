@@ -17,11 +17,17 @@ import {
     shareReplay,
     skip,
     take,
+    tap,
 } from 'rxjs/operators'
-import { getModuleNameFromFile, patchPythonSrc } from './main-thread'
+import {
+    getModuleNameFromFile,
+    patchPythonSrc,
+    WorkerListener,
+} from './main-thread'
 import { logFactory } from './log-factory.conf'
 
-const log = logFactory().getChildLogger('worker-base.state.ts')
+const log = logFactory().getChildLogger('environment.state.ts')
+
 /**
  * @category Data Structure
  */
@@ -60,14 +66,35 @@ export class Environment {
     }
 }
 
+export interface ExecutingImplementation {
+    execPythonCode(
+        code: string,
+        rawLog$: Subject<RawLog>,
+        pythonGlobals?: Record<string, unknown>,
+        // this next argument should somehow disappear
+        workerListener?: WorkerListener,
+    ): Observable<unknown>
+
+    initializeBeforeRun(
+        fileSystem: Map<string, string>,
+        rawLog$: Subject<RawLog>,
+    ): Observable<unknown>
+
+    installRequirements(
+        requirements: Requirements,
+        rawLog$: Subject<RawLog>,
+        cdnEvent$: Observable<CdnEvent>,
+    ): Observable<unknown>
+}
+
 /**
  * @category State
  */
-export abstract class EnvironmentState {
+export class EnvironmentState<T extends ExecutingImplementation> {
     /**
-     * @group Observables
+     * @group Immutable Constants
      */
-    public readonly environment$ = new ReplaySubject<Environment>(1)
+    public readonly executingImplementation: T
 
     /**
      * @group Immutable Constants
@@ -119,7 +146,7 @@ export abstract class EnvironmentState {
     /**
      * @group Observables
      */
-    public readonly rawLog$ = new ReplaySubject<RawLog>()
+    public readonly rawLog$ = new Subject<RawLog>()
 
     /**
      * @group Observables
@@ -136,42 +163,62 @@ export abstract class EnvironmentState {
      */
     public readonly runDone$ = new Subject<true>()
 
-    protected constructor({
-        worker,
+    constructor({
+        initialModel,
         rawLog$,
+        executingImplementation,
     }: {
-        worker: WorkerCommon
+        initialModel: WorkerCommon
         rawLog$: Subject<RawLog>
+        executingImplementation: T
     }) {
+        this.executingImplementation = executingImplementation
+
+        this.rawLog$.subscribe((log) => {
+            rawLog$.next(log)
+        })
+
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
         })
 
-        this.id = worker.id
+        this.id = initialModel.id
 
-        log.info(`Initialize state for worker ${worker.id}`, () => {
-            return worker.environment.requirements
+        log.info(`Initialize state for ${initialModel.id}`, () => {
+            return initialModel.environment.requirements
         })
         const requirementsFile = {
             path: './requirements',
-            content: JSON.stringify(worker.environment.requirements, null, 4),
+            content: JSON.stringify(
+                initialModel.environment.requirements,
+                null,
+                4,
+            ),
             subject: this.requirements$,
         }
         const configurationsFile = {
             path: './configurations',
-            content: JSON.stringify(worker.environment.configurations, null, 4),
+            content: JSON.stringify(
+                initialModel.environment.configurations,
+                null,
+                4,
+            ),
             subject: this.configurations$,
         }
         const nativeFiles = [requirementsFile, configurationsFile]
-        this.configurations$.next(worker.environment.configurations)
-        this.requirements$.next(worker.environment.requirements)
+        this.configurations$.next(initialModel.environment.configurations)
+        this.requirements$.next(initialModel.environment.requirements)
         this.selectedConfiguration$.next(
-            worker.environment.configurations[0].name,
+            initialModel.environment.configurations[0].name,
         )
 
         this.ideState = new Common.IdeState({
-            files: [requirementsFile, configurationsFile, ...worker.sources],
+            files: [
+                requirementsFile,
+                configurationsFile,
+                ...initialModel.sources,
+            ],
             defaultFileSystem: Promise.resolve(new Map<string, string>()),
         })
         nativeFiles.map((nativeFile) => {
@@ -186,17 +233,6 @@ export abstract class EnvironmentState {
                 })
         })
 
-        this.environment$.subscribe((env) => {
-            this.rawLog$.next({
-                level: 'info',
-                message: `Python ${env.pythonVersion.split('\n')[0]}`,
-            })
-            this.rawLog$.next({
-                level: 'info',
-                message: `Pyodide ${env.pyodideVersion}`,
-            })
-        })
-
         this.serialized$ = combineLatest([
             this.requirements$,
             this.configurations$,
@@ -204,8 +240,8 @@ export abstract class EnvironmentState {
         ]).pipe(
             map(([requirements, configurations, fsMap]) => {
                 return {
-                    id: worker.id,
-                    name: worker.name,
+                    id: initialModel.id,
+                    name: initialModel.name,
                     environment: {
                         requirements,
                         configurations,
@@ -233,20 +269,17 @@ export abstract class EnvironmentState {
             }, []),
             shareReplay({ bufferSize: 1, refCount: true }),
         )
-        this.rawLog$.subscribe((log) => {
-            rawLog$.next(log)
-        })
+        this.applyRequirements().subscribe()
     }
 
     removeFile(path: string) {
         this.ideState.removeFile(path)
-        this.environment$.pipe(take(1)).subscribe(({ pyodide }) => {
-            const moduleName = getModuleNameFromFile(path)
-            pyodide.FS.unlink(path)
-            pyodide.runPython(
-                `import sys\n${moduleName} in sys.modules and del sys.modules[${moduleName}]`,
-            )
-        })
+        const pyodide = self[Environment.ExportedPyodideInstanceName]
+        const moduleName = getModuleNameFromFile(path)
+        pyodide.FS.unlink(path)
+        pyodide.runPython(
+            `import sys\n${moduleName} in sys.modules and del sys.modules[${moduleName}]`,
+        )
     }
 
     selectConfiguration(name: string) {
@@ -273,9 +306,19 @@ export abstract class EnvironmentState {
     applyRequirements() {
         this.projectLoaded$.next(false)
         this.cdnEvent$.next('reset')
-        this.requirements$.pipe(take(1)).subscribe((requirements) => {
-            this.installRequirements(requirements)
-        })
+        return this.requirements$.pipe(
+            take(1),
+            mergeMap((requirements) => {
+                return this.executingImplementation.installRequirements(
+                    requirements,
+                    this.rawLog$,
+                    this.cdnEvent$,
+                )
+            }),
+            tap(() => {
+                this.projectLoaded$.next(true)
+            }),
+        )
     }
 
     run() {
@@ -291,9 +334,9 @@ export abstract class EnvironmentState {
                     const selectedConfig = configurations.find(
                         (config) => config.name == selectedConfigName,
                     )
-                    return this.initializeBeforeRun(fsMap).pipe(
-                        mapTo({ selectedConfig, fileSystem: fsMap }),
-                    )
+                    return this.executingImplementation
+                        .initializeBeforeRun(fsMap, this.rawLog$)
+                        .pipe(mapTo({ selectedConfig, fileSystem: fsMap }))
                 }),
             )
             .subscribe(({ fileSystem, selectedConfig }) => {
@@ -302,15 +345,11 @@ export abstract class EnvironmentState {
                     sourcePath,
                     fileSystem.get(sourcePath),
                 )
-                return this.execPythonSrc(patchedContent)
+                this.runDone$.next(true)
+                return this.executingImplementation.execPythonCode(
+                    patchedContent,
+                    this.rawLog$,
+                )
             })
     }
-
-    abstract execPythonSrc(patchedContent: string)
-
-    abstract initializeBeforeRun(
-        fileSystem: Map<string, string>,
-    ): Observable<unknown>
-
-    abstract installRequirements(requirements: Requirements)
 }

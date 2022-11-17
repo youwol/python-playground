@@ -1,5 +1,5 @@
 import { CodePageView } from './code-editor'
-import { EnvironmentState } from '../environment.state'
+import { EnvironmentState, ExecutingImplementation } from '../environment.state'
 import { AppState } from '../app.state'
 
 /**
@@ -8,7 +8,7 @@ import { AppState } from '../app.state'
 export class SourceView extends CodePageView {
     constructor(params: {
         sourcePath: string
-        state: EnvironmentState
+        state: EnvironmentState<ExecutingImplementation>
         appState: AppState
     }) {
         const run = () => {

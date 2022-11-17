@@ -1,8 +1,9 @@
 import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
 import { children$, VirtualDOM } from '@youwol/flux-view'
-import { MainThreadState } from '../main-thread'
+import { MainThreadImplementation } from '../main-thread'
 import { combineLatest } from 'rxjs'
+import { EnvironmentState } from '../environment.state'
 
 /**
  * @category View
@@ -69,7 +70,7 @@ export class ConfigurationSelectorView implements VirtualDOM {
                 innerText: 'Configurations',
             },
             new ConfigurationsDropDown({
-                projectState: this.appState.projectState,
+                mainThreadState: this.appState.projectState,
             }),
             new HeaderBtnView({
                 icon: 'fas fa-play',
@@ -112,17 +113,22 @@ export class ConfigurationsDropDown implements VirtualDOM {
      * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
-    constructor({ projectState }: { projectState: MainThreadState }) {
+
+    constructor({
+        mainThreadState,
+    }: {
+        mainThreadState: EnvironmentState<MainThreadImplementation>
+    }) {
         this.children = [
             {
                 tag: 'select',
                 onchange: (ev) => {
-                    projectState.selectConfiguration(ev.target.value)
+                    mainThreadState.selectConfiguration(ev.target.value)
                 },
                 children: children$(
                     combineLatest([
-                        projectState.configurations$,
-                        projectState.selectedConfiguration$,
+                        mainThreadState.configurations$,
+                        mainThreadState.selectedConfiguration$,
                     ]),
                     ([configurations, selectedName]) => {
                         return configurations.map((config) => {

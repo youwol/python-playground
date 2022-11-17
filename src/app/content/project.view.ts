@@ -1,10 +1,11 @@
 import { VirtualDOM } from '@youwol/flux-view'
-import { MainThreadState } from '../main-thread'
+import { MainThreadImplementation } from '../main-thread'
 import {
     LoadingScreenView,
     InstallDoneEvent,
     CdnMessageEvent,
 } from '@youwol/cdn-client'
+import { EnvironmentState } from '../environment.state'
 
 /**
  * @category View
@@ -17,14 +18,16 @@ export class ProjectView implements VirtualDOM {
     /**
      * @group States
      */
-    projectState: MainThreadState
+    public readonly mainThreadState: EnvironmentState<MainThreadImplementation>
 
     /**
      * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
 
-    constructor(params: { projectState: MainThreadState }) {
+    constructor(params: {
+        mainThreadState: EnvironmentState<MainThreadImplementation>
+    }) {
         Object.assign(this, params)
         this.children = [
             {
@@ -40,7 +43,7 @@ export class ProjectView implements VirtualDOM {
                         },
                     })
                     loadingScreen.render()
-                    this.projectState.cdnEvent$.subscribe((event) => {
+                    this.mainThreadState.cdnEvent$.subscribe((event) => {
                         if (event instanceof InstallDoneEvent) {
                             loadingScreen.next(
                                 new CdnMessageEvent(

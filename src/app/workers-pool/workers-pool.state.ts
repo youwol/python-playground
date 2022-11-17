@@ -1,5 +1,5 @@
-import { Environment, EnvironmentState } from '../environment.state'
-import { WorkersPool, RawLog, Requirements } from '../models'
+import { Environment, ExecutingImplementation } from '../environment.state'
+import { RawLog, Requirements } from '../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
@@ -22,6 +22,7 @@ import {
     syncFileSystem,
     WorkerListener,
 } from '../main-thread'
+import { CdnEvent } from '@youwol/cdn-client'
 
 interface EntryPointInstallArgs {
     requirements: Requirements
@@ -129,16 +130,11 @@ function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
 /**
  * @category State
  */
-export class WorkersPoolState extends EnvironmentState {
+export class WorkersPoolImplementation implements ExecutingImplementation {
     /**
      * @group Observables
      */
-    public readonly pyWorker$: Observable<WorkersPool>
-
-    /**
-     * @group Observables
-     */
-    public readonly workersPool$ = new BehaviorSubject<WorkersFactory>(
+    public readonly workersFactory$ = new BehaviorSubject<WorkersFactory>(
         undefined,
     )
 
@@ -147,87 +143,64 @@ export class WorkersPoolState extends EnvironmentState {
      */
     static cdnSrc$ = getCdnClientSrc$()
 
-    constructor({
-        pyWorker,
-        rawLog$,
-    }: {
-        pyWorker: WorkersPool
-        rawLog$: Subject<RawLog>
-    }) {
-        super({ worker: pyWorker, rawLog$ })
-        this.pyWorker$ = this.serialized$.pipe(
-            map((workerCommon) => {
-                return {
-                    ...workerCommon,
-                    inputs: [
+    installRequirements(
+        requirements: Requirements,
+        rawLog$: Subject<RawLog>,
+        cdnEvent$: Subject<CdnEvent>,
+    ) {
+        this.workersFactory$.next(undefined)
+        return WorkersPoolImplementation.cdnSrc$.pipe(
+            take(1),
+            mergeMap((src) => {
+                const title = 'install requirements'
+                const context = new Context(title)
+                const workersPool = new WorkersFactory()
+                workersPool.import({
+                    sources: [{ id: '@youwol/cdn-client', src }],
+                    functions: [
+                        { id: 'syncFileSystem', target: syncFileSystem },
+                        { id: 'registerJsModules', target: registerJsModules },
                         {
-                            name: 'input_stream',
+                            id: 'registerYwPyodideModule',
+                            target: registerYwPyodideModule,
+                        },
+                        {
+                            id: 'getModuleNameFromFile',
+                            target: getModuleNameFromFile,
                         },
                     ],
-                    outputs: [
-                        {
-                            name: 'output_stream',
+                    variables: [],
+                })
+                return workersPool
+                    .schedule({
+                        title,
+                        entryPoint: entryPointInstall,
+                        args: {
+                            requirements,
+                            exportedPyodideInstanceName:
+                                Environment.ExportedPyodideInstanceName,
                         },
-                    ],
-                }
+                        context,
+                    })
+                    .pipe(
+                        tap((message: MessageEventData) => {
+                            const cdnEvent = isCdnEventMessage(message)
+                            if (cdnEvent) {
+                                cdnEvent$.next(cdnEvent)
+                            }
+                        }),
+                        filter((d) => d.type == 'Exit'),
+                        take(1),
+                        tap(() => {
+                            this.workersFactory$.next(workersPool)
+                        }),
+                    )
             }),
         )
-        this.installRequirements(pyWorker.environment.requirements)
-    }
-
-    installRequirements(requirements: Requirements) {
-        this.projectLoaded$.next(false)
-        this.workersPool$.next(undefined)
-        WorkersPoolState.cdnSrc$.pipe(take(1)).subscribe((src) => {
-            const title = 'install requirements'
-            const context = new Context(title)
-            const workersPool = new WorkersFactory()
-            workersPool.import({
-                sources: [{ id: '@youwol/cdn-client', src }],
-                functions: [
-                    { id: 'syncFileSystem', target: syncFileSystem },
-                    { id: 'registerJsModules', target: registerJsModules },
-                    {
-                        id: 'registerYwPyodideModule',
-                        target: registerYwPyodideModule,
-                    },
-                    {
-                        id: 'getModuleNameFromFile',
-                        target: getModuleNameFromFile,
-                    },
-                ],
-                variables: [],
-            })
-            workersPool
-                .schedule({
-                    title,
-                    entryPoint: entryPointInstall,
-                    args: {
-                        requirements,
-                        exportedPyodideInstanceName:
-                            Environment.ExportedPyodideInstanceName,
-                    },
-                    context,
-                })
-                .pipe(
-                    tap((message: MessageEventData) => {
-                        const cdnEvent = isCdnEventMessage(message)
-                        if (cdnEvent) {
-                            this.cdnEvent$.next(cdnEvent)
-                        }
-                    }),
-                    filter((d) => d.type == 'Exit'),
-                    take(1),
-                )
-                .subscribe(() => {
-                    this.projectLoaded$.next(true)
-                    this.workersPool$.next(workersPool)
-                })
-        })
     }
 
     initializeBeforeRun(fileSystem: Map<string, string>) {
-        return this.workersPool$.pipe(
+        return this.workersFactory$.pipe(
             filter((pool) => pool != undefined),
             take(1),
             mergeMap((workersPool) => {
@@ -249,12 +222,13 @@ export class WorkersPoolState extends EnvironmentState {
         )
     }
 
-    execPythonSrc(
-        patchedContent: string,
+    execPythonCode(
+        code: string,
+        rawLog$: Subject<RawLog>,
         pythonGlobals: Record<string, unknown> = {},
         workerListener: WorkerListener = undefined,
     ): Observable<MessageDataExit> {
-        return this.workersPool$.pipe(
+        return this.workersFactory$.pipe(
             filter((pool) => pool != undefined),
             take(1),
             mergeMap((workersPool) => {
@@ -264,7 +238,7 @@ export class WorkersPoolState extends EnvironmentState {
                     title,
                     entryPoint: entryPointExe,
                     args: {
-                        content: patchedContent,
+                        content: code,
                         exportedPyodideInstanceName:
                             Environment.ExportedPyodideInstanceName,
                         pythonGlobals,
@@ -273,7 +247,7 @@ export class WorkersPoolState extends EnvironmentState {
                 })
             }),
             tap((message) => {
-                dispatchWorkerMessage(message, this.rawLog$, workerListener)
+                dispatchWorkerMessage(message, rawLog$, workerListener)
             }),
             filter((d) => d.type == 'Exit'),
             map((result) => result.data as unknown as MessageDataExit),
@@ -281,8 +255,8 @@ export class WorkersPoolState extends EnvironmentState {
         )
     }
 
-    getPythonProxy() {
-        return new WorkerPoolPythonProxy({ state: this })
+    getPythonProxy(rawLog$: Subject<RawLog>) {
+        return new WorkerPoolPythonProxy({ exeEnv: this, rawLog$ })
     }
 }
 
@@ -297,11 +271,19 @@ interface PythonProxyScheduleInput {
 
 export class WorkerPoolPythonProxy {
     /**
-     * @group States
+     * @group Immutable Constants
      */
-    public readonly state: WorkersPoolState
+    public readonly exeEnv: WorkersPoolImplementation
 
-    constructor(params: { state: WorkersPoolState }) {
+    /**
+     * @group Observables
+     */
+    public readonly rawLog$: Subject<RawLog>
+
+    constructor(params: {
+        exeEnv: WorkersPoolImplementation
+        rawLog$: Subject<RawLog>
+    }) {
         Object.assign(this, params)
     }
 
@@ -319,9 +301,10 @@ result
         `,
         )
         return new Promise((resolve) => {
-            this.state
-                .execPythonSrc(
+            this.exeEnv
+                .execPythonCode(
                     src,
+                    this.rawLog$,
                     { test_glob_var: input.argument },
                     workerChannel,
                 )

@@ -1,7 +1,8 @@
 import { children$, childrenWithReplace$, VirtualDOM } from '@youwol/flux-view'
 
-import { WorkersPoolState, CdnEventWorker } from '../workers-pool'
+import { WorkersPoolImplementation, CdnEventWorker } from '../workers-pool'
 import { distinctUntilChanged, map } from 'rxjs/operators'
+import { EnvironmentState } from '../environment.state'
 
 /**
  * @category View
@@ -15,14 +16,16 @@ export class WorkerView implements VirtualDOM {
     /**
      * @group States
      */
-    workerState: WorkersPoolState
+    workerState: EnvironmentState<WorkersPoolImplementation>
 
     /**
      * @group Immutable DOM Constants
      */
     public readonly children
 
-    constructor(params: { workerState: WorkersPoolState }) {
+    constructor(params: {
+        workerState: EnvironmentState<WorkersPoolImplementation>
+    }) {
         Object.assign(this, params)
         const eqSet = (xs, ys) =>
             xs.size === ys.size && [...xs].every((x) => ys.has(x))
@@ -39,7 +42,7 @@ export class WorkerView implements VirtualDOM {
             return [...workerIds].map((workerId) => {
                 return new WorkerCard({
                     workerId,
-                    workerState: this.workerState,
+                    workersPoolState: this.workerState,
                 })
             })
         })
@@ -72,9 +75,12 @@ export class WorkerCard implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly workerState: WorkersPoolState
+    public readonly workersPoolState: EnvironmentState<WorkersPoolImplementation>
 
-    constructor(params: { workerId: string; workerState: WorkersPoolState }) {
+    constructor(params: {
+        workerId: string
+        workersPoolState: EnvironmentState<WorkersPoolImplementation>
+    }) {
         Object.assign(this, params)
         this.children = [
             {
@@ -84,7 +90,7 @@ export class WorkerCard implements VirtualDOM {
             {
                 class: 'p-2',
                 children: childrenWithReplace$(
-                    this.workerState.cdnEvents$.pipe(
+                    this.workersPoolState.cdnEvents$.pipe(
                         map((cdnEvents: CdnEventWorker[]) => {
                             const filtered = cdnEvents.filter(
                                 (cdnEvent) =>

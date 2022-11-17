@@ -2,7 +2,10 @@ import { VirtualDOM } from '@youwol/flux-view'
 import { delay, withLatestFrom } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { Common } from '@youwol/fv-code-mirror-editors'
-import { EnvironmentState } from '../../environment.state'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../../environment.state'
 
 /**
  * @category View
@@ -11,7 +14,7 @@ export class CodeEditorView {
     /**
      * @group States
      */
-    public readonly state: EnvironmentState
+    public readonly state: EnvironmentState<ExecutingImplementation>
 
     /**
      * @group Immutable DOM constants
@@ -35,7 +38,7 @@ export class CodeEditorView {
 
     constructor(params: {
         sourcePath: Common.SourcePath
-        state: EnvironmentState
+        state: EnvironmentState<ExecutingImplementation>
         onRun: () => void
         refresh$?: Observable<unknown>
     }) {

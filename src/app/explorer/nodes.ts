@@ -1,10 +1,14 @@
 import { ImmutableTree } from '@youwol/fv-tree'
 import { Environment, Project, WorkersPool } from '../models'
-import { MainThreadState } from '../main-thread'
+import { MainThreadImplementation } from '../main-thread'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
-import { EnvironmentState } from '../environment.state'
-import { WorkersPoolState } from '../workers-pool'
+import { EnvironmentState, ExecutingImplementation } from '../environment.state'
+import { WorkersPoolImplementation } from '../workers-pool'
+
+type MainThreadState = EnvironmentState<MainThreadImplementation>
+type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
+type AbstractEnvState = EnvironmentState<ExecutingImplementation>
 
 /**
  * Node's signal data-structure
@@ -127,9 +131,9 @@ export class RequirementsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: EnvironmentState
+    public readonly state: AbstractEnvState
 
-    constructor(params: { state: EnvironmentState }) {
+    constructor(params: { state: AbstractEnvState }) {
         super({
             id: `${params.state.id}#requirements`,
             name: 'Requirements',
@@ -152,9 +156,9 @@ export class ConfigurationsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: EnvironmentState
+    public readonly state: AbstractEnvState
 
-    constructor(params: { state: EnvironmentState }) {
+    constructor(params: { state: AbstractEnvState }) {
         super({
             id: `${params.state.id}#configurations`,
             name: 'Configurations',
@@ -182,9 +186,9 @@ export class SourceNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: EnvironmentState
+    public readonly state: AbstractEnvState
 
-    constructor(params: { path: string; state: EnvironmentState }) {
+    constructor(params: { path: string; state: AbstractEnvState }) {
         super({
             id: params.path,
             name: params.path.split('/').slice(-1)[0],
@@ -205,7 +209,10 @@ export class HelpersJsSourceNode extends SourceNode {
      */
     public readonly category: NodeCategory = 'HelpersJsSourceNode'
 
-    constructor(params: { path: string; state: EnvironmentState }) {
+    constructor(params: {
+        path: string
+        state: EnvironmentState<ExecutingImplementation>
+    }) {
         super(params)
     }
 }

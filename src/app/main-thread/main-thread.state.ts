@@ -1,16 +1,8 @@
-import { Project, RawLog, Requirements } from '../models'
-import {
-    BehaviorSubject,
-    from,
-    merge,
-    Observable,
-    ReplaySubject,
-    Subject,
-} from 'rxjs'
-import { scan } from 'rxjs/operators'
+import { RawLog, Requirements } from '../models'
+import { BehaviorSubject, from, merge, ReplaySubject, Subject } from 'rxjs'
+import { map, scan } from 'rxjs/operators'
 import { OutputViewNode } from '../explorer'
-import { Environment, EnvironmentState } from '../environment.state'
-import { installRequirements } from '../load-project'
+import { Environment, ExecutingImplementation } from '../environment.state'
 import {
     registerJsModules,
     registerPyPlayModule,
@@ -18,11 +10,12 @@ import {
     syncFileSystem,
 } from './utils'
 import { AppState } from '../app.state'
+import { CdnEvent, install } from '@youwol/cdn-client'
 
 /**
  * @category State
  */
-export class MainThreadState extends EnvironmentState {
+export class MainThreadImplementation implements ExecutingImplementation {
     /**
      *
      * @group States
@@ -32,7 +25,7 @@ export class MainThreadState extends EnvironmentState {
     /**
      * @group Observables
      */
-    public readonly project$: Observable<Project>
+    public readonly triggerOutputsCollect$ = new Subject<boolean>()
 
     /**
      * @group Observables
@@ -44,19 +37,10 @@ export class MainThreadState extends EnvironmentState {
      */
     public readonly createdOutputs$ = new BehaviorSubject<OutputViewNode[]>([])
 
-    constructor({
-        project,
-        rawLog$,
-        appState,
-    }: {
-        project: Project
-        rawLog$: Subject<RawLog>
-        appState: AppState
-    }) {
-        super({ worker: project, rawLog$ })
+    constructor({ appState }: { appState: AppState }) {
         this.appState = appState
-        this.project$ = this.serialized$
-        merge(this.runStart$, this.createdOutput$)
+
+        merge(this.triggerOutputsCollect$, this.createdOutput$)
             .pipe(
                 scan(
                     (acc, e: true | OutputViewNode) =>
@@ -67,24 +51,71 @@ export class MainThreadState extends EnvironmentState {
             .subscribe((outputs) => {
                 this.createdOutputs$.next(outputs)
             })
-
-        this.installRequirements(project.environment.requirements)
     }
 
-    installRequirements(requirements: Requirements) {
-        installRequirements({
-            requirements,
-            cdnEvent$: this.cdnEvent$,
-            rawLog$: this.rawLog$,
-            environment$: this.environment$,
-        }).then(() => {
-            this.projectLoaded$.next(true)
-        })
+    installRequirements(
+        requirements: Requirements,
+        rawLog$: Subject<RawLog>,
+        cdnEvent$: Subject<CdnEvent>,
+    ) {
+        const exportedPyodideInstanceName =
+            Environment.ExportedPyodideInstanceName
+
+        return from(
+            install({
+                ...requirements.javascriptPackages,
+                customInstallers: [
+                    {
+                        module: '@youwol/cdn-pyodide-loader',
+                        installInputs: {
+                            modules: requirements.pythonPackages.map(
+                                (p) => `@pyodide/${p}`,
+                            ),
+                            warmUp: true,
+                            onEvent: (cdnEvent) => cdnEvent$.next(cdnEvent),
+                            exportedPyodideInstanceName,
+                        },
+                    },
+                ],
+                onEvent: (cdnEvent) => {
+                    cdnEvent$.next(cdnEvent)
+                },
+            }),
+        ).pipe(
+            map(() => {
+                const pyodide = window[exportedPyodideInstanceName]
+
+                Object.entries(requirements.javascriptPackages.aliases).forEach(
+                    ([alias, originalName]) => {
+                        rawLog$.next({
+                            level: 'info',
+                            message: `create alias '${alias}' to import '${originalName}' (version ${window[alias].__yw_set_from_version__}) `,
+                        })
+                        pyodide.registerJsModule(alias, window[alias])
+                    },
+                )
+                const env = new Environment({
+                    pyodide,
+                })
+                rawLog$.next({
+                    level: 'info',
+                    message: `Python ${env.pythonVersion.split('\n')[0]}`,
+                })
+                rawLog$.next({
+                    level: 'info',
+                    message: `Pyodide ${env.pyodideVersion}`,
+                })
+                return env
+            }),
+        )
     }
 
-    initializeBeforeRun(fileSystem: Map<string, string>) {
+    initializeBeforeRun(
+        fileSystem: Map<string, string>,
+        rawLog$: Subject<RawLog>,
+    ) {
         const outputs = {
-            onLog: (log) => this.rawLog$.next(log),
+            onLog: (log) => rawLog$.next(log),
             onView: (view) => {
                 const newNode = new OutputViewNode({
                     ...view,
@@ -107,11 +138,10 @@ export class MainThreadState extends EnvironmentState {
         )
     }
 
-    execPythonSrc(patchedContent: string) {
-        return self[Environment.ExportedPyodideInstanceName]
-            .runPythonAsync(patchedContent)
-            .then(() => {
-                this.runDone$.next(true)
-            })
+    execPythonCode(code: string) {
+        this.triggerOutputsCollect$.next(true)
+        return from(
+            self[Environment.ExportedPyodideInstanceName].runPythonAsync(code),
+        )
     }
 }

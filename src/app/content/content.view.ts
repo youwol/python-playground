@@ -30,7 +30,7 @@ import { WorkerView } from './worker.view'
 function viewFactory(node: Node, appState: AppState) {
     if (node instanceof ProjectNode) {
         return new ProjectView({
-            projectState: appState.projectState,
+            mainThreadState: appState.projectState,
         })
     }
     if (node instanceof SourceNode) {

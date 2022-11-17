@@ -11,9 +11,8 @@ import {
     from,
     Observable,
     ReplaySubject,
-    Subject,
 } from 'rxjs'
-import { Project, RawLog } from './models'
+import { Project, RawLog, WorkersPool } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab } from './side-nav-explorer'
@@ -27,7 +26,7 @@ import {
     take,
     tap,
 } from 'rxjs/operators'
-import { MainThreadState } from './main-thread'
+import { MainThreadImplementation } from './main-thread'
 import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
     createProjectRootNode,
@@ -37,12 +36,16 @@ import {
     WorkersPoolNode,
     SourceNode,
 } from './explorer'
-import { Explorer, WorkersPool } from '.'
+import { Explorer } from '.'
 import { logFactory } from './log-factory.conf'
-import { WorkersPoolState } from './workers-pool'
-import { EnvironmentState } from './environment.state'
+import { getDefaultWorker, WorkersPoolImplementation } from './workers-pool'
+import { EnvironmentState, ExecutingImplementation } from './environment.state'
 
 const log = logFactory().getChildLogger('app.state.ts')
+
+type MainThreadState = EnvironmentState<MainThreadImplementation>
+type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
+type AbstractEnvState = EnvironmentState<ExecutingImplementation>
 
 /**
  * See https://github.com/pyodide/pyodide/blob/main/docs/usage/faq.md for eventual improvements
@@ -89,7 +92,7 @@ export class AppState {
     /**
      * @group Observables
      */
-    public readonly rawLog$ = new Subject<RawLog>()
+    public readonly rawLog$ = new ReplaySubject<RawLog>()
 
     /**
      *
@@ -106,14 +109,20 @@ export class AppState {
     }) {
         Object.assign(this, params)
 
-        this.projectState = new MainThreadState({
-            project: params.project,
+        this.projectState = new EnvironmentState<MainThreadImplementation>({
+            initialModel: params.project,
             rawLog$: this.rawLog$,
-            appState: this,
+            executingImplementation: new MainThreadImplementation({
+                appState: this,
+            }),
         })
         const initialWorkers = (params.project.workersPools || []).map(
-            (pyWorker) => {
-                return new WorkersPoolState({ pyWorker, rawLog$: this.rawLog$ })
+            (workersPool) => {
+                return new EnvironmentState<WorkersPoolImplementation>({
+                    initialModel: workersPool,
+                    rawLog$: this.rawLog$,
+                    executingImplementation: new WorkersPoolImplementation(),
+                })
             },
         )
         this.pyWorkersState$ = new BehaviorSubject<WorkersPoolState[]>(
@@ -130,7 +139,7 @@ export class AppState {
             appState: this,
         })
         const mergeWorkerBaseObs = (
-            toObs: (state: EnvironmentState) => Observable<unknown>,
+            toObs: (state: AbstractEnvState) => Observable<unknown>,
         ) => {
             return this.pyWorkersState$.pipe(
                 switchMap((workers) => {
@@ -207,14 +216,8 @@ export class AppState {
                 id: 'errorSaving',
             })
         })
-        this.pyWorkersState$
+        mergeWorkerBaseObs((state) => state.serialized$)
             .pipe(
-                switchMap((workers) => {
-                    return combineLatest([
-                        this.projectState.project$,
-                        ...workers.map((w) => w.pyWorker$),
-                    ])
-                }),
                 skip(1),
                 tap(() => {
                     const projectNode = this.explorerState.getNode(
@@ -227,10 +230,10 @@ export class AppState {
                     })
                 }),
                 debounceTime(1000),
-                map(([project, ...workers]) => {
+                map(([project, ...workers]: [Project, WorkersPool[]]) => {
                     return {
                         ...project,
-                        pyWorkers: workers,
+                        workersPool: workers,
                     }
                 }),
                 mergeMap((project) => {
@@ -274,7 +277,9 @@ export class AppState {
                     )
                 }),
                 mergeMap(({ fsMap, pyWorker }) => {
-                    return pyWorker.initializeBeforeRun(fsMap)
+                    return pyWorker.executingImplementation.initializeBeforeRun(
+                        fsMap,
+                    )
                 }),
                 reduce((acc, e) => [...acc, e], []),
             )
@@ -340,10 +345,14 @@ export class AppState {
     }
 
     addPyWorker() {
-        const pyWorker = WorkersPool.getDefaultWorker({
+        const pyWorker = getDefaultWorker({
             name: `Worker ${this.getWorkersPoolNodes().length}`,
         })
-        const state = new WorkersPoolState({ pyWorker, rawLog$: this.rawLog$ })
+        const state = new EnvironmentState<WorkersPoolImplementation>({
+            initialModel: pyWorker,
+            rawLog$: this.rawLog$,
+            executingImplementation: new WorkersPoolImplementation(),
+        })
         const node = new WorkersPoolNode({
             pyWorker,
             state,
@@ -359,10 +368,13 @@ export class AppState {
                 const id = this.getWorkersPoolNodes().find(
                     (node: WorkersPoolNode) => node.name == name,
                 ).id
-                return this.pyWorkersState$
+                const state = this.pyWorkersState$
                     .getValue()
                     .find((pool) => pool.id == id)
-                    .getPythonProxy()
+
+                return state.executingImplementation.getPythonProxy(
+                    this.rawLog$,
+                )
             },
         }
     }

@@ -1,13 +1,16 @@
 import { CodePageView } from './code-editor'
-import { EnvironmentState } from '../environment.state'
+import { EnvironmentState, ExecutingImplementation } from '../environment.state'
 
 /**
  * @category View
  */
 export class RequirementsView extends CodePageView {
-    constructor(params: { sourcePath: string; state: EnvironmentState }) {
+    constructor(params: {
+        sourcePath: string
+        state: EnvironmentState<ExecutingImplementation>
+    }) {
         const run = () => {
-            this.state.applyRequirements()
+            this.state.applyRequirements().subscribe()
         }
         super({
             ...params,
