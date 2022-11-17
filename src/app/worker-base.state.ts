@@ -302,11 +302,7 @@ export abstract class WorkerBaseState {
                     sourcePath,
                     fileSystem.get(sourcePath),
                 )
-                return global[Environment.ExportedPyodideInstanceName]
-                    .runPythonAsync(patchedContent)
-                    .then(() => {
-                        this.runDone$.next(true)
-                    })
+                return this.execPythonSrc(patchedContent)
             })
     }
 
