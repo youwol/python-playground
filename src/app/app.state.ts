@@ -36,9 +36,6 @@ import {
     OutputViewNode,
     PyWorkerNode,
     SourceNode,
-    WorkerInputsNode,
-    WorkerIONode,
-    WorkerOutputsNode,
 } from './explorer'
 import { Explorer, WorkersPool } from '.'
 import { logFactory } from './log-factory.conf'
@@ -287,10 +284,6 @@ export class AppState {
     }
 
     openTab(node: Node) {
-        const noTabNodes = [WorkerIONode, WorkerInputsNode, WorkerOutputsNode]
-        if (noTabNodes.map((type) => node instanceof type).find((v) => v)) {
-            return
-        }
         log.info(`openTab: node ${node.name} (id=${node.id})`)
         const opened = this.openTabs$.value
         if (!opened.includes(node)) {

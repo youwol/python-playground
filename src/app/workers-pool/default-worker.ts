@@ -29,16 +29,6 @@ export function getDefaultWorker({ name }: { name: string }): WorkersPool {
                 },
             ],
         },
-        inputs: [
-            {
-                name: 'input_stream',
-            },
-        ],
-        outputs: [
-            {
-                name: 'output_stream',
-            },
-        ],
         sources: [
             {
                 path: './worker_entry.py',

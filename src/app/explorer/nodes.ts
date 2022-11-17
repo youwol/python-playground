@@ -1,11 +1,5 @@
 import { ImmutableTree } from '@youwol/fv-tree'
-import {
-    Environment,
-    Project,
-    WorkersPool,
-    WorkerInput$,
-    WorkerOutput$,
-} from '../models'
+import { Environment, Project, WorkersPool } from '../models'
 import { MainThreadState } from '../main-thread'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
@@ -28,9 +22,6 @@ export type NodeCategory =
     | 'WorkerRequirementsNode'
     | 'PyWorkerNode'
     | 'WorkerSourceNode'
-    | 'WorkerIONode'
-    | 'WorkerInputsNode'
-    | 'WorkerOutputsNode'
 
 export const specialFiles = ['./requirements', './configurations']
 /**
@@ -255,95 +246,6 @@ export class OutputViewNode extends Node {
     }
 }
 
-export class WorkerIONode extends Node {
-    /**
-     * @group Immutable Constants
-     */
-    public readonly category: NodeCategory = 'WorkerIONode'
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly name: string
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly type: string
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly state: WorkersPoolState
-
-    constructor(params: {
-        name: string
-        type: 'input' | 'output'
-        state: WorkersPoolState
-    }) {
-        super({
-            id: `${params.state.id}#${params.name}`,
-            name: params.name,
-            children: undefined,
-        })
-        Object.assign(this, params)
-    }
-}
-
-export class WorkerInputsNode extends Node {
-    /**
-     * @group Immutable Constants
-     */
-    public readonly category: NodeCategory = 'WorkerInputsNode'
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly state: WorkersPoolState
-
-    constructor(params: { inputs: WorkerInput$[]; state: WorkersPoolState }) {
-        super({
-            id: `${params.state.id}#inputs`,
-            name: 'Inputs',
-            children: params.inputs.map((input) => {
-                return new WorkerIONode({
-                    name: input.name,
-                    type: 'input',
-                    state: params.state,
-                })
-            }),
-        })
-        Object.assign(this, params)
-    }
-}
-
-export class WorkerOutputsNode extends Node {
-    /**
-     * @group Immutable Constants
-     */
-    public readonly category: NodeCategory = 'WorkerOutputsNode'
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly state: WorkersPoolState
-
-    constructor(params: { outputs: WorkerOutput$[]; state: WorkersPoolState }) {
-        super({
-            id: `${params.state.id}#outputs`,
-            name: 'Outputs',
-            children: params.outputs.map((input) => {
-                return new WorkerIONode({
-                    name: input.name,
-                    type: 'output',
-                    state: params.state,
-                })
-            }),
-        })
-        Object.assign(this, params)
-    }
-}
-
 /**
  * Predefined worker node
  *
@@ -373,14 +275,6 @@ export class PyWorkerNode extends Node {
                         path: source.path,
                         state: params.state,
                     })
-                }),
-                new WorkerInputsNode({
-                    inputs: params.pyWorker.inputs,
-                    state: params.state,
-                }),
-                new WorkerOutputsNode({
-                    outputs: params.pyWorker.outputs,
-                    state: params.state,
                 }),
             ],
         })

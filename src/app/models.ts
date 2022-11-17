@@ -21,20 +21,10 @@ export interface Environment {
     configurations: RunConfiguration[]
 }
 
-export interface WorkerInput$ {
-    name: string
-}
-
-export interface WorkerOutput$ {
-    name: string
-}
-
 export interface WorkersPool {
     id: string
     name: string
     environment: Environment
-    inputs: WorkerInput$[]
-    outputs: WorkerOutput$[]
     sources: Source[]
 }
 
