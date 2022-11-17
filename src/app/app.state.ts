@@ -5,8 +5,14 @@ import {
     AssetsGateway,
     dispatchHTTPErrors,
 } from '@youwol/http-clients'
-import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
-import { Project } from './models'
+import {
+    BehaviorSubject,
+    combineLatest,
+    Observable,
+    ReplaySubject,
+    Subject,
+} from 'rxjs'
+import { Project, RawLog } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab } from './side-nav-explorer'
@@ -79,6 +85,11 @@ export class AppState {
     public readonly selectedTab$ = new BehaviorSubject<Node>(undefined)
 
     /**
+     * @group Observables
+     */
+    public readonly rawLog$ = new Subject<RawLog>()
+
+    /**
      *
      * @group Observables
      */
@@ -95,10 +106,11 @@ export class AppState {
 
         this.projectState = new ProjectState({
             project: params.project,
+            rawLog$: this.rawLog$,
         })
         const initialWorkers = (params.project.pyWorkers || []).map(
             (pyWorker) => {
-                return new PyWorkerState({ pyWorker })
+                return new PyWorkerState({ pyWorker, rawLog$: this.rawLog$ })
             },
         )
         this.pyWorkersState$ = new BehaviorSubject<PyWorkerState[]>(
@@ -313,7 +325,7 @@ export class AppState {
         const pyWorker = PyWorkers.getDefaultWorker({
             name: `Worker ${workerNodes.length}`,
         })
-        const state = new PyWorkerState({ pyWorker })
+        const state = new PyWorkerState({ pyWorker, rawLog$: this.rawLog$ })
         const node = new PyWorkerNode({
             pyWorker,
             state,

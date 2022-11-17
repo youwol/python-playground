@@ -1,5 +1,12 @@
-import { Project, Requirements } from '../models'
-import { BehaviorSubject, from, merge, Observable, ReplaySubject } from 'rxjs'
+import { Project, RawLog, Requirements } from '../models'
+import {
+    BehaviorSubject,
+    from,
+    merge,
+    Observable,
+    ReplaySubject,
+    Subject,
+} from 'rxjs'
 import { scan } from 'rxjs/operators'
 import { OutputViewNode } from '../explorer'
 import { Environment, WorkerBaseState } from '../worker-base.state'
@@ -29,8 +36,14 @@ export class ProjectState extends WorkerBaseState {
      */
     public readonly createdOutputs$ = new BehaviorSubject<OutputViewNode[]>([])
 
-    constructor({ project }: { project: Project }) {
-        super({ worker: project })
+    constructor({
+        project,
+        rawLog$,
+    }: {
+        project: Project
+        rawLog$: Subject<RawLog>
+    }) {
+        super({ worker: project, rawLog$ })
         this.project$ = this.serialized$
         merge(this.runStart$, this.createdOutput$)
             .pipe(

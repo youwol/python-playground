@@ -1,14 +1,18 @@
 import { DockableTabs } from '@youwol/fv-tabs'
-import { childrenAppendOnly$, VirtualDOM , HTMLElement$ } from '@youwol/flux-view'
-import { ProjectState } from '../../project'
+import {
+    childrenAppendOnly$,
+    VirtualDOM,
+    HTMLElement$,
+} from '@youwol/flux-view'
 import { debounceTime, map } from 'rxjs/operators'
 import { RawLog } from '../../models'
+import { Observable } from 'rxjs'
 
 /**
  * @category View
  */
 export class LogsTab extends DockableTabs.Tab {
-    constructor({ projectState }: { projectState: ProjectState }) {
+    constructor({ rawLog$ }: { rawLog$: Observable<RawLog> }) {
         super({
             id: 'Logs',
             title: 'Logs',
@@ -18,7 +22,7 @@ export class LogsTab extends DockableTabs.Tab {
                     style: {
                         height: '300px',
                     },
-                    children: [new LogsView({ projectState })],
+                    children: [new LogsView({ rawLog$: rawLog$ })],
                 }
             },
         })
@@ -31,9 +35,9 @@ export class LogsTab extends DockableTabs.Tab {
 export class LogsView implements VirtualDOM {
     /**
      *
-     * @group States
+     * @group Observables
      */
-    public readonly projectState: ProjectState
+    public readonly rawLog$: Observable<RawLog>
 
     /**
      * @group Immutable DOM Constants
@@ -62,9 +66,9 @@ export class LogsView implements VirtualDOM {
      */
     private htmlElement: HTMLDivElement & HTMLElement$
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { rawLog$: Observable<RawLog> }) {
         Object.assign(this, params)
-        this.projectState.rawLog$
+        this.rawLog$
             .pipe(debounceTime(100))
             .subscribe(
                 () =>
@@ -76,7 +80,7 @@ export class LogsView implements VirtualDOM {
             {
                 class: 'h-100 overflow-auto',
                 children: childrenAppendOnly$(
-                    this.projectState.rawLog$.pipe(map((log) => [log])),
+                    this.rawLog$.pipe(map((log) => [log])),
                     (log: RawLog) => {
                         return {
                             class: log.level == 'error' ? 'fv-text-error' : '',

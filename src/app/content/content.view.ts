@@ -149,7 +149,9 @@ export class ContentView implements VirtualDOM {
                     'pined',
                 ),
                 tabs$: new BehaviorSubject([
-                    new LogsTab({ projectState: this.appState.projectState }),
+                    new LogsTab({
+                        rawLog$: this.appState.rawLog$,
+                    }),
                 ]),
                 selected$: new BehaviorSubject<string>('Logs'),
             }),

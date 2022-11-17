@@ -136,7 +136,13 @@ export abstract class WorkerBaseState {
      */
     public readonly runDone$ = new Subject<true>()
 
-    protected constructor({ worker }: { worker: WorkerCommon }) {
+    protected constructor({
+        worker,
+        rawLog$,
+    }: {
+        worker: WorkerCommon
+        rawLog$: Subject<RawLog>
+    }) {
         this.rawLog$.next({
             level: 'info',
             message: 'Welcome to the python playground 🐍',
@@ -227,6 +233,9 @@ export abstract class WorkerBaseState {
             }, []),
             shareReplay({ bufferSize: 1, refCount: true }),
         )
+        this.rawLog$.subscribe((log) => {
+            rawLog$.next(log)
+        })
     }
 
     removeFile(path: string) {

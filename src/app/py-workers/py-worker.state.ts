@@ -1,6 +1,6 @@
 import { Environment, WorkerBaseState } from '../worker-base.state'
-import { PyWorker, Requirements } from '../models'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { PyWorker, RawLog, Requirements } from '../models'
+import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
@@ -82,8 +82,14 @@ export class PyWorkerState extends WorkerBaseState {
      */
     static cdnSrc$ = getCdnClientSrc$()
 
-    constructor({ pyWorker }: { pyWorker: PyWorker }) {
-        super({ worker: pyWorker })
+    constructor({
+        pyWorker,
+        rawLog$,
+    }: {
+        pyWorker: PyWorker
+        rawLog$: Subject<RawLog>
+    }) {
+        super({ worker: pyWorker, rawLog$ })
         this.pyWorker$ = this.serialized$.pipe(
             map((workerCommon) => {
                 return {
