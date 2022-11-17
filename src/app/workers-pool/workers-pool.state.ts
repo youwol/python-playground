@@ -1,5 +1,5 @@
 import { Environment, EnvironmentState } from '../environment.state'
-import { PyWorker, RawLog, Requirements } from '../models'
+import { WorkersPool, RawLog, Requirements } from '../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
@@ -133,7 +133,7 @@ export class WorkersPoolState extends EnvironmentState {
     /**
      * @group Observables
      */
-    public readonly pyWorker$: Observable<PyWorker>
+    public readonly pyWorker$: Observable<WorkersPool>
 
     /**
      * @group Observables
@@ -151,7 +151,7 @@ export class WorkersPoolState extends EnvironmentState {
         pyWorker,
         rawLog$,
     }: {
-        pyWorker: PyWorker
+        pyWorker: WorkersPool
         rawLog$: Subject<RawLog>
     }) {
         super({ worker: pyWorker, rawLog$ })

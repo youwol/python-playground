@@ -114,7 +114,7 @@ export class AppState {
             rawLog$: this.rawLog$,
             appState: this,
         })
-        const initialWorkers = (params.project.pyWorkers || []).map(
+        const initialWorkers = (params.project.workersPools || []).map(
             (pyWorker) => {
                 return new WorkersPoolState({ pyWorker, rawLog$: this.rawLog$ })
             },

@@ -29,7 +29,7 @@ export interface WorkerOutput$ {
     name: string
 }
 
-export interface PyWorker {
+export interface WorkersPool {
     id: string
     name: string
     environment: Environment
@@ -43,7 +43,7 @@ export interface Project {
     name: string
     environment: Environment
     sources: Source[]
-    pyWorkers?: PyWorker[]
+    workersPools?: WorkersPool[]
 }
 
 export interface WorkerCommon {

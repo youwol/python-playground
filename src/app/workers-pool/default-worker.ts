@@ -1,4 +1,4 @@
-import { PyWorker } from '../models'
+import { WorkersPool } from '../models'
 import { v4 as uuidv4 } from 'uuid'
 
 export const defaultWorkerSrc = `
@@ -10,7 +10,7 @@ def compute(d, output):
 input_stream.on_data( lambda d: compute(d, output_compute) )
 `
 
-export function getDefaultWorker({ name }: { name: string }): PyWorker {
+export function getDefaultWorker({ name }: { name: string }): WorkersPool {
     return {
         id: `${uuidv4()}`,
         name,

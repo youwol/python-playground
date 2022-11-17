@@ -2,7 +2,7 @@ import { ImmutableTree } from '@youwol/fv-tree'
 import {
     Environment,
     Project,
-    PyWorker,
+    WorkersPool,
     WorkerInput$,
     WorkerOutput$,
 } from '../models'
@@ -360,7 +360,7 @@ export class PyWorkerNode extends Node {
      */
     public readonly state: WorkersPoolState
 
-    constructor(params: { pyWorker: PyWorker; state: WorkersPoolState }) {
+    constructor(params: { pyWorker: WorkersPool; state: WorkersPoolState }) {
         super({
             id: params.pyWorker.id,
             name: params.pyWorker.name,
@@ -404,7 +404,7 @@ export function createProjectRootNode(
         children: [
             new RequirementsNode({ state: projectState }),
             new ConfigurationsNode({ state: projectState }),
-            ...(project.pyWorkers || []).map((pyWorker) => {
+            ...(project.workersPools || []).map((pyWorker) => {
                 return new PyWorkerNode({
                     pyWorker,
                     state: workersStateById[pyWorker.id],
