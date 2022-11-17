@@ -12,6 +12,7 @@ import {
     dispatchWorkerMessage,
     getCdnClientSrc$,
     isCdnEventMessage,
+    objectPyToJs,
 } from './utils'
 import { Context } from '../../context'
 import {
@@ -291,6 +292,8 @@ export class WorkerPoolPythonProxy {
         input: PythonProxyScheduleInput,
         workerChannel: WorkerListener,
     ) {
+        input = objectPyToJs(input)
+
         const src = patchPythonSrc(`
 from ${input.entryPoint.file} import ${input.entryPoint.function}       
 result = ${input.entryPoint.function}(test_glob_var)

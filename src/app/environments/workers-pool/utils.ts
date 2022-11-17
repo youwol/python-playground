@@ -5,6 +5,7 @@ import { MessageEventData } from './workers-factory'
 import { RawLog } from '../../models'
 import { Subject } from 'rxjs'
 import { WorkerListener } from '../in-worker-executable'
+import { Environment } from '../environment.state'
 
 export interface CdnEventWorker {
     text: string
@@ -104,4 +105,19 @@ export function dispatchWorkerMessage(
         workerListener.emit(userData)
         return
     }
+}
+
+export function objectPyToJs(object) {
+    const pyodide = self[Environment.ExportedPyodideInstanceName]
+    const namespace = pyodide.toPy({ object })
+    return pyodide.runPython(
+        `
+from pyodide.ffi import to_js
+from js import Object
+to_js(object, dict_converter= Object.fromEntries)
+        `,
+        {
+            globals: namespace,
+        },
+    )
 }
