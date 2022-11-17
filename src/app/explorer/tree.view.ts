@@ -82,9 +82,7 @@ export class NodeView implements VirtualDOM {
         RequirementsNode: 'fas fa-cubes',
         ConfigurationsNode: 'fas fa-tools',
         OutputViewNode: 'fas fa-code',
-        WorkerRequirementsNode: 'fas  fa-cubes',
         WorkersPoolNode: 'fas fa-play',
-        WorkerSourceNode: 'fab fa-python',
     }
     /**
      * @group Factories

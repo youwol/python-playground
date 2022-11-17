@@ -19,9 +19,7 @@ export type NodeCategory =
     | 'HelpersJsSourceNode'
     | 'SourceNode'
     | 'OutputViewNode'
-    | 'WorkerRequirementsNode'
     | 'WorkersPoolNode'
-    | 'WorkerSourceNode'
 
 export const specialFiles = ['./requirements', './configurations']
 /**
