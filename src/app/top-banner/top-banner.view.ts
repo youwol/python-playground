@@ -1,7 +1,7 @@
 import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
 import { children$, VirtualDOM } from '@youwol/flux-view'
-import { ProjectState } from '../project'
+import { MainThreadState } from '../main-thread'
 import { combineLatest } from 'rxjs'
 
 /**
@@ -112,7 +112,7 @@ export class ConfigurationsDropDown implements VirtualDOM {
      * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
-    constructor({ projectState }: { projectState: ProjectState }) {
+    constructor({ projectState }: { projectState: MainThreadState }) {
         this.children = [
             {
                 tag: 'select',

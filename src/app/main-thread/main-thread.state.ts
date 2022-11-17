@@ -22,7 +22,7 @@ import { AppState } from '../app.state'
 /**
  * @category State
  */
-export class ProjectState extends WorkerBaseState {
+export class MainThreadState extends WorkerBaseState {
     /**
      *
      * @group States

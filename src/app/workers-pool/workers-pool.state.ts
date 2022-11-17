@@ -21,7 +21,7 @@ import {
     registerYwPyodideModule,
     syncFileSystem,
     WorkerListener,
-} from '../project'
+} from '../main-thread'
 
 interface EntryPointInstallArgs {
     requirements: Requirements
@@ -129,7 +129,7 @@ function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
 /**
  * @category State
  */
-export class PyWorkerState extends WorkerBaseState {
+export class WorkersPoolState extends WorkerBaseState {
     /**
      * @group Observables
      */
@@ -176,7 +176,7 @@ export class PyWorkerState extends WorkerBaseState {
     installRequirements(requirements: Requirements) {
         this.projectLoaded$.next(false)
         this.workersPool$.next(undefined)
-        PyWorkerState.cdnSrc$.pipe(take(1)).subscribe((src) => {
+        WorkersPoolState.cdnSrc$.pipe(take(1)).subscribe((src) => {
             const title = 'install requirements'
             const context = new Context(title)
             const workersPool = new WorkerPool()
@@ -297,9 +297,9 @@ export class WorkerPoolPythonProxy {
     /**
      * @group States
      */
-    public readonly state: PyWorkerState
+    public readonly state: WorkersPoolState
 
-    constructor(params: { state: PyWorkerState }) {
+    constructor(params: { state: WorkersPoolState }) {
         Object.assign(this, params)
     }
 

@@ -1,5 +1,5 @@
 import { VirtualDOM } from '@youwol/flux-view'
-import { ProjectState } from '../project'
+import { MainThreadState } from '../main-thread'
 import {
     LoadingScreenView,
     InstallDoneEvent,
@@ -17,14 +17,14 @@ export class ProjectView implements VirtualDOM {
     /**
      * @group States
      */
-    projectState: ProjectState
+    projectState: MainThreadState
 
     /**
      * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { projectState: MainThreadState }) {
         Object.assign(this, params)
         this.children = [
             {

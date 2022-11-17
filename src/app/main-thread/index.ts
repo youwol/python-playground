@@ -3,5 +3,5 @@
  *
  * @module Project
  */
-export * from './project.state'
+export * from './main-thread.state'
 export * from './utils'

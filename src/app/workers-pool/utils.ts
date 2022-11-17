@@ -4,7 +4,7 @@ import { getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
 import { MessageEventData } from './worker-pool'
 import { RawLog } from '../models'
 import { Subject } from 'rxjs'
-import { WorkerListener } from '../project'
+import { WorkerListener } from '../main-thread'
 
 export interface CdnEventWorker {
     text: string

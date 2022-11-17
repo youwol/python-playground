@@ -18,7 +18,7 @@ import {
     skip,
     take,
 } from 'rxjs/operators'
-import { getModuleNameFromFile, patchPythonSrc } from './project'
+import { getModuleNameFromFile, patchPythonSrc } from './main-thread'
 import { logFactory } from './log-factory.conf'
 
 const log = logFactory().getChildLogger('worker-base.state.ts')

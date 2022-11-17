@@ -1,8 +1,7 @@
 import { children$, childrenWithReplace$, VirtualDOM } from '@youwol/flux-view'
 
-import { PyWorkerState } from '../py-workers/py-worker.state'
+import { WorkersPoolState, CdnEventWorker } from '../workers-pool'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { CdnEventWorker } from '../py-workers/utils'
 
 /**
  * @category View
@@ -16,14 +15,14 @@ export class WorkerView implements VirtualDOM {
     /**
      * @group States
      */
-    workerState: PyWorkerState
+    workerState: WorkersPoolState
 
     /**
      * @group Immutable DOM Constants
      */
     public readonly children
 
-    constructor(params: { workerState: PyWorkerState }) {
+    constructor(params: { workerState: WorkersPoolState }) {
         Object.assign(this, params)
         const eqSet = (xs, ys) =>
             xs.size === ys.size && [...xs].every((x) => ys.has(x))
@@ -73,9 +72,9 @@ export class WorkerCard implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly workerState: PyWorkerState
+    public readonly workerState: WorkersPoolState
 
-    constructor(params: { workerId: string; workerState: PyWorkerState }) {
+    constructor(params: { workerId: string; workerState: WorkersPoolState }) {
         Object.assign(this, params)
         this.children = [
             {

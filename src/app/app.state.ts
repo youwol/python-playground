@@ -27,7 +27,7 @@ import {
     take,
     tap,
 } from 'rxjs/operators'
-import { ProjectState } from './project'
+import { MainThreadState } from './main-thread'
 import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
     createProjectRootNode,
@@ -40,9 +40,9 @@ import {
     WorkerIONode,
     WorkerOutputsNode,
 } from './explorer'
-import { Explorer, PyWorkers } from '.'
+import { Explorer, WorkersPool } from '.'
 import { logFactory } from './log-factory.conf'
-import { PyWorkerState } from './py-workers/py-worker.state'
+import { WorkersPoolState } from './workers-pool'
 import { WorkerBaseState } from './worker-base.state'
 
 const log = logFactory().getChildLogger('app.state.ts')
@@ -72,12 +72,12 @@ export class AppState {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly projectState: MainThreadState
 
     /**
      * @group Immutable Constants
      */
-    public readonly pyWorkersState$: BehaviorSubject<PyWorkerState[]>
+    public readonly pyWorkersState$: BehaviorSubject<WorkersPoolState[]>
 
     /**
      * @group Observables
@@ -109,17 +109,17 @@ export class AppState {
     }) {
         Object.assign(this, params)
 
-        this.projectState = new ProjectState({
+        this.projectState = new MainThreadState({
             project: params.project,
             rawLog$: this.rawLog$,
             appState: this,
         })
         const initialWorkers = (params.project.pyWorkers || []).map(
             (pyWorker) => {
-                return new PyWorkerState({ pyWorker, rawLog$: this.rawLog$ })
+                return new WorkersPoolState({ pyWorker, rawLog$: this.rawLog$ })
             },
         )
-        this.pyWorkersState$ = new BehaviorSubject<PyWorkerState[]>(
+        this.pyWorkersState$ = new BehaviorSubject<WorkersPoolState[]>(
             initialWorkers,
         )
 
@@ -347,10 +347,10 @@ export class AppState {
     }
 
     addPyWorker() {
-        const pyWorker = PyWorkers.getDefaultWorker({
+        const pyWorker = WorkersPool.getDefaultWorker({
             name: `Worker ${this.getWorkersPoolNodes().length}`,
         })
-        const state = new PyWorkerState({ pyWorker, rawLog$: this.rawLog$ })
+        const state = new WorkersPoolState({ pyWorker, rawLog$: this.rawLog$ })
         const node = new PyWorkerNode({
             pyWorker,
             state,

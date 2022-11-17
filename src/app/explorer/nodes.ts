@@ -6,11 +6,11 @@ import {
     WorkerInput$,
     WorkerOutput$,
 } from '../models'
-import { ProjectState } from '../project'
+import { MainThreadState } from '../main-thread'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
 import { WorkerBaseState } from '../worker-base.state'
-import { PyWorkerState } from '../py-workers/py-worker.state'
+import { WorkersPoolState } from '../workers-pool'
 
 /**
  * Node's signal data-structure
@@ -235,7 +235,7 @@ export class OutputViewNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: ProjectState
+    public readonly state: MainThreadState
 
     /**
      * @group Immutable Constants
@@ -243,7 +243,7 @@ export class OutputViewNode extends Node {
     public readonly htmlElement: HTMLElement | VirtualDOM
 
     constructor(params: {
-        projectState: ProjectState
+        projectState: MainThreadState
         name: string
         htmlElement: HTMLElement | VirtualDOM
     }) {
@@ -274,12 +274,12 @@ export class WorkerIONode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: PyWorkerState
+    public readonly state: WorkersPoolState
 
     constructor(params: {
         name: string
         type: 'input' | 'output'
-        state: PyWorkerState
+        state: WorkersPoolState
     }) {
         super({
             id: `${params.state.id}#${params.name}`,
@@ -299,9 +299,9 @@ export class WorkerInputsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: PyWorkerState
+    public readonly state: WorkersPoolState
 
-    constructor(params: { inputs: WorkerInput$[]; state: PyWorkerState }) {
+    constructor(params: { inputs: WorkerInput$[]; state: WorkersPoolState }) {
         super({
             id: `${params.state.id}#inputs`,
             name: 'Inputs',
@@ -326,9 +326,9 @@ export class WorkerOutputsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: PyWorkerState
+    public readonly state: WorkersPoolState
 
-    constructor(params: { outputs: WorkerOutput$[]; state: PyWorkerState }) {
+    constructor(params: { outputs: WorkerOutput$[]; state: WorkersPoolState }) {
         super({
             id: `${params.state.id}#outputs`,
             name: 'Outputs',
@@ -358,9 +358,9 @@ export class PyWorkerNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly state: PyWorkerState
+    public readonly state: WorkersPoolState
 
-    constructor(params: { pyWorker: PyWorker; state: PyWorkerState }) {
+    constructor(params: { pyWorker: PyWorker; state: WorkersPoolState }) {
         super({
             id: params.pyWorker.id,
             name: params.pyWorker.name,
@@ -390,8 +390,8 @@ export class PyWorkerNode extends Node {
 
 export function createProjectRootNode(
     project: Project,
-    projectState: ProjectState,
-    workersState: PyWorkerState[],
+    projectState: MainThreadState,
+    workersState: WorkersPoolState[],
 ) {
     const workersStateById = workersState.reduce(
         (acc, e) => ({ ...acc, [e.id]: e }),
