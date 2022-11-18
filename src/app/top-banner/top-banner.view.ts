@@ -70,7 +70,7 @@ export class ConfigurationSelectorView implements VirtualDOM {
                 innerText: 'Configurations',
             },
             new ConfigurationsDropDown({
-                mainThreadState: this.appState.projectState,
+                mainThreadState: this.appState.mainThreadState,
             }),
             new HeaderBtnView({
                 icon: 'fas fa-play',

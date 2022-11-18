@@ -78,7 +78,7 @@ export class AppState {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: MainThreadState
+    public readonly mainThreadState: MainThreadState
 
     /**
      * @group Immutable Constants
@@ -115,7 +115,7 @@ export class AppState {
     }) {
         Object.assign(this, params)
 
-        this.projectState = new EnvironmentState<MainThreadImplementation>({
+        this.mainThreadState = new EnvironmentState<MainThreadImplementation>({
             initialModel: params.project,
             rawLog$: this.rawLog$,
             executingImplementation: new MainThreadImplementation({
@@ -137,7 +137,7 @@ export class AppState {
 
         const rootNode = createProjectRootNode(
             params.project,
-            this.projectState,
+            this.mainThreadState,
             initialWorkers,
         )
         this.explorerState = new Explorer.TreeState({
@@ -150,7 +150,7 @@ export class AppState {
             return this.pyWorkersState$.pipe(
                 switchMap((workers) => {
                     return combineLatest([
-                        toObs(this.projectState),
+                        toObs(this.mainThreadState),
                         ...workers.map((w) => toObs(w)),
                     ])
                 }),
@@ -191,7 +191,7 @@ export class AppState {
             this.openTab(node)
         })
 
-        this.projectState.runStart$.subscribe(() => {
+        this.mainThreadState.runStart$.subscribe(() => {
             const toKeep = this.openTabs$.value.filter(
                 (v) => !(v instanceof OutputViewNode),
             )
@@ -290,7 +290,7 @@ export class AppState {
                 reduce((acc, e) => [...acc, e], []),
             )
             .subscribe(() => {
-                this.projectState.run()
+                this.mainThreadState.run()
             })
     }
 
@@ -319,20 +319,20 @@ export class AppState {
         const path = `./${name}.${kind}`
         const factory = kind == 'js' ? HelpersJsSourceNode : SourceNode
         this.explorerState.addChild(
-            this.projectState.id,
+            this.mainThreadState.id,
             new factory({
                 path,
-                state: this.projectState,
+                state: this.mainThreadState,
             }),
         )
-        this.projectState.ideState.addFile({ path, content: '' })
+        this.mainThreadState.ideState.addFile({ path, content: '' })
     }
 
     deleteFile(path: string) {
         log.info(`deleteFile: ${path}`)
         const node = this.explorerState.getNode(path)
         this.explorerState.removeNode(path)
-        this.projectState.removeFile(path)
+        this.mainThreadState.removeFile(path)
         this.closeTab(node)
     }
 
@@ -340,11 +340,11 @@ export class AppState {
         log.info(`renameFile: ${node.id} with name ${name}`)
         const factory = name.endsWith('.js') ? HelpersJsSourceNode : SourceNode
         const path = `./${name}`
-        const newNode = new factory({ path, state: this.projectState })
-        this.projectState.ideState.moveFile(node.id, `./${name}`)
+        const newNode = new factory({ path, state: this.mainThreadState })
+        this.mainThreadState.ideState.moveFile(node.id, `./${name}`)
         this.explorerState.replaceNode(
             node,
-            new factory({ path, state: this.projectState }),
+            new factory({ path, state: this.mainThreadState }),
         )
         this.closeTab(node)
         this.openTab(newNode)
@@ -365,7 +365,7 @@ export class AppState {
         })
         const actualWorkers = this.pyWorkersState$.getValue()
         this.pyWorkersState$.next([...actualWorkers, state])
-        this.explorerState.addChild(this.projectState.id, node)
+        this.explorerState.addChild(this.mainThreadState.id, node)
     }
 
     getPythonProxy() {
@@ -386,7 +386,7 @@ export class AppState {
     }
 
     private getWorkersPoolNodes() {
-        const projectNode = this.explorerState.getNode(this.projectState.id)
+        const projectNode = this.explorerState.getNode(this.mainThreadState.id)
         return projectNode
             .resolvedChildren()
             .filter((node) => node instanceof WorkersPoolNode)

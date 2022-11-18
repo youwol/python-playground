@@ -18,7 +18,7 @@ export class OutputViewsTab extends DockableTabs.Tab {
                         width: '300px',
                     },
                     children: children$(
-                        appState.projectState.executingImplementation
+                        appState.mainThreadState.executingImplementation
                             .createdOutputs$,
                         (outputs) => {
                             return outputs.map((output) => {
