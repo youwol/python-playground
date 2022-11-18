@@ -1,6 +1,6 @@
 import { Environment, ExecutingImplementation } from '../environment.state'
 import { RawLog, Requirements, WorkerCommon } from '../../models'
-import { BehaviorSubject, Observable, Subject } from 'rxjs'
+import { BehaviorSubject, forkJoin, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
@@ -173,21 +173,32 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
             mergeMap((workersPool) => {
                 const title = 'Synchronize file-system'
                 const context = new Context(title)
-                return workersPool.schedule({
-                    title,
-                    entryPoint: entryPointSyncFileSystem,
-                    args: {
-                        fsMap: fileSystem,
-                        exportedRxjsSymbol:
-                            setup.getDependencySymbolExported('rxjs'),
-                        exportedPyodideInstanceName:
-                            Environment.ExportedPyodideInstanceName,
+                const installs$ = Object.keys(workersPool.workers$.value).map(
+                    (workerId) => {
+                        return workersPool
+                            .schedule({
+                                title,
+                                entryPoint: entryPointSyncFileSystem,
+                                args: {
+                                    fsMap: fileSystem,
+                                    exportedRxjsSymbol:
+                                        setup.getDependencySymbolExported(
+                                            'rxjs',
+                                        ),
+                                    exportedPyodideInstanceName:
+                                        Environment.ExportedPyodideInstanceName,
+                                },
+                                targetWorkerId: workerId,
+                                context,
+                            })
+                            .pipe(
+                                filter((d) => d.type == 'Exit'),
+                                take(1),
+                            )
                     },
-                    context,
-                })
+                )
+                return forkJoin(installs$)
             }),
-            filter((d) => d.type == 'Exit'),
-            take(1),
         )
     }
 
@@ -277,6 +288,20 @@ result
                 )
                 .subscribe((messageResult: MessageDataExit) => {
                     resolve(messageResult.result)
+                })
+        })
+    }
+
+    reserve(workersCount) {
+        return new Promise<void>((resolve) => {
+            this.exeEnv.workersFactory$
+                .pipe(
+                    mergeMap((factory) => {
+                        return factory.reserve({ workersCount })
+                    }),
+                )
+                .subscribe(() => {
+                    resolve()
                 })
         })
     }
