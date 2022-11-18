@@ -6,6 +6,7 @@ import {
 } from '../environments/workers-pool'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { EnvironmentState } from '../environments/environment.state'
+import { ConfigurationSelectorView } from '../top-banner'
 
 /**
  * @category View
@@ -90,6 +91,10 @@ export class WorkerCard implements VirtualDOM {
                 tag: 'h3',
                 innerText: `Worker ${this.workerId}`,
             },
+            new ConfigurationSelectorView({
+                state: this.workersPoolState,
+                onRun: () => this.workersPoolState.run(),
+            }),
             {
                 class: 'p-2',
                 children: childrenWithReplace$(

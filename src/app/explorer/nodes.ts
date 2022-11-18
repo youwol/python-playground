@@ -278,6 +278,9 @@ export class WorkersPoolNode extends Node {
                 new RequirementsNode({
                     state: params.state,
                 }),
+                new ConfigurationsNode({
+                    state: params.state,
+                }),
                 ...params.pyWorker.sources.map((source) => {
                     return new SourceNode({
                         path: source.path,
