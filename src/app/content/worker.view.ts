@@ -56,7 +56,7 @@ export class WorkerCard implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public readonly class = 'p-2 rounded border'
+    public readonly class = 'p-2 m-2 rounded border'
 
     /**
      * @group Immutable DOM Constants
