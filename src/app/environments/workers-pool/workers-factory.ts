@@ -1,16 +1,19 @@
 /** @format */
 
-import { Observable, of, Subject } from 'rxjs'
-import { filter, map, reduce, take, takeWhile, tap } from 'rxjs/operators'
+import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs'
+import { filter, map, take, takeWhile, tap } from 'rxjs/operators'
 import { Context } from '../../context'
-
+import { CdnEvent } from '@youwol/cdn-client'
+import { isCdnEventMessage } from './utils'
 type WorkerId = string
 
-interface WorkerDependency {
-    id: string
-    src: string
-    import?: (GlobalScope, src) => void
-    sideEffects?: (globalScope, exports) => void
+interface WorkerCdnInstallation {
+    modules: string[]
+    aliases: { [k: string]: string }
+    customInstallers: {
+        module: string
+        installInputs: Record<string, unknown>
+    }[]
 }
 
 interface WorkerFunction<T> {
@@ -21,6 +24,13 @@ interface WorkerFunction<T> {
 interface WorkerVariable<T> {
     id: string
     value: T
+}
+
+interface WorkerEnvironment {
+    cdnUrl: string
+    variables: WorkerVariable<unknown>[]
+    functions: WorkerFunction<unknown>[]
+    cdnInstallation: WorkerCdnInstallation
 }
 
 export interface WorkerContext {
@@ -38,13 +48,6 @@ interface MessageDataExecute {
 type MessageDataVariables = WorkerVariable<unknown>[]
 
 type MessageDataFunctions = WorkerFunction<string>[]
-
-interface MessageDataScript {
-    import: string
-    id: string
-    src: string
-    sideEffects: string
-}
 
 export interface MessageDataExit {
     taskId: string
@@ -185,87 +188,53 @@ function entryPointWorker(messageEvent: MessageEvent) {
             return
         }
     }
-    if (message.type == 'installVariables') {
-        const data: MessageDataVariables =
-            message.data as unknown as MessageDataVariables
-        data.forEach((d) => {
-            workerScope[d.id] = d.value
-        })
-    }
-    if (message.type == 'installFunctions') {
-        const data: MessageDataFunctions =
-            message.data as unknown as MessageDataFunctions
-        data.forEach((d) => {
-            workerScope[d.id] = new Function(d.target)()
-        })
-    }
-    if (message.type == 'installScript') {
-        //let GlobalScope = _GlobalScope ? _GlobalScope : self as any
-        const data: MessageDataScript =
-            message.data as unknown as MessageDataScript
-        const GlobalScope = self
-        const exports = {}
-        if (!data.import) {
-            workerScope.postMessage({
-                type: 'Log',
-                data: {
-                    logLevel: 'info',
-                    text: `Installing ${data.id} using default import`,
-                },
-            })
-            new Function('document', 'exports', '__dirname', data.src)(
-                GlobalScope,
-                exports,
-                '',
-            )
-        } else {
-            workerScope.postMessage({
-                type: 'Log',
-                data: {
-                    logLevel: 'info',
-                    text: `Installing ${data.id} using provided import function: ${data.import}`,
-                },
-            })
-            const importFunction = new Function(data.import)()
-            importFunction(GlobalScope, data.src)
-        }
-        workerScope.postMessage({
-            type: 'Log',
-            data: {
-                logLevel: 'info',
-                text: `Installing ${data.id} using provided import function: ${data.import}`,
-            },
-        })
+}
 
-        if (data.sideEffects) {
-            const sideEffectFunction = new Function(data.sideEffects)()
-            const promise = sideEffectFunction(GlobalScope, exports)
-            if (promise instanceof Promise) {
-                promise.then(() => {
-                    workerScope.postMessage({
-                        type: 'DependencyInstalled',
-                        data: {
-                            id: data.id,
-                        },
-                    })
-                })
-            } else {
-                workerScope.postMessage({
-                    type: 'DependencyInstalled',
-                    data: {
-                        id: data.id,
-                    },
-                })
-            }
-        } else {
-            workerScope.postMessage({
-                type: 'DependencyInstalled',
-                data: {
-                    id: data.id,
-                },
-            })
-        }
+export interface MessageDataInstall {
+    cdnUrl: string
+    variables: WorkerVariable<unknown>[]
+    functions: { id: string; target: string }[]
+    cdnInstallation: WorkerCdnInstallation
+}
+
+function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
+    self['importScripts'](input.args.cdnUrl)
+    const cdn = self['@youwol/cdn-client']
+    cdn.Client.HostName = window.location.origin
+
+    const onEvent = (cdnEvent) => {
+        const message = { type: 'CdnEvent', event: cdnEvent }
+        input.context.sendData(message)
     }
+
+    const customInstallers = input.args.cdnInstallation.customInstallers.map(
+        (installer) => {
+            return {
+                installInputs: { ...installer.installInputs, onEvent },
+                module: installer.module,
+            }
+        },
+    )
+    const cdnBody = {
+        ...input.args.cdnInstallation,
+        customInstallers,
+        //onEvent,
+    }
+    return cdn
+        .install(cdnBody)
+        .then(() => {
+            console.log('Add functions', input.args.functions)
+            input.args.functions.forEach((f) => {
+                self[f.id] = new Function(f.target)()
+            })
+            input.args.variables.forEach((v) => {
+                self[v.id] = v.value
+            })
+        })
+        .then(() => {
+            const message = { type: 'installEvent', value: 'install done' }
+            input.context.sendData(message)
+        })
 }
 
 export class Process {
@@ -313,40 +282,107 @@ export class Process {
 }
 
 export class WorkersFactory {
-    poolSize = navigator.hardwareConcurrency - 2
+    public readonly poolSize = navigator.hardwareConcurrency - 2
 
-    workers: { [key: string]: Worker } = {}
-    channels$: { [key: string]: Subject<MessageEventData> } = {}
-    installedDependencies: { [key: string]: Array<string> } = {}
+    public readonly workers$ = new BehaviorSubject<{ [p: string]: Worker }>({})
+    public readonly runningTasks$ = new BehaviorSubject<
+        { workerId: string; taskId: string }[]
+    >([])
+    public readonly busyWorkers$ = new BehaviorSubject<string[]>([])
+    public readonly workerReleased$ = new Subject<{
+        workerId: WorkerId
+        taskId: string
+    }>()
 
-    tasksQueue: Array<{
+    public readonly backgroundContext = new Context('background management', {})
+
+    public readonly cdnEvent$: Subject<CdnEvent>
+
+    public readonly environment: WorkerEnvironment
+
+    private tasksQueue: Array<{
         taskId: string
         targetWorkerId?: string
         args: unknown
         channel$: Subject<MessageEventData>
         entryPoint: unknown
     }> = []
-    runningTasks: Array<{ workerId: string; taskId: string }> = []
-    busyWorkers: Array<string> = []
 
-    dependencies: WorkerDependency[] = []
-    functions: WorkerFunction<unknown>[] = []
-    variables: WorkerVariable<unknown>[] = []
-
-    workerReleased$ = new Subject<{ workerId: WorkerId; taskId: string }>()
-
-    backgroundContext = new Context('background management', {})
-
-    constructor() {
+    constructor({
+        cdnEvent$,
+        variables,
+        functions,
+        cdnInstallation,
+        cdnUrl,
+    }: {
+        cdnEvent$: Subject<CdnEvent>
+        cdnUrl: string
+        variables?: { [_k: string]: unknown }
+        functions?: { [_k: string]: unknown }
+        cdnInstallation?: WorkerCdnInstallation
+    }) {
+        this.cdnEvent$ = cdnEvent$
         // Need to manage lifecycle of following subscription
         this.workerReleased$.subscribe(({ workerId, taskId }) => {
-            this.busyWorkers = this.busyWorkers.filter((wId) => wId != workerId)
-            this.runningTasks = this.runningTasks.filter(
-                (task) => task.taskId != taskId,
+            this.busyWorkers$.next(
+                this.busyWorkers$.value.filter((wId) => wId != workerId),
+            )
+            this.runningTasks$.next(
+                this.runningTasks$.value.filter(
+                    (task) => task.taskId != taskId,
+                ),
             )
 
             this.pickTask(workerId, this.backgroundContext)
         })
+        this.environment = {
+            cdnUrl,
+            variables: Object.entries(variables || {}).map(([id, value]) => ({
+                id,
+                value,
+            })),
+            functions: Object.entries(functions || {}).map(([id, target]) => ({
+                id,
+                target,
+            })),
+            cdnInstallation,
+        }
+    }
+
+    reserve({ workersCount }: { workersCount: number }) {
+        const title = 'install requirements'
+        const context = new Context(title)
+        const scheduleInstall$ = () =>
+            this.schedule({
+                title,
+                entryPoint: entryPointInstall,
+                args: {
+                    cdnUrl: this.environment.cdnUrl,
+                    variables: this.environment.variables,
+                    functions: this.environment.functions.map(
+                        ({ id, target }) => ({
+                            id,
+                            target: `return ${String(target)}`,
+                        }),
+                    ),
+                    cdnInstallation: this.environment.cdnInstallation,
+                },
+                context,
+            }).pipe(
+                tap((message: MessageEventData) => {
+                    const cdnEvent = isCdnEventMessage(message)
+                    if (cdnEvent) {
+                        this.cdnEvent$.next(cdnEvent)
+                    }
+                }),
+                filter((d) => d.type == 'Exit'),
+                take(1),
+            )
+        return forkJoin(
+            new Array(workersCount)
+                .fill(undefined)
+                .map(() => scheduleInstall$()),
+        )
     }
 
     schedule<TArgs = unknown>({
@@ -374,10 +410,10 @@ export class WorkersFactory {
 
             const r$ = this.instrumentChannel$(channel$, p, taskId, context)
 
-            if (targetWorkerId && !this.workers[targetWorkerId]) {
+            if (targetWorkerId && !this.workers$.value[targetWorkerId]) {
                 throw Error('Provided workerId not known')
             }
-            if (targetWorkerId && this.workers[targetWorkerId]) {
+            if (targetWorkerId && this.workers$.value[targetWorkerId]) {
                 this.tasksQueue.push({
                     entryPoint,
                     args,
@@ -386,7 +422,7 @@ export class WorkersFactory {
                     targetWorkerId,
                 })
 
-                if (!this.busyWorkers.includes(targetWorkerId)) {
+                if (!this.busyWorkers$.value.includes(targetWorkerId)) {
                     this.pickTask(targetWorkerId, ctx)
                 }
 
@@ -405,13 +441,7 @@ export class WorkersFactory {
             worker$
                 .pipe(
                     map(({ workerId }) => {
-                        ctx.info(`Got a worker ready ${workerId}`, {
-                            installedDependencies:
-                                this.installedDependencies[workerId],
-                            requiredDependencies: this.dependencies.map(
-                                (d) => d.id,
-                            ),
-                        })
+                        ctx.info(`Got a worker ready ${workerId}`)
                         this.tasksQueue.push({
                             entryPoint,
                             args,
@@ -425,55 +455,6 @@ export class WorkersFactory {
                 .subscribe()
 
             return r$
-        })
-    }
-
-    import({
-        sources,
-        functions,
-        variables,
-    }: {
-        sources: WorkerDependency[]
-        functions: WorkerFunction<unknown>[]
-        variables: WorkerVariable<unknown>[]
-    }) {
-        this.dependencies = [...this.dependencies, ...sources]
-        this.functions = [...this.functions, ...functions]
-        this.variables = [...this.variables, ...variables]
-        Object.values(this.workers).forEach((worker) =>
-            this.installDependencies(worker, sources, functions, variables),
-        )
-    }
-
-    installDependencies(worker, sources, functions, variables) {
-        worker.postMessage({
-            type: 'installVariables',
-            data: variables,
-        })
-
-        const dataFcts = functions.map((fct) => ({
-            id: fct.id,
-            target: `return ${String(fct.target)}`,
-        }))
-        worker.postMessage({
-            type: 'installFunctions',
-            data: dataFcts,
-        })
-
-        sources.forEach((dependency) => {
-            worker.postMessage({
-                type: 'installScript',
-                data: {
-                    src: dependency.src,
-                    id: dependency.id,
-                    import: dependency.import
-                        ? `return ${String(dependency.import)}`
-                        : undefined,
-                    sideEffects: dependency.sideEffects
-                        ? `return ${String(dependency.sideEffects)}`
-                        : undefined,
-                },
-            })
         })
     }
 
@@ -512,15 +493,6 @@ export class WorkersFactory {
                 exposedProcess.succeed()
                 context.info('worker exited normally', message)
             })
-
-        /*channel$
-            .pipe(filter((message) => message.data.taskId != taskId))
-            .subscribe((message: any) => {
-                throw Error(
-                    `Mismatch in taskId: expected ${taskId} but got from message ${message.data.taskId}`,
-                )
-            })*/
-
         channel$
             .pipe(filter((message) => message.type == 'Log'))
             .subscribe((message) => {
@@ -544,18 +516,18 @@ export class WorkersFactory {
         context: Context,
     ): Observable<{ workerId: string; worker: Worker }> {
         return context.withChild('get worker', (ctx) => {
-            const idleWorkerId = Object.keys(this.workers).find(
-                (workerId) => !this.busyWorkers.includes(workerId),
+            const idleWorkerId = Object.keys(this.workers$.value).find(
+                (workerId) => !this.busyWorkers$.value.includes(workerId),
             )
 
             if (idleWorkerId) {
                 ctx.info(`return idle worker ${idleWorkerId}`)
                 return of({
                     workerId: idleWorkerId,
-                    worker: this.workers[idleWorkerId],
+                    worker: this.workers$.value[idleWorkerId],
                 })
             }
-            if (Object.keys(this.workers).length < this.poolSize) {
+            if (Object.keys(this.workers$.value).length < this.poolSize) {
                 return this.createWorker$(ctx)
             }
             return undefined
@@ -567,11 +539,7 @@ export class WorkersFactory {
     ): Observable<{ workerId: string; worker: Worker }> {
         return context.withChild('create worker', (ctx) => {
             const workerId = `w${Math.floor(Math.random() * 1e6)}`
-            ctx.info(`Create worker ${workerId}`, {
-                requiredDependencies: this.dependencies.map((d) => d.id),
-            })
-
-            this.channels$[workerId] = new Subject()
+            ctx.info(`Create worker ${workerId}`)
 
             const blob = new Blob(
                 ['self.onmessage = ', entryPointWorker.toString()],
@@ -579,43 +547,9 @@ export class WorkersFactory {
             )
             const url = URL.createObjectURL(blob)
             const worker = new Worker(url)
-            this.installedDependencies[workerId] = []
 
-            worker.onmessage = ({ data }) => {
-                if (data.type == 'DependencyInstalled') {
-                    this.installedDependencies[workerId].push(data.id)
-                    this.channels$[workerId].next(data)
-                }
-            }
-
-            this.installDependencies(
-                worker,
-                this.dependencies,
-                this.functions,
-                this.variables,
-            )
-
-            const dependencyCount = Object.keys(this.dependencies).length
-            if (dependencyCount == 0) {
-                ctx.info('No dependencies to load: worker ready', {
-                    workerId: workerId,
-                    worker,
-                })
-                this.workers[workerId] = worker
-                return of({ workerId, worker })
-            }
-            return this.channels$[workerId].pipe(
-                filter((message) => message.type == 'DependencyInstalled'),
-                take(dependencyCount),
-                reduce((acc, e) => {
-                    return acc.concat(e)
-                }, []),
-                map(() => worker),
-                tap(() => (this.workers[workerId] = worker)),
-                map((worker) => {
-                    return { workerId, worker }
-                }),
-            )
+            this.workers$.next({ ...this.workers$.value, [workerId]: worker })
+            return of({ workerId, worker })
         })
     }
 
@@ -633,7 +567,7 @@ export class WorkersFactory {
             ) {
                 return
             }
-            this.busyWorkers.push(workerId)
+            this.busyWorkers$.next([...this.busyWorkers$.value, workerId])
             const { taskId, entryPoint, args, channel$ } = this.tasksQueue.find(
                 (t) =>
                     t.targetWorkerId ? t.targetWorkerId === workerId : true,
@@ -641,8 +575,11 @@ export class WorkersFactory {
 
             this.tasksQueue = this.tasksQueue.filter((t) => t.taskId != taskId)
 
-            this.runningTasks.push({ workerId, taskId })
-            const worker = this.workers[workerId]
+            this.runningTasks$.next([
+                ...this.runningTasks$.value,
+                { workerId, taskId },
+            ])
+            const worker = this.workers$.value[workerId]
 
             channel$
                 .pipe(

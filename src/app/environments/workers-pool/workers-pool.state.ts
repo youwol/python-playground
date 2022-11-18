@@ -5,13 +5,12 @@ import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
     MessageDataExit,
-    MessageEventData,
     WorkersFactory,
 } from './workers-factory'
 import {
     dispatchWorkerMessage,
+    formatCdnDependencies,
     getCdnClientSrc$,
-    isCdnEventMessage,
     objectPyToJs,
 } from './utils'
 import { Context } from '../../context'
@@ -23,49 +22,7 @@ import {
     syncFileSystem,
     WorkerListener,
 } from '../in-worker-executable'
-import { CdnEvent } from '@youwol/cdn-client'
-
-interface EntryPointInstallArgs {
-    requirements: Requirements
-    exportedPyodideInstanceName: string
-}
-
-function entryPointInstall(input: EntryPointArguments<EntryPointInstallArgs>) {
-    const cdn = self['@youwol/cdn-client']
-    cdn.Client.HostName = window.location.origin
-    return cdn
-        .install({
-            modules: [
-                'rxjs#^6.5.5',
-                ...input.args.requirements.javascriptPackages.modules,
-            ],
-            aliases: input.args.requirements.javascriptPackages.aliases,
-            customInstallers: [
-                {
-                    module: '@youwol/cdn-pyodide-loader',
-                    installInputs: {
-                        modules: input.args.requirements.pythonPackages.map(
-                            (p) => `@pyodide/${p}`,
-                        ),
-                        warmUp: true,
-                        onEvent: (cdnEvent) => {
-                            const message = {
-                                type: 'CdnEvent',
-                                event: cdnEvent,
-                            }
-                            input.context.sendData(message)
-                        },
-                        exportedPyodideInstanceName:
-                            input.args.exportedPyodideInstanceName,
-                    },
-                },
-            ],
-        })
-        .then(() => {
-            const message = { type: 'installEvent', value: 'install done' }
-            input.context.sendData(message)
-        })
-}
+import { CdnEvent, getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
 
 interface EntryPointSyncFsMapArgs {
     fsMap: Map<string, string>
@@ -149,55 +106,30 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         rawLog$: Subject<RawLog>,
         cdnEvent$: Subject<CdnEvent>,
     ) {
-        this.workersFactory$.next(undefined)
-        return WorkersPoolImplementation.cdnSrc$.pipe(
-            take(1),
-            mergeMap((src) => {
-                const title = 'install requirements'
-                const context = new Context(title)
-                const workersPool = new WorkersFactory()
-                workersPool.import({
-                    sources: [{ id: '@youwol/cdn-client', src }],
-                    functions: [
-                        { id: 'syncFileSystem', target: syncFileSystem },
-                        { id: 'registerJsModules', target: registerJsModules },
-                        {
-                            id: 'registerYwPyodideModule',
-                            target: registerYwPyodideModule,
-                        },
-                        {
-                            id: 'getModuleNameFromFile',
-                            target: getModuleNameFromFile,
-                        },
-                    ],
-                    variables: [],
-                })
-                return workersPool
-                    .schedule({
-                        title,
-                        entryPoint: entryPointInstall,
-                        args: {
-                            requirements,
-                            exportedPyodideInstanceName:
-                                Environment.ExportedPyodideInstanceName,
-                        },
-                        context,
-                    })
-                    .pipe(
-                        tap((message: MessageEventData) => {
-                            const cdnEvent = isCdnEventMessage(message)
-                            if (cdnEvent) {
-                                cdnEvent$.next(cdnEvent)
-                            }
-                        }),
-                        filter((d) => d.type == 'Exit'),
-                        take(1),
-                        tap(() => {
-                            this.workersFactory$.next(workersPool)
-                        }),
-                    )
-            }),
-        )
+        const minWorkersCount = 2
+        const workersFactory = new WorkersFactory({
+            cdnEvent$,
+            cdnUrl: `${window.location.origin}${getUrlBase(
+                '@youwol/cdn-client',
+                cdnSetup.version,
+            )}`,
+            functions: {
+                syncFileSystem: syncFileSystem,
+                registerJsModules: registerJsModules,
+                registerYwPyodideModule: registerYwPyodideModule,
+                getModuleNameFromFile: getModuleNameFromFile,
+            },
+            cdnInstallation: formatCdnDependencies(requirements),
+        })
+        return workersFactory
+            .reserve({
+                workersCount: minWorkersCount,
+            })
+            .pipe(
+                tap(() => {
+                    this.workersFactory$.next(workersFactory)
+                }),
+            )
     }
 
     initializeBeforeRun(fileSystem: Map<string, string>) {
