@@ -3,4 +3,4 @@
  *
  * @module Project
  */
-export * from './main-thread.state'
+export * from './main-thread.implementation'
