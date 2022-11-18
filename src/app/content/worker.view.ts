@@ -93,6 +93,7 @@ export class PoolSizeSelectorView {
             },
             {
                 tag: 'select',
+                class: 'mx-2',
                 onchange: (ev) => {
                     console.log('Set capacity', ev.target.value)
                     this.workersPoolState.executingImplementation.capacity$.next(
