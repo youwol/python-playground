@@ -119,7 +119,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         this.capacity$ = new BehaviorSubject<number>(capacity)
         this.signals = {
             install$: this.capacity$.pipe(skip(1)),
-            save$: this.capacity$.pipe(skip(1)),
+            save$: this.capacity$,
         }
     }
 
