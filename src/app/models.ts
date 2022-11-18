@@ -24,6 +24,7 @@ export interface Environment {
 export interface WorkersPool {
     id: string
     name: string
+    capacity: number
     environment: Environment
     sources: Source[]
 }

@@ -20,7 +20,7 @@ export class WorkerView implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public class = 'w-100 h-100 d-flex p-2 flex-wrap'
+    public class = 'w-100 h-100 d-flex flex-column'
 
     /**
      * @group States
@@ -30,7 +30,7 @@ export class WorkerView implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public readonly children
+    public readonly children: VirtualDOM[]
 
     constructor(params: {
         workerState: EnvironmentState<WorkersPoolImplementation>
@@ -47,17 +47,79 @@ export class WorkerView implements VirtualDOM {
             distinctUntilChanged(eqSet),
         )
 
-        this.children = children$(workerIds$, (workerIds) => {
-            return [...workerIds].map((workerId) => {
-                return new WorkerCard({
-                    workerId,
-                    workersPoolState: this.workerState,
-                })
-            })
-        })
+        this.children = [
+            new PoolSizeSelectorView({ workersPoolState: this.workerState }),
+            {
+                class: 'w-100 d-flex flex-grow-1 p-2 flex-wrap',
+                children: children$(workerIds$, (workerIds) => {
+                    return [...workerIds].map((workerId) => {
+                        return new WorkerCard({
+                            workerId,
+                            workersPoolState: this.workerState,
+                        })
+                    })
+                }),
+            },
+        ]
     }
 }
 
+/**
+ * @category View
+ */
+export class PoolSizeSelectorView {
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly class = 'p-2 m-2 d-flex align-items-center'
+
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly children: VirtualDOM[]
+
+    /**
+     * @group States
+     */
+    public readonly workersPoolState: EnvironmentState<WorkersPoolImplementation>
+
+    constructor(params: {
+        workersPoolState: EnvironmentState<WorkersPoolImplementation>
+    }) {
+        Object.assign(this, params)
+        this.children = [
+            {
+                innerText: 'Capacity:',
+            },
+            {
+                tag: 'select',
+                onchange: (ev) => {
+                    console.log('Set capacity', ev.target.value)
+                    this.workersPoolState.executingImplementation.capacity$.next(
+                        parseInt(ev.target.value),
+                    )
+                },
+                children: children$(
+                    this.workersPoolState.executingImplementation.capacity$,
+                    (selected) => {
+                        return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => {
+                            return {
+                                tag: 'option',
+                                value: value,
+                                innerText: value,
+                                selected: value == selected,
+                            }
+                        })
+                    },
+                ),
+            },
+        ]
+    }
+}
+
+/**
+ * @category View
+ */
 export class WorkerCard implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
@@ -69,6 +131,7 @@ export class WorkerCard implements VirtualDOM {
      */
     public readonly style = {
         height: 'fit-content',
+        width: 'fit-content',
     }
 
     /**

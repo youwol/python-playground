@@ -1,7 +1,7 @@
 import { Environment, ExecutingImplementation } from '../environment.state'
-import { RawLog, Requirements } from '../../models'
+import { RawLog, Requirements, WorkerCommon } from '../../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
-import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
+import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
     MessageDataExit,
@@ -97,14 +97,45 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         undefined,
     )
 
+    /**
+     * @group Observables
+     */
     public readonly busyWorkers$ = new BehaviorSubject<string[]>([])
+
+    /**
+     * @group Observable
+     */
+    public readonly capacity$: BehaviorSubject<number>
+
+    /**
+     * @group Observable
+     */
+    public readonly signals: {
+        install$: Observable<number>
+        save$: Observable<unknown>
+    }
+
+    constructor({ capacity }: { capacity: number }) {
+        this.capacity$ = new BehaviorSubject<number>(capacity)
+        this.signals = {
+            install$: this.capacity$.pipe(skip(1)),
+            save$: this.capacity$.pipe(skip(1)),
+        }
+    }
+
+    serialize(model: WorkerCommon) {
+        return {
+            ...model,
+            capacity: this.capacity$.value,
+        }
+    }
 
     installRequirements(
         requirements: Requirements,
         rawLog$: Subject<RawLog>,
         cdnEvent$: Subject<CdnEvent>,
     ) {
-        const minWorkersCount = 2
+        const minWorkersCount = this.capacity$.value
         const workersFactory = new WorkersFactory({
             cdnEvent$,
             cdnUrl: `${window.location.origin}${getUrlBase(

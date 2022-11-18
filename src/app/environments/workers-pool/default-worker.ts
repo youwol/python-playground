@@ -14,6 +14,7 @@ export function getDefaultWorker({ name }: { name: string }): WorkersPool {
     return {
         id: `${uuidv4()}`,
         name,
+        capacity: 2,
         environment: {
             requirements: {
                 pythonPackages: [],

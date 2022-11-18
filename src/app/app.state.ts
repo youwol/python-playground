@@ -127,7 +127,9 @@ export class AppState {
                 return new EnvironmentState<WorkersPoolImplementation>({
                     initialModel: workersPool,
                     rawLog$: this.rawLog$,
-                    executingImplementation: new WorkersPoolImplementation(),
+                    executingImplementation: new WorkersPoolImplementation({
+                        capacity: workersPool.capacity,
+                    }),
                 })
             },
         )
@@ -357,7 +359,9 @@ export class AppState {
         const state = new EnvironmentState<WorkersPoolImplementation>({
             initialModel: pyWorker,
             rawLog$: this.rawLog$,
-            executingImplementation: new WorkersPoolImplementation(),
+            executingImplementation: new WorkersPoolImplementation({
+                capacity: pyWorker.capacity,
+            }),
         })
         const node = new WorkersPoolNode({
             pyWorker,

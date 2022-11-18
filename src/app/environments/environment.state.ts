@@ -2,6 +2,7 @@ import {
     BehaviorSubject,
     combineLatest,
     Observable,
+    of,
     ReplaySubject,
     Subject,
 } from 'rxjs'
@@ -67,6 +68,13 @@ export class Environment {
 }
 
 export interface ExecutingImplementation {
+    signals?: {
+        install$?: Observable<unknown>
+        save$?: Observable<unknown>
+    }
+
+    serialize?(model: WorkerCommon): WorkerCommon & { [k: string]: unknown }
+
     execPythonCode(
         code: string,
         rawLog$: Subject<RawLog>,
@@ -173,7 +181,7 @@ export class EnvironmentState<T extends ExecutingImplementation> {
         executingImplementation: T
     }) {
         this.executingImplementation = executingImplementation
-
+        const signals = this.executingImplementation.signals
         this.rawLog$.subscribe((log) => {
             rawLog$.next(log)
         })
@@ -234,11 +242,12 @@ export class EnvironmentState<T extends ExecutingImplementation> {
         })
 
         this.serialized$ = combineLatest([
+            signals && signals.save$ ? signals.save$ : of(true),
             this.requirements$,
             this.configurations$,
             this.ideState.fsMap$.pipe(filter((fsMap) => fsMap != undefined)),
         ]).pipe(
-            map(([requirements, configurations, fsMap]) => {
+            map(([_, requirements, configurations, fsMap]) => {
                 return {
                     id: initialModel.id,
                     name: initialModel.name,
@@ -258,6 +267,11 @@ export class EnvironmentState<T extends ExecutingImplementation> {
                         }),
                 }
             }),
+            map((model) => {
+                return this.executingImplementation.serialize
+                    ? this.executingImplementation.serialize(model)
+                    : model
+            }),
             shareReplay({ bufferSize: 1, refCount: true }),
         )
         this.cdnEvents$ = this.cdnEvent$.pipe(
@@ -269,6 +283,12 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             }, []),
             shareReplay({ bufferSize: 1, refCount: true }),
         )
+        if (signals && signals.install$) {
+            this.executingImplementation.signals.install$
+                .pipe(mergeMap(() => this.applyRequirements()))
+                .subscribe()
+        }
+
         this.applyRequirements().subscribe()
     }
 
