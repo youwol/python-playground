@@ -10,7 +10,6 @@ import {
 import {
     dispatchWorkerMessage,
     formatCdnDependencies,
-    getCdnClientSrc$,
     objectPyToJs,
 } from './utils'
 import { Context } from '../../context'
@@ -97,11 +96,6 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     public readonly workersFactory$ = new BehaviorSubject<WorkersFactory>(
         undefined,
     )
-
-    /**
-     * @group Observables
-     */
-    static cdnSrc$ = getCdnClientSrc$()
 
     installRequirements(
         requirements: Requirements,
