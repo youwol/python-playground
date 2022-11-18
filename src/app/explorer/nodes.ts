@@ -70,7 +70,11 @@ export abstract class Node extends ImmutableTree.Node {
         this.name = name
     }
 
-    addProcess(process: { type: NodeSignal; id?: string }) {
+    addProcess(process: {
+        type: NodeSignal
+        id?: string
+        [k: string]: unknown
+    }) {
         const pid = process.id || `${Math.floor(Math.random() * 1e6)}`
         const runningProcesses = this.processes$
             .getValue()
