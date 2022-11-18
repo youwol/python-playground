@@ -97,6 +97,8 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         undefined,
     )
 
+    public readonly busyWorkers$ = new BehaviorSubject<string[]>([])
+
     installRequirements(
         requirements: Requirements,
         rawLog$: Subject<RawLog>,
@@ -116,6 +118,9 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                 getModuleNameFromFile: getModuleNameFromFile,
             },
             cdnInstallation: formatCdnDependencies(requirements),
+        })
+        workersFactory.busyWorkers$.subscribe((workers) => {
+            this.busyWorkers$.next(workers)
         })
         return workersFactory
             .reserve({

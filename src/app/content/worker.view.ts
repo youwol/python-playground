@@ -1,4 +1,9 @@
-import { children$, childrenWithReplace$, VirtualDOM } from '@youwol/flux-view'
+import {
+    attr$,
+    children$,
+    childrenWithReplace$,
+    VirtualDOM,
+} from '@youwol/flux-view'
 
 import {
     WorkersPoolImplementation,
@@ -87,10 +92,7 @@ export class WorkerCard implements VirtualDOM {
     }) {
         Object.assign(this, params)
         this.children = [
-            {
-                tag: 'h3',
-                innerText: `Worker ${this.workerId}`,
-            },
+            new WorkerCardTitleView(params),
             new ConfigurationSelectorView({
                 state: this.workersPoolState,
                 onRun: () => this.workersPoolState.run(),
@@ -116,6 +118,53 @@ export class WorkerCard implements VirtualDOM {
                             innerText: cdnEvent.text,
                         }
                     },
+                ),
+            },
+        ]
+    }
+}
+
+/**
+ * @category View
+ */
+export class WorkerCardTitleView implements VirtualDOM {
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly class = 'd-flex align-items-center'
+
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly children: VirtualDOM[]
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly workerId: string
+
+    /**
+     * @group States
+     */
+    public readonly workersPoolState: EnvironmentState<WorkersPoolImplementation>
+
+    constructor(params: {
+        workerId: string
+        workersPoolState: EnvironmentState<WorkersPoolImplementation>
+    }) {
+        Object.assign(this, params)
+        this.children = [
+            {
+                tag: 'h3',
+                innerText: `Worker ${this.workerId}`,
+            },
+            {
+                class: attr$(
+                    this.workersPoolState.executingImplementation.busyWorkers$,
+                    (busyWorkers) =>
+                        busyWorkers.includes(this.workerId)
+                            ? 'fas fa-play fv-text-success fv-blink mx-2'
+                            : '',
                 ),
             },
         ]
