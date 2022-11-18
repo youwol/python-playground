@@ -30,7 +30,7 @@ interface EntryPointSyncFsMapArgs {
     exportedRxjsSymbol: string
 }
 
-function entryPointSyncFileSystem(
+function entryPointSyncEnv(
     input: EntryPointArguments<EntryPointSyncFsMapArgs>,
 ) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
@@ -178,7 +178,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                         return workersPool
                             .schedule({
                                 title,
-                                entryPoint: entryPointSyncFileSystem,
+                                entryPoint: entryPointSyncEnv,
                                 args: {
                                     fsMap: fileSystem,
                                     exportedRxjsSymbol:
