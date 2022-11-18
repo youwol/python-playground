@@ -6,6 +6,7 @@ import { RawLog, Requirements } from '../../models'
 import { Subject } from 'rxjs'
 import { WorkerListener } from '../in-worker-executable'
 import { Environment } from '../environment.state'
+import { setup } from '../../../auto-generated'
 
 export interface CdnEventWorker {
     text: string
@@ -129,7 +130,10 @@ export function formatCdnDependencies(requirements: Requirements) {
     )}`
     return {
         cdnUrl,
-        modules: ['rxjs#^6.5.5', ...requirements.javascriptPackages.modules],
+        modules: [
+            `rxjs#${setup.runTimeDependencies.externals.rxjs}`,
+            ...requirements.javascriptPackages.modules,
+        ],
         aliases: requirements.javascriptPackages.aliases,
         customInstallers: [
             {

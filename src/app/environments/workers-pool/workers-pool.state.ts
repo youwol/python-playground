@@ -23,10 +23,12 @@ import {
     WorkerListener,
 } from '../in-worker-executable'
 import { CdnEvent, getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
+import { setup } from '../../../auto-generated'
 
 interface EntryPointSyncFsMapArgs {
     fsMap: Map<string, string>
     exportedPyodideInstanceName: string
+    exportedRxjsSymbol: string
 }
 
 function entryPointSyncFileSystem(
@@ -144,6 +146,8 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                     entryPoint: entryPointSyncFileSystem,
                     args: {
                         fsMap: fileSystem,
+                        exportedRxjsSymbol:
+                            setup.getDependencySymbolExported('rxjs'),
                         exportedPyodideInstanceName:
                             Environment.ExportedPyodideInstanceName,
                     },
