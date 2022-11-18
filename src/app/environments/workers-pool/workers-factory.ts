@@ -616,4 +616,8 @@ export class WorkersFactory {
             })
         })
     }
+
+    terminate() {
+        Object.values(this.workers$.value).forEach((w) => w.terminate())
+    }
 }

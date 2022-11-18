@@ -153,6 +153,8 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         workersFactory.busyWorkers$.subscribe((workers) => {
             this.busyWorkers$.next(workers)
         })
+        this.workersFactory$.value && this.workersFactory$.value.terminate()
+        this.workersFactory$.next(undefined)
         return workersFactory
             .reserve({
                 workersCount: minWorkersCount,
