@@ -198,6 +198,10 @@ export interface MessageDataInstall {
 }
 
 function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
+    if (self['@youwol/cdn-client']) {
+        // The environment is already installed
+        return Promise.resolve()
+    }
     self['importScripts'](input.args.cdnUrl)
     const cdn = self['@youwol/cdn-client']
     cdn.Client.HostName = window.location.origin
