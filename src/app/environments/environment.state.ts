@@ -338,17 +338,19 @@ export class EnvironmentState<T extends ExecutingImplementation> {
                         .initializeBeforeRun(fsMap, this.rawLog$)
                         .pipe(mapTo({ selectedConfig, fileSystem: fsMap }))
                 }),
+                mergeMap(({ fileSystem, selectedConfig }) => {
+                    const sourcePath = selectedConfig.scriptPath
+                    const patchedContent = patchPythonSrc(
+                        fileSystem.get(sourcePath),
+                    )
+                    return this.executingImplementation.execPythonCode(
+                        patchedContent,
+                        this.rawLog$,
+                    )
+                }),
             )
-            .subscribe(({ fileSystem, selectedConfig }) => {
-                const sourcePath = selectedConfig.scriptPath
-                const patchedContent = patchPythonSrc(
-                    fileSystem.get(sourcePath),
-                )
+            .subscribe(() => {
                 this.runDone$.next(true)
-                return this.executingImplementation.execPythonCode(
-                    patchedContent,
-                    this.rawLog$,
-                )
             })
     }
 }
