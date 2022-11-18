@@ -1,9 +1,11 @@
 import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
 import { children$, VirtualDOM } from '@youwol/flux-view'
-import { MainThreadImplementation } from '../environments/main-thread'
 import { combineLatest } from 'rxjs'
-import { EnvironmentState } from '../environments/environment.state'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
 
 /**
  * @category View
@@ -59,9 +61,16 @@ export class ConfigurationSelectorView implements VirtualDOM {
     /**
      * @group Immutable Constants
      */
-    public readonly appState: AppState
+    public readonly onRun: () => void
+    /**
+     * @group State
+     */
+    public readonly state: EnvironmentState<ExecutingImplementation>
 
-    constructor(params: { appState: AppState }) {
+    constructor(params: {
+        state: EnvironmentState<ExecutingImplementation>
+        onRun: () => void
+    }) {
         Object.assign(this, params)
 
         this.children = [
@@ -70,11 +79,11 @@ export class ConfigurationSelectorView implements VirtualDOM {
                 innerText: 'Configurations',
             },
             new ConfigurationsDropDown({
-                mainThreadState: this.appState.mainThreadState,
+                state: this.state,
             }),
             new HeaderBtnView({
                 icon: 'fas fa-play',
-                onClick: () => this.appState.run(),
+                onClick: () => this.onRun(),
             }),
         ]
     }
@@ -91,7 +100,12 @@ export class TopBannerView extends TopBannerBaseView {
                 children: [
                     {
                         class: 'flex-grow-1 d-flex justify-content-center',
-                        children: [new ConfigurationSelectorView({ appState })],
+                        children: [
+                            new ConfigurationSelectorView({
+                                state: appState.mainThreadState,
+                                onRun: () => appState.run(),
+                            }),
+                        ],
                     },
                     {
                         tag: 'a',
@@ -115,20 +129,20 @@ export class ConfigurationsDropDown implements VirtualDOM {
     public readonly children: VirtualDOM[]
 
     constructor({
-        mainThreadState,
+        state,
     }: {
-        mainThreadState: EnvironmentState<MainThreadImplementation>
+        state: EnvironmentState<ExecutingImplementation>
     }) {
         this.children = [
             {
                 tag: 'select',
                 onchange: (ev) => {
-                    mainThreadState.selectConfiguration(ev.target.value)
+                    state.selectConfiguration(ev.target.value)
                 },
                 children: children$(
                     combineLatest([
-                        mainThreadState.configurations$,
-                        mainThreadState.selectedConfiguration$,
+                        state.configurations$,
+                        state.selectedConfiguration$,
                     ]),
                     ([configurations, selectedName]) => {
                         return configurations.map((config) => {
