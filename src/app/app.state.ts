@@ -5,13 +5,7 @@ import {
     AssetsGateway,
     dispatchHTTPErrors,
 } from '@youwol/http-clients'
-import {
-    BehaviorSubject,
-    combineLatest,
-    from,
-    Observable,
-    ReplaySubject,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { Project, RawLog, WorkersPool } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
@@ -20,7 +14,6 @@ import {
     debounceTime,
     map,
     mergeMap,
-    reduce,
     skip,
     switchMap,
     take,
@@ -271,26 +264,9 @@ export class AppState {
     }
 
     run() {
-        this.pyWorkersState$
-            .pipe(
-                take(1),
-                mergeMap((pyWorkers) => {
-                    return from(pyWorkers)
-                }),
-                mergeMap((pyWorker) => {
-                    return pyWorker.ideState.fsMap$.pipe(
-                        take(1),
-                        map((fsMap) => ({ fsMap, pyWorker })),
-                    )
-                }),
-                mergeMap(({ pyWorker }) => {
-                    return pyWorker.executingImplementation.initializeBeforeRun()
-                }),
-                reduce((acc, e) => [...acc, e], []),
-            )
-            .subscribe(() => {
-                this.mainThreadState.run()
-            })
+        this.pyWorkersState$.pipe(take(1)).subscribe(() => {
+            this.mainThreadState.run()
+        })
     }
 
     openTab(node: Node) {

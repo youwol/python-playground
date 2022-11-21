@@ -12,7 +12,6 @@ import { CdnEvent } from '@youwol/cdn-client'
 import {
     filter,
     map,
-    mapTo,
     mergeMap,
     scan,
     shareReplay,
@@ -79,8 +78,6 @@ export interface ExecutingImplementation {
         // this next argument should somehow disappear
         workerListener?: WorkerListener,
     ): Observable<unknown>
-
-    initializeBeforeRun(rawLog$: Subject<RawLog>): Observable<unknown>
 
     installRequirements(
         requirements: Requirements,
@@ -338,13 +335,14 @@ export class EnvironmentState<T extends ExecutingImplementation> {
         ])
             .pipe(
                 take(1),
-                mergeMap(([configurations, selectedConfigName, fsMap]) => {
+                map(([configurations, selectedConfigName, fsMap]) => {
                     const selectedConfig = configurations.find(
                         (config) => config.name == selectedConfigName,
                     )
-                    return this.executingImplementation
-                        .initializeBeforeRun(this.rawLog$)
-                        .pipe(mapTo({ selectedConfig, fileSystem: fsMap }))
+                    return {
+                        selectedConfig,
+                        fileSystem: fsMap,
+                    }
                 }),
                 mergeMap(({ fileSystem, selectedConfig }) => {
                     const sourcePath = selectedConfig.scriptPath

@@ -92,6 +92,9 @@ export class MainThreadImplementation implements ExecutingImplementation {
                 },
             }),
         ).pipe(
+            mergeMap(() => {
+                return registerPyPlayAddOns(this.appState, this.createdOutput$)
+            }),
             map(() => {
                 const pyodide = window[exportedPyodideInstanceName]
 
@@ -120,29 +123,6 @@ export class MainThreadImplementation implements ExecutingImplementation {
         )
     }
 
-    initializeBeforeRun(rawLog$: Subject<RawLog>) {
-        const outputs = {
-            onLog: (log) => rawLog$.next(log),
-            onView: (view) => {
-                const newNode = new OutputViewNode({
-                    ...view,
-                    projectState: this,
-                })
-                this.createdOutput$.next(newNode)
-            },
-            onData: () => {
-                /*no op on main thread*/
-            },
-        }
-        const pyodide = self[Environment.ExportedPyodideInstanceName]
-        return from(
-            Promise.all([
-                registerYwPyodideModule(pyodide, outputs),
-                registerPyPlayModule(pyodide, this.appState),
-            ]),
-        )
-    }
-
     execPythonCode(code: string, fileSystem: Map<string, string>) {
         this.triggerOutputsCollect$.next(true)
         const pyodide = self[Environment.ExportedPyodideInstanceName]
@@ -166,4 +146,30 @@ export class MainThreadImplementation implements ExecutingImplementation {
             }),
         )
     }
+}
+
+function registerPyPlayAddOns(
+    appState: AppState,
+    createdOutput$: Subject<OutputViewNode>,
+) {
+    const outputs = {
+        onLog: (log) => appState.rawLog$.next(log),
+        onView: (view) => {
+            const newNode = new OutputViewNode({
+                ...view,
+                projectState: appState.mainThreadState,
+            })
+            createdOutput$.next(newNode)
+        },
+        onData: () => {
+            /*no op on main thread*/
+        },
+    }
+    const pyodide = self[Environment.ExportedPyodideInstanceName]
+    return from(
+        Promise.all([
+            registerYwPyodideModule(pyodide, outputs),
+            registerPyPlayModule(pyodide, appState),
+        ]),
+    )
 }

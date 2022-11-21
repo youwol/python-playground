@@ -4,7 +4,7 @@ import {
     ExecutingImplementation,
 } from '../environment.state'
 import { RawLog, Requirements, WorkerCommon } from '../../models'
-import { BehaviorSubject, forkJoin, Observable, Subject } from 'rxjs'
+import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
 import {
     EntryPointArguments,
@@ -154,6 +154,18 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                 getModuleNameFromFile: getModuleNameFromFile,
             },
             cdnInstallation: formatCdnDependencies(requirements),
+            postInstallTasks: [
+                {
+                    title: 'sync',
+                    entryPoint: entryPointSyncEnv,
+                    args: {
+                        exportedRxjsSymbol:
+                            setup.getDependencySymbolExported('rxjs'),
+                        exportedPyodideInstanceName:
+                            Environment.ExportedPyodideInstanceName,
+                    },
+                },
+            ],
         })
         workersFactory.busyWorkers$.subscribe((workers) => {
             this.busyWorkers$.next(workers)
@@ -169,41 +181,6 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                     this.workersFactory$.next(workersFactory)
                 }),
             )
-    }
-
-    initializeBeforeRun() {
-        return this.workersFactory$.pipe(
-            filter((pool) => pool != undefined),
-            take(1),
-            mergeMap((workersPool) => {
-                const title = 'Synchronize file-system'
-                const context = new Context(title)
-                const installs$ = Object.keys(workersPool.workers$.value).map(
-                    (workerId) => {
-                        return workersPool
-                            .schedule({
-                                title,
-                                entryPoint: entryPointSyncEnv,
-                                args: {
-                                    exportedRxjsSymbol:
-                                        setup.getDependencySymbolExported(
-                                            'rxjs',
-                                        ),
-                                    exportedPyodideInstanceName:
-                                        Environment.ExportedPyodideInstanceName,
-                                },
-                                targetWorkerId: workerId,
-                                context,
-                            })
-                            .pipe(
-                                filter((d) => d.type == 'Exit'),
-                                take(1),
-                            )
-                    },
-                )
-                return forkJoin(installs$)
-            }),
-        )
     }
 
     execPythonCode(
