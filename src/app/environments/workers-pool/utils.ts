@@ -99,8 +99,7 @@ export function dispatchWorkerMessage(
     }
 }
 
-export function objectPyToJs(object) {
-    const pyodide = self[Environment.ExportedPyodideInstanceName]
+export function objectPyToJs(pyodide, object) {
     const namespace = pyodide.toPy({ object })
     return pyodide.runPython(
         `

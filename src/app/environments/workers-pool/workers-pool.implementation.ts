@@ -276,7 +276,10 @@ export class WorkerPoolPythonProxy {
         input: PythonProxyScheduleInput,
         workerChannel: WorkerListener,
     ) {
-        input = objectPyToJs(input)
+        input = objectPyToJs(
+            self[Environment.ExportedPyodideInstanceName],
+            input,
+        )
         const filesystem = this.state.ideState.fsMap$.value
         const src = patchPythonSrc(`
 from ${input.entryPoint.file} import ${input.entryPoint.function}       
