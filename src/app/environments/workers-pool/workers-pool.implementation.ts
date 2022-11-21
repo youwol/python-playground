@@ -35,7 +35,7 @@ interface EntryPointSyncFsMapArgs {
     exportedRxjsSymbol: string
 }
 
-function entryPointSyncEnv(
+function entryRegisterPyPlayAddOns(
     input: EntryPointArguments<EntryPointSyncFsMapArgs>,
 ) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
@@ -167,8 +167,8 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
             cdnInstallation: formatCdnDependencies(requirements),
             postInstallTasks: [
                 {
-                    title: 'sync',
-                    entryPoint: entryPointSyncEnv,
+                    title: 'register py-play add-ons',
+                    entryPoint: entryRegisterPyPlayAddOns,
                     args: {
                         exportedRxjsSymbol:
                             setup.getDependencySymbolExported('rxjs'),
