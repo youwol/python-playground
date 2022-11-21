@@ -1,9 +1,9 @@
 import { VirtualDOM, HTMLElement$ } from '@youwol/flux-view'
-import { ProjectState } from '../../project'
 import { CodeEditorView } from './code-editor.view'
-import { BehaviorSubject } from 'rxjs'
-import { delay, filter } from 'rxjs/operators'
-import { CarouselSide } from '../../carousel-3d'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../../environments/environment.state'
 
 /**
  * @category View
@@ -12,7 +12,7 @@ export class CodePageView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly projectState: ProjectState
+    public readonly state: EnvironmentState<ExecutingImplementation>
 
     /**
      * @group Immutable DOM Constants
@@ -46,22 +46,16 @@ export class CodePageView implements VirtualDOM {
 
     constructor(params: {
         sourcePath: string
-        projectState: ProjectState
+        state: EnvironmentState<ExecutingImplementation>
         headerView: VirtualDOM
         onCtrlEnter: () => void
     }) {
         Object.assign(this, params)
 
-        const selectedSide$ = new BehaviorSubject<CarouselSide>('front')
-
         const codeEditorView = new CodeEditorView({
             sourcePath: this.sourcePath,
-            projectState: this.projectState,
+            state: this.state,
             onRun: this.onCtrlEnter,
-            refresh$: selectedSide$.pipe(
-                filter((side) => side == 'front'),
-                delay(800),
-            ),
         })
 
         this.children = [

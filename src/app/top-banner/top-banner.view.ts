@@ -1,7 +1,11 @@
 import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
-import { ConfigurationsDropDown } from '../content'
-import { VirtualDOM } from '@youwol/flux-view'
+import { children$, VirtualDOM } from '@youwol/flux-view'
+import { combineLatest } from 'rxjs'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
 
 /**
  * @category View
@@ -57,9 +61,16 @@ export class ConfigurationSelectorView implements VirtualDOM {
     /**
      * @group Immutable Constants
      */
-    public readonly appState: AppState
+    public readonly onRun: () => void
+    /**
+     * @group State
+     */
+    public readonly state: EnvironmentState<ExecutingImplementation>
 
-    constructor(params: { appState: AppState }) {
+    constructor(params: {
+        state: EnvironmentState<ExecutingImplementation>
+        onRun: () => void
+    }) {
         Object.assign(this, params)
 
         this.children = [
@@ -68,12 +79,11 @@ export class ConfigurationSelectorView implements VirtualDOM {
                 innerText: 'Configurations',
             },
             new ConfigurationsDropDown({
-                projectState: this.appState.projectState,
+                state: this.state,
             }),
             new HeaderBtnView({
                 icon: 'fas fa-play',
-                onClick: () =>
-                    this.appState.projectState.runCurrentConfiguration(),
+                onClick: () => this.onRun(),
             }),
         ]
     }
@@ -90,7 +100,12 @@ export class TopBannerView extends TopBannerBaseView {
                 children: [
                     {
                         class: 'flex-grow-1 d-flex justify-content-center',
-                        children: [new ConfigurationSelectorView({ appState })],
+                        children: [
+                            new ConfigurationSelectorView({
+                                state: appState.mainThreadState,
+                                onRun: () => appState.run(),
+                            }),
+                        ],
                     },
                     {
                         tag: 'a',
@@ -101,5 +116,46 @@ export class TopBannerView extends TopBannerBaseView {
                 ],
             },
         })
+    }
+}
+
+/**
+ * @category View
+ */
+export class ConfigurationsDropDown implements VirtualDOM {
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly children: VirtualDOM[]
+
+    constructor({
+        state,
+    }: {
+        state: EnvironmentState<ExecutingImplementation>
+    }) {
+        this.children = [
+            {
+                tag: 'select',
+                onchange: (ev) => {
+                    state.selectConfiguration(ev.target.value)
+                },
+                children: children$(
+                    combineLatest([
+                        state.configurations$,
+                        state.selectedConfiguration$,
+                    ]),
+                    ([configurations, selectedName]) => {
+                        return configurations.map((config) => {
+                            return {
+                                tag: 'option',
+                                value: config.name,
+                                innerText: config.name,
+                                selected: config.name == selectedName,
+                            }
+                        })
+                    },
+                ),
+            },
+        ]
     }
 }

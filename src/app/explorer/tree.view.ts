@@ -4,13 +4,21 @@ import {
     NodeSignal,
     ProjectNode,
     SourceNode,
+    WorkersPoolNode,
 } from './nodes'
 import { ImmutableTree } from '@youwol/fv-tree'
-import { child$, children$, HTMLElement$, VirtualDOM } from '@youwol/flux-view'
+import {
+    child$,
+    children$,
+    HTMLElement$,
+    Stream$,
+    VirtualDOM,
+} from '@youwol/flux-view'
 import { AppState } from '../app.state'
 import { ContextMenuState } from './context-menu'
 import { ContextMenu } from '@youwol/fv-context-menu'
 import { filter } from 'rxjs/operators'
+import { WorkersPoolImplementation } from '../environments/workers-pool'
 
 /**
  * @category State
@@ -82,6 +90,7 @@ export class NodeView implements VirtualDOM {
         RequirementsNode: 'fas fa-cubes',
         ConfigurationsNode: 'fas fa-tools',
         OutputViewNode: 'fas fa-code',
+        WorkersPoolNode: 'fas fa-play',
     }
     /**
      * @group Factories
@@ -116,7 +125,6 @@ export class NodeView implements VirtualDOM {
     constructor(params: { state: TreeState; node: Node }) {
         Object.assign(this, params)
         const innerView = { innerText: this.node.name }
-
         this.children = [
             { class: `${NodeView.NodeTypeFactory[this.node.category]} mx-1` },
             child$(
@@ -131,6 +139,11 @@ export class NodeView implements VirtualDOM {
                     untilFirst: innerView,
                 },
             ),
+            this.node instanceof WorkersPoolNode
+                ? new BusyWorkersBulletsView({
+                      implementation: this.node.state.executingImplementation,
+                  })
+                : {},
             {
                 class: 'flex-grow-1',
             },
@@ -171,8 +184,49 @@ function headerRenamed(node: SourceNode, explorerState: TreeState): VirtualDOM {
         onclick: (ev) => ev.stopPropagation(),
         onkeydown: (ev) => {
             if (ev.key === 'Enter') {
-                explorerState.appState.renameFile(node, ev.target.value)
+                explorerState.appState.renameFile(
+                    node.state,
+                    node.path,
+                    ev.target.value,
+                )
             }
         },
+    }
+}
+
+/**
+ * @category View
+ */
+export class BusyWorkersBulletsView implements VirtualDOM {
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly class = 'd-flex align-items-center'
+
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly style = {
+        transform: 'scale(0.5)',
+    }
+
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly children: Stream$<string[], VirtualDOM>
+
+    constructor(params: { implementation: WorkersPoolImplementation }) {
+        Object.assign(this, params)
+
+        this.children = children$(
+            params.implementation.busyWorkers$,
+            (workers) => {
+                return workers.map(() => {
+                    return {
+                        class: 'fas fa-circle fv-text-success mx-1',
+                    }
+                })
+            },
+        )
     }
 }

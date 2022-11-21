@@ -1,7 +1,13 @@
 import { ImmutableTree } from '@youwol/fv-tree'
 import { TreeState } from '../tree.view'
-import { ProjectNode, SourceNode } from '../nodes'
+import {
+    ExecutingEnvironmentNode,
+    ProjectNode,
+    SourceNode,
+    WorkersPoolNode,
+} from '../nodes'
 import { ContextMenuState } from './context-menu'
+import { ExecutingImplementation } from '../../environments/environment.state'
 
 /**
  * Factory of available actions in the
@@ -9,7 +15,8 @@ import { ContextMenuState } from './context-menu'
  */
 export const ALL_ACTIONS = {
     newPyFile: {
-        applicable: (selectedNode) => selectedNode instanceof ProjectNode,
+        applicable: (selectedNode) =>
+            selectedNode instanceof ExecutingEnvironmentNode,
         createNode: (documentNode: ProjectNode, explorerState: TreeState) =>
             new AddPyFileNode({
                 parentNode: documentNode,
@@ -17,7 +24,8 @@ export const ALL_ACTIONS = {
             }),
     },
     newJsFile: {
-        applicable: (selectedNode) => selectedNode instanceof ProjectNode,
+        applicable: (selectedNode) =>
+            selectedNode instanceof ExecutingEnvironmentNode,
         createNode: (documentNode: ProjectNode, explorerState: TreeState) =>
             new AddJsFileNode({
                 parentNode: documentNode,
@@ -36,6 +44,22 @@ export const ALL_ACTIONS = {
         applicable: (selectedNode) => selectedNode instanceof SourceNode,
         createNode: (node: SourceNode, explorerState: TreeState) =>
             new RenameNode<SourceNode>({
+                node,
+                explorerState,
+            }),
+    },
+    newWorker: {
+        applicable: (selectedNode) => selectedNode instanceof ProjectNode,
+        createNode: (node: ProjectNode, explorerState: TreeState) =>
+            new NewWorkersPoolNode({
+                node,
+                explorerState,
+            }),
+    },
+    deleteWorker: {
+        applicable: (selectedNode) => selectedNode instanceof WorkersPoolNode,
+        createNode: (node: WorkersPoolNode, explorerState: TreeState) =>
+            new DeleteWorkersPoolNode({
                 node,
                 explorerState,
             }),
@@ -81,9 +105,12 @@ export class ContextRootNode extends ContextTreeNode {
 
 export class AddPyFileNode extends ContextTreeNode implements ExecutableNode {
     public readonly explorerState: TreeState
-    public readonly parentNode: ProjectNode
+    public readonly parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
 
-    constructor(params: { explorerState: TreeState; parentNode: ProjectNode }) {
+    constructor(params: {
+        explorerState: TreeState
+        parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
+    }) {
         super({
             id: 'new-python-file',
             children: undefined,
@@ -94,15 +121,22 @@ export class AddPyFileNode extends ContextTreeNode implements ExecutableNode {
     }
 
     execute(_state: ContextMenuState) {
-        this.explorerState.appState.addFile('new_file', 'py')
+        this.explorerState.appState.addFile(
+            this.parentNode.state,
+            'new_file',
+            'py',
+        )
     }
 }
 
 export class AddJsFileNode extends ContextTreeNode implements ExecutableNode {
     public readonly explorerState: TreeState
-    public readonly parentNode: ProjectNode
+    public readonly parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
 
-    constructor(params: { explorerState: TreeState; parentNode: ProjectNode }) {
+    constructor(params: {
+        explorerState: TreeState
+        parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
+    }) {
         super({
             id: 'new-javascript-file',
             children: undefined,
@@ -113,7 +147,11 @@ export class AddJsFileNode extends ContextTreeNode implements ExecutableNode {
     }
 
     execute(_state: ContextMenuState) {
-        this.explorerState.appState.addFile('new_file', 'js')
+        this.explorerState.appState.addFile(
+            this.parentNode.state,
+            'new_file',
+            'js',
+        )
     }
 }
 
@@ -153,6 +191,53 @@ export class DeleteFileNode extends ContextTreeNode implements ExecutableNode {
     }
 
     execute(_state: ContextMenuState) {
-        this.explorerState.appState.deleteFile(this.deletedNode.id)
+        this.explorerState.appState.deleteFile(
+            this.deletedNode.state,
+            this.deletedNode.path,
+        )
+    }
+}
+
+export class NewWorkersPoolNode
+    extends ContextTreeNode
+    implements ExecutableNode
+{
+    public readonly explorerState: TreeState
+    public readonly node: ProjectNode
+
+    constructor(params: { explorerState: TreeState; node: ProjectNode }) {
+        super({
+            id: 'new-workers-pool',
+            children: undefined,
+            name: 'New workers pool',
+            faIcon: 'fas fa-play',
+        })
+        Object.assign(this, params)
+    }
+
+    execute(_state: ContextMenuState) {
+        this.explorerState.appState.addWorkersPool()
+    }
+}
+
+export class DeleteWorkersPoolNode
+    extends ContextTreeNode
+    implements ExecutableNode
+{
+    public readonly explorerState: TreeState
+    public readonly node: WorkersPoolNode
+
+    constructor(params: { explorerState: TreeState; node: WorkersPoolNode }) {
+        super({
+            id: 'delete-workers-pool',
+            children: undefined,
+            name: 'Delete workers pool',
+            faIcon: 'fas fa-trash',
+        })
+        Object.assign(this, params)
+    }
+
+    execute(_state: ContextMenuState) {
+        this.explorerState.appState.deleteWorkersPool(this.node.state)
     }
 }

@@ -1,13 +1,19 @@
-import { ProjectState } from '../project'
 import { CodePageView } from './code-editor'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
 
 /**
  * @category View
  */
 export class ConfigurationsView extends CodePageView {
-    constructor(params: { sourcePath: string; projectState: ProjectState }) {
+    constructor(params: {
+        sourcePath: string
+        state: EnvironmentState<ExecutingImplementation>
+    }) {
         const run = () => {
-            this.projectState.applyConfigurations()
+            this.state.applyConfigurations()
         }
         super({
             ...params,

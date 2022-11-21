@@ -2,17 +2,18 @@
 const runTimeDependencies = {
     "externals": {
         "@youwol/fv-code-mirror-editors": "^0.2.2",
-        "@youwol/os-core": "^0.1.1",
+        "@youwol/os-core": "^0.1.3",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
-        "@youwol/cdn-client": "^1.0.6",
+        "@youwol/cdn-client": "^1.0.7",
         "@youwol/http-clients": "^1.0.2",
         "@youwol/flux-view": "^1.0.3",
         "@youwol/fv-context-menu": "^0.1.1",
         "@youwol/fv-tree": "^0.2.3",
         "lodash": "^4.17.15",
         "rxjs": "^6.5.5",
-        "@youwol/logging": "^0.1.0"
+        "@youwol/logging": "^0.1.0",
+        "uuid": "^8.3.2"
     },
     "includedInBundle": {}
 }
@@ -29,6 +30,7 @@ const externals = {
     "lodash": "window['__APIv4']",
     "rxjs": "window['rxjs_APIv6']",
     "@youwol/logging": "window['@youwol/logging_APIv01']",
+    "uuid": "window['uuid_APIv8']",
     "rxjs/operators": "window['rxjs_APIv6']['operators']"
 }
 const exportedSymbols = {
@@ -79,6 +81,10 @@ const exportedSymbols = {
     "@youwol/logging": {
         "apiKey": "01",
         "exportedSymbol": "@youwol/logging"
+    },
+    "uuid": {
+        "apiKey": "8",
+        "exportedSymbol": "uuid"
     }
 }
 
@@ -97,7 +103,8 @@ const mainEntry : Object = {
         "@youwol/fv-tree",
         "lodash",
         "rxjs",
-        "@youwol/logging"
+        "@youwol/logging",
+        "uuid"
     ]
 }
 
@@ -110,7 +117,7 @@ const entries = {
 export const setup = {
     name:'@youwol/python-playground',
         assetId:'QHlvdXdvbC9weXRob24tcGxheWdyb3VuZA==',
-    version:'0.1.1',
+    version:'0.1.2',
     shortDescription:"Python playground application",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground',
     npmPackage:'https://www.npmjs.com/package/@youwol/python-playground',
@@ -145,7 +152,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/python-playground#0.1.1~dist/@youwol/python-playground/${entry.name}.js`
+            `@youwol/python-playground#0.1.2~dist/@youwol/python-playground/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),

@@ -1,56 +1,26 @@
-import { children$, VirtualDOM } from '@youwol/flux-view'
-import { ProjectState } from '../project'
 import { CodePageView } from './code-editor'
-import { combineLatest } from 'rxjs'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
+import { AppState } from '../app.state'
 
 /**
  * @category View
  */
 export class SourceView extends CodePageView {
-    constructor(params: { sourcePath: string; projectState: ProjectState }) {
+    constructor(params: {
+        sourcePath: string
+        state: EnvironmentState<ExecutingImplementation>
+        appState: AppState
+    }) {
         const run = () => {
-            this.projectState.runCurrentConfiguration()
+            params.appState.run()
         }
         super({
             ...params,
             headerView: {},
             onCtrlEnter: run,
         })
-    }
-}
-
-/**
- * @category View
- */
-export class ConfigurationsDropDown implements VirtualDOM {
-    /**
-     * @group Immutable DOM Constants
-     */
-    public readonly children: VirtualDOM[]
-    constructor({ projectState }: { projectState: ProjectState }) {
-        this.children = [
-            {
-                tag: 'select',
-                onchange: (ev) => {
-                    projectState.selectConfiguration(ev.target.value)
-                },
-                children: children$(
-                    combineLatest([
-                        projectState.configurations$,
-                        projectState.selectedConfiguration$,
-                    ]),
-                    ([configurations, selectedName]) => {
-                        return configurations.map((config) => {
-                            return {
-                                tag: 'option',
-                                value: config.name,
-                                innerText: config.name,
-                                selected: config.name == selectedName,
-                            }
-                        })
-                    },
-                ),
-            },
-        ]
     }
 }

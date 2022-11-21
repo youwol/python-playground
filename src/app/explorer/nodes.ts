@@ -1,8 +1,17 @@
 import { ImmutableTree } from '@youwol/fv-tree'
-import { Environment, Project } from '../models'
-import { ProjectState } from '../project'
+import { Environment, Project, WorkersPool } from '../models'
+import { MainThreadImplementation } from '../environments/main-thread'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
+import {
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environments/environment.state'
+import { WorkersPoolImplementation } from '../environments/workers-pool'
+
+type MainThreadState = EnvironmentState<MainThreadImplementation>
+type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
+type AbstractEnvState = EnvironmentState<ExecutingImplementation>
 
 /**
  * Node's signal data-structure
@@ -17,6 +26,7 @@ export type NodeCategory =
     | 'HelpersJsSourceNode'
     | 'SourceNode'
     | 'OutputViewNode'
+    | 'WorkersPoolNode'
 
 export const specialFiles = ['./requirements', './configurations']
 /**
@@ -60,7 +70,11 @@ export abstract class Node extends ImmutableTree.Node {
         this.name = name
     }
 
-    addProcess(process: { type: NodeSignal; id?: string }) {
+    addProcess(process: {
+        type: NodeSignal
+        id?: string
+        [k: string]: unknown
+    }) {
         const pid = process.id || `${Math.floor(Math.random() * 1e6)}`
         const runningProcesses = this.processes$
             .getValue()
@@ -79,12 +93,39 @@ export abstract class Node extends ImmutableTree.Node {
     }
 }
 
+export class ExecutingEnvironmentNode<
+    TState extends ExecutingImplementation,
+> extends Node {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly environment: Environment
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly state: EnvironmentState<TState>
+
+    constructor(params: {
+        state: AbstractEnvState
+        name: string
+        environment: Environment
+        children
+    }) {
+        super({
+            id: params.state.id,
+            name: params.name,
+            children: params.children,
+        })
+    }
+}
+
 /**
  * Project Node of explorer
  *
  * @category Nodes
  */
-export class ProjectNode extends Node {
+export class ProjectNode extends ExecutingEnvironmentNode<MainThreadImplementation> {
     /**
      * @group Immutable Constants
      */
@@ -96,14 +137,15 @@ export class ProjectNode extends Node {
     public readonly environment: Environment
 
     constructor(params: {
-        id: string
+        state: AbstractEnvState
         name: string
         environment: Environment
         children
     }) {
         super({
-            id: params.id,
             name: params.name,
+            state: params.state,
+            environment: params.environment,
             children: params.children,
         })
         Object.assign(this, params)
@@ -124,11 +166,11 @@ export class RequirementsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: AbstractEnvState
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { state: AbstractEnvState }) {
         super({
-            id: `${params.projectState.id}#requirements`,
+            id: `${params.state.id}#requirements`,
             name: 'Requirements',
         })
         Object.assign(this, params)
@@ -149,11 +191,11 @@ export class ConfigurationsNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: AbstractEnvState
 
-    constructor(params: { projectState: ProjectState }) {
+    constructor(params: { state: AbstractEnvState }) {
         super({
-            id: `${params.projectState.id}#configurations`,
+            id: `${params.state.id}#configurations`,
             name: 'Configurations',
         })
         Object.assign(this, params)
@@ -166,6 +208,9 @@ export class ConfigurationsNode extends Node {
  * @category Nodes
  */
 export class SourceNode extends Node {
+    static getId(state: AbstractEnvState, path: string) {
+        return `${state.id}#${path}`
+    }
     /**
      * @group Immutable Constants
      */
@@ -179,11 +224,11 @@ export class SourceNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: AbstractEnvState
 
-    constructor(params: { path: string; projectState: ProjectState }) {
+    constructor(params: { path: string; state: AbstractEnvState }) {
         super({
-            id: params.path,
+            id: SourceNode.getId(params.state, params.path),
             name: params.path.split('/').slice(-1)[0],
             children: undefined,
         })
@@ -202,7 +247,10 @@ export class HelpersJsSourceNode extends SourceNode {
      */
     public readonly category: NodeCategory = 'HelpersJsSourceNode'
 
-    constructor(params: { path: string; projectState: ProjectState }) {
+    constructor(params: {
+        path: string
+        state: EnvironmentState<ExecutingImplementation>
+    }) {
         super(params)
     }
 }
@@ -221,7 +269,7 @@ export class OutputViewNode extends Node {
     /**
      * @group Immutable Constants
      */
-    public readonly projectState: ProjectState
+    public readonly state: MainThreadState
 
     /**
      * @group Immutable Constants
@@ -229,7 +277,7 @@ export class OutputViewNode extends Node {
     public readonly htmlElement: HTMLElement | VirtualDOM
 
     constructor(params: {
-        projectState: ProjectState
+        projectState: MainThreadState
         name: string
         htmlElement: HTMLElement | VirtualDOM
     }) {
@@ -241,17 +289,63 @@ export class OutputViewNode extends Node {
     }
 }
 
+/**
+ * Predefined worker node
+ *
+ * @category Nodes
+ */
+export class WorkersPoolNode extends ExecutingEnvironmentNode<WorkersPoolImplementation> {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly category: NodeCategory = 'WorkersPoolNode'
+
+    constructor(params: { pyWorker: WorkersPool; state: WorkersPoolState }) {
+        super({
+            state: params.state,
+            environment: params.pyWorker.environment,
+            name: params.pyWorker.name,
+            children: [
+                new RequirementsNode({
+                    state: params.state,
+                }),
+                new ConfigurationsNode({
+                    state: params.state,
+                }),
+                ...params.pyWorker.sources.map((source) => {
+                    return new SourceNode({
+                        path: source.path,
+                        state: params.state,
+                    })
+                }),
+            ],
+        })
+        Object.assign(this, params)
+    }
+}
+
 export function createProjectRootNode(
     project: Project,
-    projectState: ProjectState,
+    projectState: MainThreadState,
+    workersState: WorkersPoolState[],
 ) {
+    const workersStateById = workersState.reduce(
+        (acc, e) => ({ ...acc, [e.id]: e }),
+        {},
+    )
     return new ProjectNode({
-        id: project.id,
+        state: projectState,
         name: project.name,
         environment: project.environment,
         children: [
-            new RequirementsNode({ projectState }),
-            new ConfigurationsNode({ projectState }),
+            new RequirementsNode({ state: projectState }),
+            new ConfigurationsNode({ state: projectState }),
+            ...(project.workersPools || []).map((pyWorker) => {
+                return new WorkersPoolNode({
+                    pyWorker,
+                    state: workersStateById[pyWorker.id],
+                })
+            }),
             ...project.sources
                 .filter((source) => {
                     return !specialFiles.includes(source.path)
@@ -262,7 +356,7 @@ export function createProjectRootNode(
                         : HelpersJsSourceNode
                     return new factory({
                         path: source.path,
-                        projectState,
+                        state: projectState,
                     })
                 }),
         ],

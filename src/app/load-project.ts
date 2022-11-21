@@ -10,7 +10,7 @@ import { forkJoin, Observable, Subject } from 'rxjs'
 import { map, mergeMap, take, tap } from 'rxjs/operators'
 import { Project, Requirements } from './models'
 import { defaultProject } from './default-project'
-import { Environment } from './project'
+import { Environment } from './environments/environment.state'
 
 /**
  *
@@ -73,9 +73,7 @@ export function load$(
  * @param loadingScreen loading screen to append loading events
  * @returns application state & application view
  */
-export function new$(
-    loadingScreen: LoadingScreenView,
-): Observable<{
+export function new$(loadingScreen: LoadingScreenView): Observable<{
     project: Project
     fileInfo: FilesBackend.GetInfoResponse
     explorerInfo: ExplorerBackend.GetItemResponse

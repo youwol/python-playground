@@ -13,7 +13,7 @@ export interface Requirements {
 export interface RunConfiguration {
     name: string
     scriptPath: string
-    parameters: string
+    parameters?: string
 }
 
 export interface Environment {
@@ -21,7 +21,23 @@ export interface Environment {
     configurations: RunConfiguration[]
 }
 
+export interface WorkersPool {
+    id: string
+    name: string
+    capacity: number
+    environment: Environment
+    sources: Source[]
+}
+
 export interface Project {
+    id: string
+    name: string
+    environment: Environment
+    sources: Source[]
+    workersPools?: WorkersPool[]
+}
+
+export interface WorkerCommon {
     id: string
     name: string
     environment: Environment
