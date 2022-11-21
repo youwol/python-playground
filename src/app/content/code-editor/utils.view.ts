@@ -1,8 +1,5 @@
 import { VirtualDOM, HTMLElement$ } from '@youwol/flux-view'
 import { CodeEditorView } from './code-editor.view'
-import { BehaviorSubject } from 'rxjs'
-import { delay, filter } from 'rxjs/operators'
-import { CarouselSide } from '../../carousel-3d'
 import {
     EnvironmentState,
     ExecutingImplementation,
@@ -55,16 +52,10 @@ export class CodePageView implements VirtualDOM {
     }) {
         Object.assign(this, params)
 
-        const selectedSide$ = new BehaviorSubject<CarouselSide>('front')
-
         const codeEditorView = new CodeEditorView({
             sourcePath: this.sourcePath,
             state: this.state,
             onRun: this.onCtrlEnter,
-            refresh$: selectedSide$.pipe(
-                filter((side) => side == 'front'),
-                delay(800),
-            ),
         })
 
         this.children = [
