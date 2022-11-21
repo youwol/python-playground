@@ -1,9 +1,10 @@
 import { RawLog, Requirements } from '../../models'
-import { BehaviorSubject, from, merge, ReplaySubject, Subject } from 'rxjs'
-import { map, scan } from 'rxjs/operators'
+import { BehaviorSubject, from, merge, of, ReplaySubject, Subject } from 'rxjs'
+import { map, mergeMap, scan, tap } from 'rxjs/operators'
 import { OutputViewNode } from '../../explorer'
 import { Environment, ExecutingImplementation } from '../environment.state'
 import {
+    cleanFileSystem,
     registerJsModules,
     registerPyPlayModule,
     registerYwPyodideModule,
@@ -133,15 +134,24 @@ export class MainThreadImplementation implements ExecutingImplementation {
                 registerYwPyodideModule(pyodide, fileSystem, outputs),
                 registerPyPlayModule(pyodide, this.appState),
                 registerJsModules(pyodide, fileSystem),
-                syncFileSystem(pyodide, fileSystem),
+                //syncFileSystem(pyodide, fileSystem),
             ]),
         )
     }
 
-    execPythonCode(code: string) {
+    execPythonCode(code: string, fileSystem: Map<string, string>) {
         this.triggerOutputsCollect$.next(true)
-        return from(
-            self[Environment.ExportedPyodideInstanceName].runPythonAsync(code),
+        const pyodide = self[Environment.ExportedPyodideInstanceName]
+        return of(undefined).pipe(
+            tap(() => {
+                syncFileSystem(pyodide, fileSystem)
+            }),
+            mergeMap(() => {
+                return pyodide.runPythonAsync(code)
+            }),
+            tap(() => {
+                cleanFileSystem(pyodide, fileSystem)
+            }),
         )
     }
 }

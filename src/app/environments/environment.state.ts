@@ -20,11 +20,7 @@ import {
     take,
     tap,
 } from 'rxjs/operators'
-import {
-    getModuleNameFromFile,
-    patchPythonSrc,
-    WorkerListener,
-} from './in-worker-executable'
+import { patchPythonSrc, WorkerListener } from './in-worker-executable'
 import { logFactory } from '../log-factory.conf'
 
 const log = logFactory().getChildLogger('environment.state.ts')
@@ -77,6 +73,7 @@ export interface ExecutingImplementation {
 
     execPythonCode(
         code: string,
+        fileSystem: Map<string, string>,
         rawLog$: Subject<RawLog>,
         pythonGlobals?: Record<string, unknown>,
         // this next argument should somehow disappear
@@ -294,12 +291,6 @@ export class EnvironmentState<T extends ExecutingImplementation> {
 
     removeFile(path: string) {
         this.ideState.removeFile(path)
-        const pyodide = self[Environment.ExportedPyodideInstanceName]
-        const moduleName = getModuleNameFromFile(path)
-        pyodide.FS.unlink(path)
-        pyodide.runPython(
-            `import sys\n${moduleName} in sys.modules and del sys.modules[${moduleName}]`,
-        )
     }
 
     selectConfiguration(name: string) {
@@ -365,6 +356,7 @@ export class EnvironmentState<T extends ExecutingImplementation> {
                     )
                     return this.executingImplementation.execPythonCode(
                         patchedContent,
+                        fileSystem,
                         this.rawLog$,
                     )
                 }),

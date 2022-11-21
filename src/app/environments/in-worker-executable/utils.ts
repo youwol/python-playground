@@ -105,12 +105,26 @@ export async function registerJsModules(
 }
 
 export async function syncFileSystem(pyodide, fileSystem: Map<string, string>) {
-    // No need to delete files: those are deleted explicitly from user's action 'delete file'
     fileSystem.forEach((value, path) => {
         path.endsWith('.py') &&
             pyodide.FS.writeFile(path, value, {
                 encoding: 'utf8',
             })
+    })
+}
+
+export async function cleanFileSystem(
+    pyodide,
+    fileSystem: Map<string, string>,
+) {
+    fileSystem.forEach((value, path) => {
+        if (path.endsWith('.py')) {
+            const moduleName = getModuleNameFromFile(path)
+            pyodide.FS.unlink(path)
+            pyodide.runPython(
+                `import sys\nif '${moduleName}' in sys.modules:\n    del sys.modules['${moduleName}']`,
+            )
+        }
     })
 }
 

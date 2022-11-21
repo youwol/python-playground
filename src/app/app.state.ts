@@ -383,6 +383,7 @@ export class AppState {
                     .find((pool) => pool.id == id)
 
                 return state.executingImplementation.getPythonProxy(
+                    state,
                     this.rawLog$,
                 )
             },

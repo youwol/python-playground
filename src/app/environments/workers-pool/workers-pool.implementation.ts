@@ -1,4 +1,8 @@
-import { Environment, ExecutingImplementation } from '../environment.state'
+import {
+    Environment,
+    EnvironmentState,
+    ExecutingImplementation,
+} from '../environment.state'
 import { RawLog, Requirements, WorkerCommon } from '../../models'
 import { BehaviorSubject, forkJoin, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
@@ -14,6 +18,7 @@ import {
 } from './utils'
 import { Context } from '../../context'
 import {
+    cleanFileSystem,
     getModuleNameFromFile,
     patchPythonSrc,
     registerJsModules,
@@ -34,7 +39,6 @@ function entryPointSyncEnv(
     input: EntryPointArguments<EntryPointSyncFsMapArgs>,
 ) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
-    const syncFileSystem = self['syncFileSystem']
     const registerYwPyodideModule = self['registerYwPyodideModule']
 
     const outputs = {
@@ -60,30 +64,33 @@ function entryPointSyncEnv(
     })
 
     return Promise.all([
-        syncFileSystem(pyodide, input.args.fsMap),
         registerYwPyodideModule(pyodide, input.args.fsMap, outputs),
     ])
 }
 
 interface EntryPointExeArgs {
     content: string
+    fileSystem: Map<string, string>
     exportedPyodideInstanceName: string
     pythonGlobals: Record<string, unknown>
 }
 
-function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
+async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
     const pythonChannel$ = new self['rxjs_APIv6'].ReplaySubject(1)
     self['getPythonChannel$'] = () => pythonChannel$
-
+    const syncFileSystem = self['syncFileSystem']
+    const cleanFileSystem = self['cleanFileSystem']
+    await syncFileSystem(pyodide, input.args.fileSystem)
     // Need to unsubscribe following subscription at the end of the run
     pythonChannel$.subscribe((message) => {
         input.context.sendData(message)
     })
     const namespace = pyodide.toPy(input.args.pythonGlobals)
-    return pyodide.runPythonAsync(input.args.content, {
+    await pyodide.runPythonAsync(input.args.content, {
         globals: namespace,
     })
+    await cleanFileSystem(pyodide, input.args.fileSystem)
 }
 
 /**
@@ -144,6 +151,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
             )}`,
             functions: {
                 syncFileSystem: syncFileSystem,
+                cleanFileSystem: cleanFileSystem,
                 registerJsModules: registerJsModules,
                 registerYwPyodideModule: registerYwPyodideModule,
                 getModuleNameFromFile: getModuleNameFromFile,
@@ -204,6 +212,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
 
     execPythonCode(
         code: string,
+        fileSystem: Map<string, string>,
         rawLog$: Subject<RawLog>,
         pythonGlobals: Record<string, unknown> = {},
         workerListener: WorkerListener = undefined,
@@ -219,6 +228,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                     entryPoint: entryPointExe,
                     args: {
                         content: code,
+                        fileSystem: fileSystem,
                         exportedPyodideInstanceName:
                             Environment.ExportedPyodideInstanceName,
                         pythonGlobals,
@@ -235,8 +245,11 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         )
     }
 
-    getPythonProxy(rawLog$: Subject<RawLog>) {
-        return new WorkerPoolPythonProxy({ exeEnv: this, rawLog$ })
+    getPythonProxy(
+        state: EnvironmentState<WorkersPoolImplementation>,
+        rawLog$: Subject<RawLog>,
+    ) {
+        return new WorkerPoolPythonProxy({ state, rawLog$ })
     }
 }
 
@@ -253,7 +266,7 @@ export class WorkerPoolPythonProxy {
     /**
      * @group Immutable Constants
      */
-    public readonly exeEnv: WorkersPoolImplementation
+    public readonly state: EnvironmentState<WorkersPoolImplementation>
 
     /**
      * @group Observables
@@ -261,7 +274,7 @@ export class WorkerPoolPythonProxy {
     public readonly rawLog$: Subject<RawLog>
 
     constructor(params: {
-        exeEnv: WorkersPoolImplementation
+        state: EnvironmentState<WorkersPoolImplementation>
         rawLog$: Subject<RawLog>
     }) {
         Object.assign(this, params)
@@ -272,16 +285,17 @@ export class WorkerPoolPythonProxy {
         workerChannel: WorkerListener,
     ) {
         input = objectPyToJs(input)
-
+        const filesystem = this.state.ideState.fsMap$.value
         const src = patchPythonSrc(`
 from ${input.entryPoint.file} import ${input.entryPoint.function}       
 result = ${input.entryPoint.function}(test_glob_var)
 result
         `)
         return new Promise((resolve) => {
-            this.exeEnv
+            this.state.executingImplementation
                 .execPythonCode(
                     src,
+                    filesystem,
                     this.rawLog$,
                     { test_glob_var: input.argument },
                     workerChannel,
@@ -294,7 +308,7 @@ result
 
     reserve(workersCount) {
         return new Promise<void>((resolve) => {
-            this.exeEnv.workersFactory$
+            this.state.executingImplementation.workersFactory$
                 .pipe(
                     mergeMap((factory) => {
                         return factory.reserve({ workersCount })
