@@ -46,7 +46,7 @@ export const ALL_ACTIONS = {
     newWorker: {
         applicable: (selectedNode) => selectedNode instanceof ProjectNode,
         createNode: (node: ProjectNode, explorerState: TreeState) =>
-            new NewWorkerNode({
+            new NewWorkersPoolNode({
                 node,
                 explorerState,
             }),
@@ -185,15 +185,18 @@ export class DeleteFileNode extends ContextTreeNode implements ExecutableNode {
     }
 }
 
-export class NewWorkerNode extends ContextTreeNode implements ExecutableNode {
+export class NewWorkersPoolNode
+    extends ContextTreeNode
+    implements ExecutableNode
+{
     public readonly explorerState: TreeState
-    public readonly parentNode: ProjectNode
+    public readonly node: ProjectNode
 
     constructor(params: { explorerState: TreeState; node: ProjectNode }) {
         super({
-            id: 'new-worker',
+            id: 'new-workers-pool',
             children: undefined,
-            name: 'New worker',
+            name: 'New workers pool',
             faIcon: 'fas fa-play',
         })
         Object.assign(this, params)
