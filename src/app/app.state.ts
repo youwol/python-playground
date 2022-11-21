@@ -328,7 +328,7 @@ export class AppState {
         this.openTab(newNode)
     }
 
-    addPyWorker() {
+    addWorkersPool() {
         const pyWorker = getDefaultWorker({
             name: `Worker ${this.getWorkersPoolNodes().length}`,
         })

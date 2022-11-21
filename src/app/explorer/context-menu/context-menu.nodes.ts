@@ -200,6 +200,6 @@ export class NewWorkerNode extends ContextTreeNode implements ExecutableNode {
     }
 
     execute(_state: ContextMenuState) {
-        this.explorerState.appState.addPyWorker()
+        this.explorerState.appState.addWorkersPool()
     }
 }
