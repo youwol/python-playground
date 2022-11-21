@@ -94,7 +94,7 @@ export function getDefaultWorker({ name }: { name: string }): WorkersPool {
             configurations: [
                 {
                     name: 'default',
-                    scriptPath: './worker_entry.py',
+                    scriptPath: './entry.py',
                 },
             ],
         },
