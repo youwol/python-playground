@@ -19,6 +19,7 @@ import {
 import { Context } from '../../context'
 import {
     cleanFileSystem,
+    cleanJsModules,
     getModuleNameFromFile,
     patchPythonSrc,
     registerJsModules,
@@ -77,8 +78,14 @@ async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
     const pythonChannel$ = new self['rxjs_APIv6'].ReplaySubject(1)
     self['getPythonChannel$'] = () => pythonChannel$
     const syncFileSystem = self['syncFileSystem']
+    const registerJsModules = self['registerJsModules']
     const cleanFileSystem = self['cleanFileSystem']
-    await syncFileSystem(pyodide, input.args.fileSystem)
+    const cleanJsModules = self['cleanJsModules']
+
+    await Promise.all([
+        syncFileSystem(pyodide, input.args.fileSystem),
+        registerJsModules(pyodide, input.args.fileSystem),
+    ])
     // Need to unsubscribe following subscription at the end of the run
     pythonChannel$.subscribe((message) => {
         input.context.sendData(message)
@@ -87,7 +94,10 @@ async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
     await pyodide.runPythonAsync(input.args.content, {
         globals: namespace,
     })
-    await cleanFileSystem(pyodide, input.args.fileSystem)
+    await Promise.all([
+        cleanFileSystem(pyodide, input.args.fileSystem),
+        cleanJsModules(pyodide, input.args.fileSystem),
+    ])
 }
 
 /**
@@ -150,6 +160,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                 syncFileSystem: syncFileSystem,
                 cleanFileSystem: cleanFileSystem,
                 registerJsModules: registerJsModules,
+                cleanJsModules: cleanJsModules,
                 registerYwPyodideModule: registerYwPyodideModule,
                 getModuleNameFromFile: getModuleNameFromFile,
             },
