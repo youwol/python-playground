@@ -1,10 +1,19 @@
 import { RawLog, Requirements } from '../../models'
-import { BehaviorSubject, from, merge, of, ReplaySubject, Subject } from 'rxjs'
+import {
+    BehaviorSubject,
+    forkJoin,
+    from,
+    merge,
+    of,
+    ReplaySubject,
+    Subject,
+} from 'rxjs'
 import { map, mergeMap, scan } from 'rxjs/operators'
 import { OutputViewNode } from '../../explorer'
 import { Environment, ExecutingImplementation } from '../environment.state'
 import {
     cleanFileSystem,
+    cleanJsModules,
     registerJsModules,
     registerPyPlayModule,
     registerYwPyodideModule,
@@ -133,7 +142,6 @@ export class MainThreadImplementation implements ExecutingImplementation {
             Promise.all([
                 registerYwPyodideModule(pyodide, outputs),
                 registerPyPlayModule(pyodide, this.appState),
-                registerJsModules(pyodide, fileSystem),
             ]),
         )
     }
@@ -143,7 +151,10 @@ export class MainThreadImplementation implements ExecutingImplementation {
         const pyodide = self[Environment.ExportedPyodideInstanceName]
         return of(undefined).pipe(
             mergeMap(() => {
-                return syncFileSystem(pyodide, fileSystem)
+                return forkJoin([
+                    syncFileSystem(pyodide, fileSystem),
+                    registerJsModules(pyodide, fileSystem),
+                ])
             }),
             mergeMap(() => {
                 return pyodide.runPythonAsync(code, {
@@ -151,7 +162,10 @@ export class MainThreadImplementation implements ExecutingImplementation {
                 })
             }),
             mergeMap(() => {
-                return cleanFileSystem(pyodide, fileSystem)
+                return forkJoin([
+                    cleanFileSystem(pyodide, fileSystem),
+                    cleanJsModules(pyodide, fileSystem),
+                ])
             }),
         )
     }

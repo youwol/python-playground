@@ -92,6 +92,17 @@ export async function registerJsModules(
     }
 }
 
+export async function cleanJsModules(pyodide, fileSystem: Map<string, string>) {
+    for (const key of Array.from(fileSystem.keys())) {
+        if (key.endsWith('.js')) {
+            const moduleName = key.substring(2).split('.js')[0]
+            pyodide.runPython(
+                `import sys\nif '${moduleName}' in sys.modules:\n    del sys.modules['${moduleName}']`,
+            )
+        }
+    }
+}
+
 export async function syncFileSystem(pyodide, fileSystem: Map<string, string>) {
     fileSystem.forEach((value, path) => {
         path.endsWith('.py') &&
