@@ -13,7 +13,7 @@ import { ImmutableTree } from '@youwol/fv-tree'
 import { child$, HTMLElement$, VirtualDOM } from '@youwol/flux-view'
 import { AppState } from '../../app.state'
 import { TreeState } from '../tree.view'
-import { Node, ProjectNode, SourceNode } from '../nodes'
+import { Node, ProjectNode, SourceNode, WorkersPoolNode } from '../nodes'
 
 /**
  * Logic side of [[ContextMenuView]]
@@ -110,7 +110,9 @@ export class ContextMenuView implements VirtualDOM {
             .filter((action) => action.applicable(this.selectedNode))
             .map((action) =>
                 action.createNode(
-                    this.selectedNode as ProjectNode & SourceNode,
+                    this.selectedNode as ProjectNode &
+                        SourceNode &
+                        WorkersPoolNode,
                     this.state.explorerState,
                 ),
             )

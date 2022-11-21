@@ -235,6 +235,14 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     ) {
         return new WorkerPoolPythonProxy({ state, rawLog$ })
     }
+
+    terminate() {
+        this.workersFactory$
+            .pipe(filter((factory) => factory != undefined))
+            .subscribe((factory) => {
+                factory.terminate()
+            })
+    }
 }
 
 interface PythonProxyScheduleInput {

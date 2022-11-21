@@ -1,6 +1,11 @@
 import { ImmutableTree } from '@youwol/fv-tree'
 import { TreeState } from '../tree.view'
-import { ExecutingEnvironmentNode, ProjectNode, SourceNode } from '../nodes'
+import {
+    ExecutingEnvironmentNode,
+    ProjectNode,
+    SourceNode,
+    WorkersPoolNode,
+} from '../nodes'
 import { ContextMenuState } from './context-menu'
 import { ExecutingImplementation } from '../../environments/environment.state'
 
@@ -47,6 +52,14 @@ export const ALL_ACTIONS = {
         applicable: (selectedNode) => selectedNode instanceof ProjectNode,
         createNode: (node: ProjectNode, explorerState: TreeState) =>
             new NewWorkersPoolNode({
+                node,
+                explorerState,
+            }),
+    },
+    deleteWorker: {
+        applicable: (selectedNode) => selectedNode instanceof WorkersPoolNode,
+        createNode: (node: WorkersPoolNode, explorerState: TreeState) =>
+            new DeleteWorkersPoolNode({
                 node,
                 explorerState,
             }),
@@ -204,5 +217,27 @@ export class NewWorkersPoolNode
 
     execute(_state: ContextMenuState) {
         this.explorerState.appState.addWorkersPool()
+    }
+}
+
+export class DeleteWorkersPoolNode
+    extends ContextTreeNode
+    implements ExecutableNode
+{
+    public readonly explorerState: TreeState
+    public readonly node: WorkersPoolNode
+
+    constructor(params: { explorerState: TreeState; node: WorkersPoolNode }) {
+        super({
+            id: 'delete-workers-pool',
+            children: undefined,
+            name: 'Delete workers pool',
+            faIcon: 'fas fa-trash',
+        })
+        Object.assign(this, params)
+    }
+
+    execute(_state: ContextMenuState) {
+        this.explorerState.appState.deleteWorkersPool(this.node.state)
     }
 }

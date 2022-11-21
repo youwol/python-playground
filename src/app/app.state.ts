@@ -347,6 +347,24 @@ export class AppState {
         this.pyWorkersState$.next([...this.pyWorkersState$.value, state])
     }
 
+    deleteWorkersPool(state: WorkersPoolState) {
+        const workersPoolNode: WorkersPoolNode = this.explorerState.getNode(
+            state.id,
+        )
+        const childrenNodes: Node[] =
+            workersPoolNode.resolvedChildren() as unknown as Node[]
+        state.executingImplementation.terminate()
+        const pools = this.pyWorkersState$.value.filter(
+            (actual_state) => actual_state != state,
+        )
+        this.pyWorkersState$.next(pools)
+        this.explorerState.removeNode(state.id)
+        this.closeTab(workersPoolNode)
+        childrenNodes.forEach((node) => {
+            this.closeTab(node)
+        })
+    }
+
     getPythonProxy() {
         return {
             get_worker_pool: (name: string) => {
