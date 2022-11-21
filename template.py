@@ -11,10 +11,10 @@ pkg_json = parse_json(folder_path / 'package.json')
 
 load_dependencies = {
     '@youwol/fv-code-mirror-editors': '^0.2.2',
-    '@youwol/os-core': '^0.1.1',
+    '@youwol/os-core': '^0.1.3',
     '@youwol/fv-tabs': '^0.2.1',
     '@youwol/os-top-banner': '^0.1.1',
-    '@youwol/cdn-client': '^1.0.6',
+    '@youwol/cdn-client': '^1.0.7',
     '@youwol/http-clients': '^1.0.2',
     '@youwol/flux-view': '^1.0.3',
     '@youwol/fv-context-menu': '^0.1.1',
