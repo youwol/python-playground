@@ -146,7 +146,9 @@ export class MainThreadImplementation implements ExecutingImplementation {
                 return syncFileSystem(pyodide, fileSystem)
             }),
             mergeMap(() => {
-                return pyodide.runPythonAsync(code)
+                return pyodide.runPythonAsync(code, {
+                    globals: pyodide.globals.get('dict')(),
+                })
             }),
             mergeMap(() => {
                 return cleanFileSystem(pyodide, fileSystem)
