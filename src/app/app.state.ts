@@ -107,6 +107,10 @@ export class AppState {
     }) {
         Object.assign(this, params)
 
+        this.rawLog$.next({
+            level: 'info',
+            message: 'Welcome to the python playground 🐍',
+        })
         this.mainThreadState = new EnvironmentState<MainThreadImplementation>({
             initialModel: params.project,
             rawLog$: this.rawLog$,

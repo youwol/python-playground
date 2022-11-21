@@ -177,11 +177,6 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             rawLog$.next(log)
         })
 
-        this.rawLog$.next({
-            level: 'info',
-            message: 'Welcome to the python playground 🐍',
-        })
-
         this.id = initialModel.id
 
         log.info(`Initialize state for ${initialModel.id}`, () => {
