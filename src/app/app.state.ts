@@ -15,7 +15,7 @@ import {
 import { Project, RawLog, WorkersPool } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
-import { ProjectTab } from './side-nav-explorer'
+import { ProjectTab, OutputViewsTab } from './side-nav-tabs'
 import {
     debounceTime,
     map,
@@ -27,7 +27,6 @@ import {
     tap,
 } from 'rxjs/operators'
 import { MainThreadImplementation } from './environments/main-thread'
-import { OutputViewsTab } from './side-nav-explorer/output-views.tab'
 import {
     createProjectRootNode,
     HelpersJsSourceNode,

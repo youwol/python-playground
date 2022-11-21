@@ -5,7 +5,7 @@ import {
     HTMLElement$,
 } from '@youwol/flux-view'
 import { debounceTime, map } from 'rxjs/operators'
-import { RawLog } from '../../models'
+import { RawLog } from '../models'
 import { Observable } from 'rxjs'
 
 /**

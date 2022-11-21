@@ -1,7 +1,7 @@
 export * from './app.view'
 export * from './app.state'
 export * as TopBanner from './top-banner'
-export * as SideNav from './side-nav-explorer'
+export * as SideNav from './side-nav-tabs'
 export * as Content from './content'
 export * as Explorer from './explorer'
 export * as MainThread from './environments/main-thread'
