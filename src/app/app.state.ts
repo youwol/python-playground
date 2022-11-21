@@ -343,9 +343,8 @@ export class AppState {
             pyWorker,
             state,
         })
-        const actualWorkers = this.pyWorkersState$.getValue()
-        this.pyWorkersState$.next([...actualWorkers, state])
         this.explorerState.addChild(this.mainThreadState.id, node)
+        this.pyWorkersState$.next([...this.pyWorkersState$.value, state])
     }
 
     getPythonProxy() {
