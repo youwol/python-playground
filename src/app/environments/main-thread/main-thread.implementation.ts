@@ -1,6 +1,6 @@
 import { RawLog, Requirements } from '../../models'
 import { BehaviorSubject, from, merge, of, ReplaySubject, Subject } from 'rxjs'
-import { map, mergeMap, scan, tap } from 'rxjs/operators'
+import { map, mergeMap, scan } from 'rxjs/operators'
 import { OutputViewNode } from '../../explorer'
 import { Environment, ExecutingImplementation } from '../environment.state'
 import {
@@ -142,14 +142,14 @@ export class MainThreadImplementation implements ExecutingImplementation {
         this.triggerOutputsCollect$.next(true)
         const pyodide = self[Environment.ExportedPyodideInstanceName]
         return of(undefined).pipe(
-            tap(() => {
-                syncFileSystem(pyodide, fileSystem)
+            mergeMap(() => {
+                return syncFileSystem(pyodide, fileSystem)
             }),
             mergeMap(() => {
                 return pyodide.runPythonAsync(code)
             }),
-            tap(() => {
-                cleanFileSystem(pyodide, fileSystem)
+            mergeMap(() => {
+                return cleanFileSystem(pyodide, fileSystem)
             }),
         )
     }
