@@ -171,7 +171,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
             )
     }
 
-    initializeBeforeRun(fileSystem: Map<string, string>) {
+    initializeBeforeRun() {
         return this.workersFactory$.pipe(
             filter((pool) => pool != undefined),
             take(1),

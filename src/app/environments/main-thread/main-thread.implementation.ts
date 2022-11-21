@@ -120,10 +120,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
         )
     }
 
-    initializeBeforeRun(
-        fileSystem: Map<string, string>,
-        rawLog$: Subject<RawLog>,
-    ) {
+    initializeBeforeRun(rawLog$: Subject<RawLog>) {
         const outputs = {
             onLog: (log) => rawLog$.next(log),
             onView: (view) => {

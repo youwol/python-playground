@@ -283,10 +283,8 @@ export class AppState {
                         map((fsMap) => ({ fsMap, pyWorker })),
                     )
                 }),
-                mergeMap(({ fsMap, pyWorker }) => {
-                    return pyWorker.executingImplementation.initializeBeforeRun(
-                        fsMap,
-                    )
+                mergeMap(({ pyWorker }) => {
+                    return pyWorker.executingImplementation.initializeBeforeRun()
                 }),
                 reduce((acc, e) => [...acc, e], []),
             )

@@ -80,10 +80,7 @@ export interface ExecutingImplementation {
         workerListener?: WorkerListener,
     ): Observable<unknown>
 
-    initializeBeforeRun(
-        fileSystem: Map<string, string>,
-        rawLog$: Subject<RawLog>,
-    ): Observable<unknown>
+    initializeBeforeRun(rawLog$: Subject<RawLog>): Observable<unknown>
 
     installRequirements(
         requirements: Requirements,
@@ -346,7 +343,7 @@ export class EnvironmentState<T extends ExecutingImplementation> {
                         (config) => config.name == selectedConfigName,
                     )
                     return this.executingImplementation
-                        .initializeBeforeRun(fsMap, this.rawLog$)
+                        .initializeBeforeRun(this.rawLog$)
                         .pipe(mapTo({ selectedConfig, fileSystem: fsMap }))
                 }),
                 mergeMap(({ fileSystem, selectedConfig }) => {
