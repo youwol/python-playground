@@ -131,7 +131,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
         const pyodide = self[Environment.ExportedPyodideInstanceName]
         return from(
             Promise.all([
-                registerYwPyodideModule(pyodide, fileSystem, outputs),
+                registerYwPyodideModule(pyodide, outputs),
                 registerPyPlayModule(pyodide, this.appState),
                 registerJsModules(pyodide, fileSystem),
             ]),

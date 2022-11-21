@@ -6,7 +6,7 @@ import { Environment } from '../environment.state'
 export function patchPythonSrc(originalSrc: string) {
     return `
 import sys
-from yw_pyodide import log_info, log_error, project_modules
+from yw_pyodide import log_info, log_error
 
 class LoggerInfo(object):
     def __init__(self):
@@ -25,10 +25,6 @@ class LoggerError(object):
         
 sys.stdout = LoggerInfo()  
 sys.stderr = LoggerError()       
-keys = list(sys.modules.keys())
-for module_name in project_modules:
-    if module_name in sys.modules:
-        del sys.modules[module_name]
 
 ${originalSrc}
 `
@@ -36,7 +32,6 @@ ${originalSrc}
 
 export async function registerYwPyodideModule(
     pyodide,
-    fileSystem: Map<string, string>,
     outputs: {
         onLog: (log: RawLog) => void
         onView: (view: View) => void
@@ -60,13 +55,6 @@ export async function registerYwPyodideModule(
         },
         new: (T, ...p) => new T(...p),
         call: (obj: unknown, method: string, ...args) => obj[method](...args),
-        project_modules: [...fileSystem.keys()].map((path) => {
-            // in a worker only self['getModuleNameFromFile'] is defined
-            // in main thread only 'getModuleNameFromFile' is defined
-            return (self['getModuleNameFromFile'] || getModuleNameFromFile)(
-                path,
-            )
-        }),
         create_view: (name: string, htmlElement: VirtualDOM | HTMLElement) => {
             outputs.onView({
                 name,

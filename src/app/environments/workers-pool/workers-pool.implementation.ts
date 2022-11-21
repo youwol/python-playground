@@ -30,7 +30,6 @@ import { CdnEvent, getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
 import { setup } from '../../../auto-generated'
 
 interface EntryPointSyncFsMapArgs {
-    fsMap: Map<string, string>
     exportedPyodideInstanceName: string
     exportedRxjsSymbol: string
 }
@@ -63,9 +62,7 @@ function entryPointSyncEnv(
         },
     })
 
-    return Promise.all([
-        registerYwPyodideModule(pyodide, input.args.fsMap, outputs),
-    ])
+    return Promise.all([registerYwPyodideModule(pyodide, outputs)])
 }
 
 interface EntryPointExeArgs {
@@ -188,7 +185,6 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                                 title,
                                 entryPoint: entryPointSyncEnv,
                                 args: {
-                                    fsMap: fileSystem,
                                     exportedRxjsSymbol:
                                         setup.getDependencySymbolExported(
                                             'rxjs',
