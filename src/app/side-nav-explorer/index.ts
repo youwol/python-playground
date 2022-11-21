@@ -3,4 +3,4 @@
  *
  * @module SideNav
  */
-export * from './projectTab'
+export * from './project.tab'
