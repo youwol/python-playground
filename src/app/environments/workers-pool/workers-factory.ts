@@ -1,7 +1,7 @@
 /** @format */
 
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs'
-import { filter, map, take, takeWhile, tap } from 'rxjs/operators'
+import { filter, map, mergeMap, take, takeWhile, tap } from 'rxjs/operators'
 import { Context } from '../../context'
 import { CdnEvent } from '@youwol/cdn-client'
 import { isCdnEventMessage } from './utils'
@@ -26,11 +26,18 @@ interface WorkerVariable<T> {
     value: T
 }
 
+interface Task {
+    title: string
+    entryPoint: (args: unknown) => Promise<unknown>
+    args: unknown
+}
+
 interface WorkerEnvironment {
     cdnUrl: string
     variables: WorkerVariable<unknown>[]
     functions: WorkerFunction<unknown>[]
     cdnInstallation: WorkerCdnInstallation
+    postInstallTasks?: Task[]
 }
 
 export interface WorkerContext {
@@ -318,12 +325,14 @@ export class WorkersFactory {
         functions,
         cdnInstallation,
         cdnUrl,
+        postInstallTasks,
     }: {
         cdnEvent$: Subject<CdnEvent>
         cdnUrl: string
         variables?: { [_k: string]: unknown }
         functions?: { [_k: string]: unknown }
         cdnInstallation?: WorkerCdnInstallation
+        postInstallTasks?: Task[]
     }) {
         this.cdnEvent$ = cdnEvent$
         // Need to manage lifecycle of following subscription
@@ -350,14 +359,14 @@ export class WorkersFactory {
                 target,
             })),
             cdnInstallation,
+            postInstallTasks,
         }
     }
 
     reserve({ workersCount }: { workersCount: number }) {
         const title = 'install requirements'
-        const context = new Context(title)
-        const scheduleInstall$ = () =>
-            this.schedule({
+        const tasks = [
+            {
                 title,
                 entryPoint: entryPointInstall,
                 args: {
@@ -371,8 +380,13 @@ export class WorkersFactory {
                     ),
                     cdnInstallation: this.environment.cdnInstallation,
                 },
-                context,
-            }).pipe(
+            },
+            ...this.environment.postInstallTasks,
+        ]
+        const scheduleTask$ = (index, targetWorkerId?) => {
+            const task = tasks[index]
+            const context = new Context(task.title)
+            return this.schedule({ ...task, targetWorkerId, context }).pipe(
                 tap((message: MessageEventData) => {
                     const cdnEvent = isCdnEventMessage(message)
                     if (cdnEvent) {
@@ -381,11 +395,15 @@ export class WorkersFactory {
                 }),
                 filter((d) => d.type == 'Exit'),
                 take(1),
+                mergeMap((message) => {
+                    return index == tasks.length - 1
+                        ? of(undefined)
+                        : scheduleTask$(index + 1, message.data['workerId'])
+                }),
             )
+        }
         return forkJoin(
-            new Array(workersCount)
-                .fill(undefined)
-                .map(() => scheduleInstall$()),
+            new Array(workersCount).fill(undefined).map(() => scheduleTask$(0)),
         )
     }
 
