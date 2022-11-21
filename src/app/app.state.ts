@@ -330,7 +330,7 @@ export class AppState {
 
     addWorkersPool() {
         const pyWorker = getDefaultWorker({
-            name: `Worker ${this.getWorkersPoolNodes().length}`,
+            name: `Workers-pool ${this.getWorkersPoolNodes().length}`,
         })
         const state = new EnvironmentState<WorkersPoolImplementation>({
             initialModel: pyWorker,
