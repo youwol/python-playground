@@ -118,7 +118,9 @@ export async function cleanFileSystem(
 ) {
     fileSystem.forEach((value, path) => {
         if (path.endsWith('.py')) {
-            const moduleName = getModuleNameFromFile(path)
+            const moduleName = (
+                self['getModuleNameFromFile'] || getModuleNameFromFile
+            )(path)
             pyodide.FS.unlink(path)
             pyodide.runPython(
                 `import sys\nif '${moduleName}' in sys.modules:\n    del sys.modules['${moduleName}']`,

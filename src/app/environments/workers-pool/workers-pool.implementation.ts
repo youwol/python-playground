@@ -81,23 +81,25 @@ async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
     const registerJsModules = self['registerJsModules']
     const cleanFileSystem = self['cleanFileSystem']
     const cleanJsModules = self['cleanJsModules']
-
+    const objectPyToJs = self['objectPyToJs']
     await Promise.all([
         syncFileSystem(pyodide, input.args.fileSystem),
         registerJsModules(pyodide, input.args.fileSystem),
     ])
-    // Need to unsubscribe following subscription at the end of the run
-    pythonChannel$.subscribe((message) => {
-        input.context.sendData(message)
+    const sub = pythonChannel$.subscribe((message) => {
+        input.context.sendData(objectPyToJs(pyodide, message))
     })
     const namespace = pyodide.toPy(input.args.pythonGlobals)
-    await pyodide.runPythonAsync(input.args.content, {
+    const result = await pyodide.runPythonAsync(input.args.content, {
         globals: namespace,
     })
-    await Promise.all([
+    sub.unsubscribe()
+    return await Promise.all([
         cleanFileSystem(pyodide, input.args.fileSystem),
         cleanJsModules(pyodide, input.args.fileSystem),
-    ])
+    ]).then(() => {
+        return objectPyToJs(pyodide, result)
+    })
 }
 
 /**
@@ -157,6 +159,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                 cdnSetup.version,
             )}`,
             functions: {
+                objectPyToJs: objectPyToJs,
                 syncFileSystem: syncFileSystem,
                 cleanFileSystem: cleanFileSystem,
                 registerJsModules: registerJsModules,
