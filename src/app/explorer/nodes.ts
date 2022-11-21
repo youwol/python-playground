@@ -93,12 +93,39 @@ export abstract class Node extends ImmutableTree.Node {
     }
 }
 
+export class ExecutingEnvironmentNode<
+    TState extends ExecutingImplementation,
+> extends Node {
+    /**
+     * @group Immutable Constants
+     */
+    public readonly environment: Environment
+
+    /**
+     * @group Immutable Constants
+     */
+    public readonly state: EnvironmentState<TState>
+
+    constructor(params: {
+        state: AbstractEnvState
+        name: string
+        environment: Environment
+        children
+    }) {
+        super({
+            id: params.state.id,
+            name: params.name,
+            children: params.children,
+        })
+    }
+}
+
 /**
  * Project Node of explorer
  *
  * @category Nodes
  */
-export class ProjectNode extends Node {
+export class ProjectNode extends ExecutingEnvironmentNode<MainThreadImplementation> {
     /**
      * @group Immutable Constants
      */
@@ -110,14 +137,15 @@ export class ProjectNode extends Node {
     public readonly environment: Environment
 
     constructor(params: {
-        id: string
+        state: AbstractEnvState
         name: string
         environment: Environment
         children
     }) {
         super({
-            id: params.id,
             name: params.name,
+            state: params.state,
+            environment: params.environment,
             children: params.children,
         })
         Object.assign(this, params)
@@ -180,6 +208,9 @@ export class ConfigurationsNode extends Node {
  * @category Nodes
  */
 export class SourceNode extends Node {
+    static getId(state: AbstractEnvState, path: string) {
+        return `${state.id}#${path}`
+    }
     /**
      * @group Immutable Constants
      */
@@ -197,7 +228,7 @@ export class SourceNode extends Node {
 
     constructor(params: { path: string; state: AbstractEnvState }) {
         super({
-            id: params.path,
+            id: SourceNode.getId(params.state, params.path),
             name: params.path.split('/').slice(-1)[0],
             children: undefined,
         })
@@ -263,20 +294,16 @@ export class OutputViewNode extends Node {
  *
  * @category Nodes
  */
-export class WorkersPoolNode extends Node {
+export class WorkersPoolNode extends ExecutingEnvironmentNode<WorkersPoolImplementation> {
     /**
      * @group Immutable Constants
      */
     public readonly category: NodeCategory = 'WorkersPoolNode'
 
-    /**
-     * @group Immutable Constants
-     */
-    public readonly state: WorkersPoolState
-
     constructor(params: { pyWorker: WorkersPool; state: WorkersPoolState }) {
         super({
-            id: params.pyWorker.id,
+            state: params.state,
+            environment: params.pyWorker.environment,
             name: params.pyWorker.name,
             children: [
                 new RequirementsNode({
@@ -307,7 +334,7 @@ export function createProjectRootNode(
         {},
     )
     return new ProjectNode({
-        id: project.id,
+        state: projectState,
         name: project.name,
         environment: project.environment,
         children: [

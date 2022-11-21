@@ -184,7 +184,11 @@ function headerRenamed(node: SourceNode, explorerState: TreeState): VirtualDOM {
         onclick: (ev) => ev.stopPropagation(),
         onkeydown: (ev) => {
             if (ev.key === 'Enter') {
-                explorerState.appState.renameFile(node, ev.target.value)
+                explorerState.appState.renameFile(
+                    node.state,
+                    node.path,
+                    ev.target.value,
+                )
             }
         },
     }

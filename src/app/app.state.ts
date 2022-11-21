@@ -289,37 +289,40 @@ export class AppState {
         }
     }
 
-    addFile(name: string, kind: 'js' | 'py') {
+    addFile(state: AbstractEnvState, name: string, kind: 'js' | 'py') {
         log.info(`addFile: ${name} of kind ${kind}`)
         const path = `./${name}.${kind}`
         const factory = kind == 'js' ? HelpersJsSourceNode : SourceNode
         this.explorerState.addChild(
-            this.mainThreadState.id,
+            state.id,
             new factory({
                 path,
-                state: this.mainThreadState,
+                state,
             }),
         )
-        this.mainThreadState.ideState.addFile({ path, content: '' })
+        state.ideState.addFile({ path, content: '' })
     }
 
-    deleteFile(path: string) {
+    deleteFile(state: AbstractEnvState, path: string) {
         log.info(`deleteFile: ${path}`)
-        const node = this.explorerState.getNode(path)
-        this.explorerState.removeNode(path)
-        this.mainThreadState.removeFile(path)
+        const node = this.explorerState.getNode(SourceNode.getId(state, path))
+        this.explorerState.removeNode(node)
+        state.removeFile(path)
         this.closeTab(node)
     }
 
-    renameFile(node: SourceNode, name: string) {
-        log.info(`renameFile: ${node.id} with name ${name}`)
+    renameFile(state: AbstractEnvState, actualPath: string, name: string) {
+        log.info(`renameFile: ${actualPath} with name ${name}`)
+        const node: SourceNode = this.explorerState.getNode(
+            SourceNode.getId(state, actualPath),
+        )
         const factory = name.endsWith('.js') ? HelpersJsSourceNode : SourceNode
         const path = `./${name}`
-        const newNode = new factory({ path, state: this.mainThreadState })
-        this.mainThreadState.ideState.moveFile(node.id, `./${name}`)
+        const newNode = new factory({ path, state: node.state })
+        node.state.ideState.moveFile(node.path, `./${name}`)
         this.explorerState.replaceNode(
             node,
-            new factory({ path, state: this.mainThreadState }),
+            new factory({ path, state: node.state }),
         )
         this.closeTab(node)
         this.openTab(newNode)
