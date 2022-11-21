@@ -134,7 +134,6 @@ export class MainThreadImplementation implements ExecutingImplementation {
                 registerYwPyodideModule(pyodide, fileSystem, outputs),
                 registerPyPlayModule(pyodide, this.appState),
                 registerJsModules(pyodide, fileSystem),
-                //syncFileSystem(pyodide, fileSystem),
             ]),
         )
     }
