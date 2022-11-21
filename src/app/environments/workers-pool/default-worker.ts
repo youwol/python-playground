@@ -58,10 +58,24 @@ def calc_pi(n):
         r = r + (inside / n * 4)
     return r / 3
 
-def compute(d, output):
-    output_stream.send_data(len(d))
-    
-input_stream.on_data( lambda d: compute(d, output_compute) )
+def compute(args):
+    """
+    Providing a list of samples count, the function compute an approximation of Pi for each element. 
+    The function return the last approximation computed (using the last element of the provided list of samples count).
+    The accumulated results at each step is emitted back to the main thread.
+     
+    @param args : a dictionary with attributes 'samplings', it defines the list of samples count.
+    """
+    counts = args["samplings"]
+    r = None
+    points = []
+    for n in counts:
+        print(f"Start to compute PI using {n} samples")
+        r = calc_pi(n)
+        points.append({"x":math.log10(n), "y":r})
+        Emitter.send(points)
+        
+    return points
 `
 
 export function getDefaultWorker({ name }: { name: string }): WorkersPool {
