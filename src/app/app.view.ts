@@ -29,7 +29,6 @@ export class AppView implements VirtualDOM {
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
-
         this.children = [
             new TopBannerView({ appState: this.appState }),
             {
@@ -37,7 +36,7 @@ export class AppView implements VirtualDOM {
                 style: {
                     minHeight: '0px',
                 },
-                children: [new MainContentView({appState: this.appState})],
+                children: [new MainContentView({ appState: this.appState })],
             },
         ]
     }
@@ -94,7 +93,7 @@ export class MainContentView implements VirtualDOM {
                     new ContentView({
                         appState: this.appState,
                     }),
-                    rightSideNavView
+                    rightSideNavView,
                 ],
             },
         ]

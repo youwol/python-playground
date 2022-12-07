@@ -28,7 +28,7 @@ await setup.installMainModule({
         ],
         scripts: [
             'codemirror#5.52.0~mode/python.min.js',
-            'codemirror#5.52.0~mode/javascript.min.js'
+            'codemirror#5.52.0~mode/javascript.min.js',
         ],
         displayLoadingScreen: true,
         onEvent: (ev) => {
