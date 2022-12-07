@@ -52,10 +52,6 @@ interface MessageDataExecute {
     args: unknown
 }
 
-type MessageDataVariables = WorkerVariable<unknown>[]
-
-type MessageDataFunctions = WorkerFunction<string>[]
-
 export interface MessageDataExit {
     taskId: string
     error: boolean
@@ -77,19 +73,13 @@ export interface MessageDataData {
 export interface MessageEventData {
     type:
         | 'Execute'
-        | 'installVariables'
-        | 'installFunctions'
         | 'installScript'
         | 'Exit'
         | 'Start'
         | 'Log'
         | 'DependencyInstalled'
         | 'Data'
-    data:
-        | MessageDataExecute
-        | MessageDataVariables
-        | MessageDataFunctions
-        | MessageDataData
+    data: MessageDataExecute | MessageDataData
 }
 
 export interface EntryPointArguments<TArgs> {
