@@ -473,7 +473,7 @@ export class WorkersFactory {
                 take(1),
             )
             .subscribe((message) => {
-                context.info('worker started', message)
+                context.info(`worker started on task ${taskId}`, message)
                 exposedProcess.start()
             })
 
@@ -485,12 +485,18 @@ export class WorkersFactory {
             .subscribe((message) => {
                 const data = message.data as unknown as MessageDataExit
                 if (data.error) {
-                    context.info('worker exited abnormally', message)
+                    context.info(
+                        `worker exited abnormally on task ${taskId}`,
+                        message,
+                    )
                     exposedProcess.fail(data.result)
                     return
                 }
                 exposedProcess.succeed()
-                context.info('worker exited normally', message)
+                context.info(
+                    `worker exited normally on task ${taskId}`,
+                    message,
+                )
             })
         channel$
             .pipe(filter((message) => message.type == 'Log'))
