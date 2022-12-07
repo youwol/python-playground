@@ -219,12 +219,11 @@ function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
     const cdnBody = {
         ...input.args.cdnInstallation,
         customInstallers,
-        //onEvent,
     }
+    input.context.info('Start install')
     return cdn
         .install(cdnBody)
         .then(() => {
-            console.log('Add functions', input.args.functions)
             input.args.functions.forEach((f) => {
                 self[f.id] = new Function(f.target)()
             })
