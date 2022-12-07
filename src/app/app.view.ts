@@ -71,13 +71,13 @@ export class MainContentView implements VirtualDOM {
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
-        let leftSideNavView = new DockableTabs.View({
+        const leftSideNavView = new DockableTabs.View({
             state: this.appState.leftSideNavState,
             styleOptions: {
                 initialPanelSize: '300px',
             },
         })
-        let rightSideNavView = new DockableTabs.View({
+        const rightSideNavView = new DockableTabs.View({
             state: this.appState.rightSideNavState,
             styleOptions: {
                 initialPanelSize: '300px',
