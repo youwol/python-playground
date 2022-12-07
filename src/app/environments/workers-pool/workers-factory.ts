@@ -407,7 +407,7 @@ export class WorkersFactory {
             })
             p.schedule()
 
-            const r$ = this.instrumentChannel$(channel$, p, taskId, context)
+            const r$ = this.getTaskChannel$(channel$, p, taskId, context)
 
             if (targetWorkerId && !this.workers$.value[targetWorkerId]) {
                 throw Error('Provided workerId not known')
@@ -427,7 +427,7 @@ export class WorkersFactory {
 
                 return r$
             }
-            const worker$ = this.getWorker$(ctx)
+            const worker$ = this.getIdleWorkerOrCreate$(ctx)
             if (!worker$) {
                 this.tasksQueue.push({
                     entryPoint,
@@ -457,7 +457,7 @@ export class WorkersFactory {
         })
     }
 
-    instrumentChannel$(
+    getTaskChannel$(
         originalChannel$: Subject<MessageEventData>,
         exposedProcess: Process,
         taskId: string,
@@ -517,7 +517,7 @@ export class WorkersFactory {
         )
     }
 
-    getWorker$(
+    getIdleWorkerOrCreate$(
         context: Context,
     ): Observable<{ workerId: string; worker: Worker }> {
         return context.withChild('get worker', (ctx) => {
