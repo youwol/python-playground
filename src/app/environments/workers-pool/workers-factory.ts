@@ -303,7 +303,13 @@ export class Process {
 export class WorkersFactory {
     public readonly poolSize = navigator.hardwareConcurrency - 2
 
-    public readonly workers$ = new BehaviorSubject<{ [p: string]: Worker }>({})
+    public readonly mergedChannel$ = new Subject<MessageEventData>()
+    public readonly workers$ = new BehaviorSubject<{
+        [p: string]: {
+            worker: Worker
+            channel$: Observable<MessageEventData>
+        }
+    }>({})
     public readonly runningTasks$ = new BehaviorSubject<
         { workerId: string; taskId: string }[]
     >([])
@@ -323,7 +329,7 @@ export class WorkersFactory {
         taskId: string
         targetWorkerId?: string
         args: unknown
-        channel$: Subject<MessageEventData>
+        channel$: Observable<MessageEventData>
         entryPoint: unknown
     }> = []
 
@@ -399,7 +405,6 @@ export class WorkersFactory {
     }): Observable<MessageEventData> {
         return context.withChild('schedule thread', (ctx) => {
             const taskId = `t${Math.floor(Math.random() * 1e6)}`
-            const channel$ = new Subject<MessageEventData>()
             const p = new Process({
                 taskId,
                 title,
@@ -407,7 +412,7 @@ export class WorkersFactory {
             })
             p.schedule()
 
-            const r$ = this.getTaskChannel$(channel$, p, taskId, context)
+            const taskChannel$ = this.getTaskChannel$(p, taskId, context)
 
             if (targetWorkerId && !this.workers$.value[targetWorkerId]) {
                 throw Error('Provided workerId not known')
@@ -417,7 +422,7 @@ export class WorkersFactory {
                     entryPoint,
                     args,
                     taskId,
-                    channel$,
+                    channel$: taskChannel$,
                     targetWorkerId,
                 })
 
@@ -425,7 +430,7 @@ export class WorkersFactory {
                     this.pickTask(targetWorkerId, ctx)
                 }
 
-                return r$
+                return taskChannel$
             }
             const worker$ = this.getIdleWorkerOrCreate$(ctx)
             if (!worker$) {
@@ -433,9 +438,9 @@ export class WorkersFactory {
                     entryPoint,
                     args,
                     taskId,
-                    channel$,
+                    channel$: taskChannel$,
                 })
-                return r$
+                return taskChannel$
             }
             worker$
                 .pipe(
@@ -445,7 +450,7 @@ export class WorkersFactory {
                             entryPoint,
                             args,
                             taskId,
-                            channel$,
+                            channel$: taskChannel$,
                         })
                         this.pickTask(workerId, ctx)
                         return workerId
@@ -453,17 +458,17 @@ export class WorkersFactory {
                 )
                 .subscribe()
 
-            return r$
+            return taskChannel$
         })
     }
 
     getTaskChannel$(
-        originalChannel$: Subject<MessageEventData>,
         exposedProcess: Process,
         taskId: string,
         context: Context,
     ): Observable<MessageEventData> {
-        const channel$ = originalChannel$.pipe(
+        const channel$ = this.mergedChannel$.pipe(
+            filter((message) => message.data.taskId == taskId),
             takeWhile((message) => message.type != 'Exit', true),
         )
 
@@ -517,9 +522,11 @@ export class WorkersFactory {
         )
     }
 
-    getIdleWorkerOrCreate$(
-        context: Context,
-    ): Observable<{ workerId: string; worker: Worker }> {
+    getIdleWorkerOrCreate$(context: Context): Observable<{
+        workerId: string
+        worker: Worker
+        channel$: Observable<MessageEventData>
+    }> {
         return context.withChild('get worker', (ctx) => {
             const idleWorkerId = Object.keys(this.workers$.value).find(
                 (workerId) => !this.busyWorkers$.value.includes(workerId),
@@ -529,7 +536,8 @@ export class WorkersFactory {
                 ctx.info(`return idle worker ${idleWorkerId}`)
                 return of({
                     workerId: idleWorkerId,
-                    worker: this.workers$.value[idleWorkerId],
+                    worker: this.workers$.value[idleWorkerId].worker,
+                    channel$: this.workers$.value[idleWorkerId].channel$,
                 })
             }
             if (Object.keys(this.workers$.value).length < this.poolSize) {
@@ -565,16 +573,10 @@ export class WorkersFactory {
             })
             p.schedule()
             worker.onmessage = ({ data }) => {
-                if (data.data.taskId == taskId) {
-                    workerChannel$.next(data)
-                }
+                workerChannel$.next(data)
+                this.mergedChannel$.next(data)
             }
-            const taskChannel$ = this.getTaskChannel$(
-                workerChannel$,
-                p,
-                taskId,
-                context,
-            )
+            const taskChannel$ = this.getTaskChannel$(p, taskId, context)
 
             worker.postMessage({
                 type: 'Execute',
@@ -619,7 +621,7 @@ export class WorkersFactory {
                 tap(() => {
                     this.workers$.next({
                         ...this.workers$.value,
-                        [workerId]: worker,
+                        [workerId]: { worker, channel$: workerChannel$ },
                     })
                 }),
                 mapTo({ workerId, worker, channel$: taskChannel$ }),
@@ -653,7 +655,7 @@ export class WorkersFactory {
                 ...this.runningTasks$.value,
                 { workerId, taskId },
             ])
-            const worker = this.workers$.value[workerId]
+            const worker = this.workers$.value[workerId].worker
 
             channel$
                 .pipe(
@@ -668,11 +670,6 @@ export class WorkersFactory {
                         workerId,
                     })
                 })
-            worker.onmessage = ({ data }) => {
-                if (data.data.taskId == taskId) {
-                    channel$.next(data)
-                }
-            }
 
             ctx.info('picked task', {
                 taskId,
@@ -692,6 +689,8 @@ export class WorkersFactory {
     }
 
     terminate() {
-        Object.values(this.workers$.value).forEach((w) => w.terminate())
+        Object.values(this.workers$.value).forEach(({ worker }) =>
+            worker.terminate(),
+        )
     }
 }
