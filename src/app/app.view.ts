@@ -29,7 +29,6 @@ export class AppView implements VirtualDOM {
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
-
         this.children = [
             new TopBannerView({ appState: this.appState }),
             {
@@ -37,7 +36,7 @@ export class AppView implements VirtualDOM {
                 style: {
                     minHeight: '0px',
                 },
-                children: [new MainContentView({appState: this.appState})],
+                children: [new MainContentView({ appState: this.appState })],
             },
         ]
     }
@@ -71,13 +70,13 @@ export class MainContentView implements VirtualDOM {
     constructor(params: { appState: AppState }) {
         Object.assign(this, params)
 
-        let leftSideNavView = new DockableTabs.View({
+        const leftSideNavView = new DockableTabs.View({
             state: this.appState.leftSideNavState,
             styleOptions: {
                 initialPanelSize: '300px',
             },
         })
-        let rightSideNavView = new DockableTabs.View({
+        const rightSideNavView = new DockableTabs.View({
             state: this.appState.rightSideNavState,
             styleOptions: {
                 initialPanelSize: '300px',
@@ -94,7 +93,7 @@ export class MainContentView implements VirtualDOM {
                     new ContentView({
                         appState: this.appState,
                     }),
-                    rightSideNavView
+                    rightSideNavView,
                 ],
             },
         ]

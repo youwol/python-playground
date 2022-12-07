@@ -44,9 +44,8 @@ export class CodeEditorView {
     }) {
         Object.assign(this, params)
         const codeEditorView = new Common.CodeEditorView({
-            // I don't understand why any is needed on the next two lines: types definition seems correct
-            ideState: this.state.ideState as any,
-            path: this.sourcePath as any,
+            ideState: this.state.ideState,
+            path: this.sourcePath,
             language: this.sourcePath.endsWith('.py') ? 'python' : 'javascript',
             config: {
                 extraKeys: {
