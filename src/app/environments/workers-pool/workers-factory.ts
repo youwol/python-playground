@@ -1,7 +1,7 @@
 /** @format */
 
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs'
-import { filter, map, mergeMap, take, takeWhile, tap } from 'rxjs/operators'
+import { filter, map, mapTo, take, takeWhile, tap } from 'rxjs/operators'
 import { Context } from '../../context'
 import { CdnEvent } from '@youwol/cdn-client'
 import { isCdnEventMessage } from './utils'
@@ -52,10 +52,6 @@ interface MessageDataExecute {
     args: unknown
 }
 
-type MessageDataVariables = WorkerVariable<unknown>[]
-
-type MessageDataFunctions = WorkerFunction<string>[]
-
 export interface MessageDataExit {
     taskId: string
     error: boolean
@@ -77,19 +73,13 @@ export interface MessageDataData {
 export interface MessageEventData {
     type:
         | 'Execute'
-        | 'installVariables'
-        | 'installFunctions'
         | 'installScript'
         | 'Exit'
         | 'Start'
         | 'Log'
         | 'DependencyInstalled'
         | 'Data'
-    data:
-        | MessageDataExecute
-        | MessageDataVariables
-        | MessageDataFunctions
-        | MessageDataData
+    data: MessageDataExecute | MessageDataData
 }
 
 export interface EntryPointArguments<TArgs> {
@@ -202,6 +192,11 @@ export interface MessageDataInstall {
     variables: WorkerVariable<unknown>[]
     functions: { id: string; target: string }[]
     cdnInstallation: WorkerCdnInstallation
+    postInstallTasks: {
+        title: string
+        entryPoint: string
+        args: unknown
+    }[]
 }
 
 function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
@@ -229,12 +224,11 @@ function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
     const cdnBody = {
         ...input.args.cdnInstallation,
         customInstallers,
-        //onEvent,
     }
+    input.context.info('Start install')
     return cdn
         .install(cdnBody)
         .then(() => {
-            console.log('Add functions', input.args.functions)
             input.args.functions.forEach((f) => {
                 self[f.id] = new Function(f.target)()
             })
@@ -243,8 +237,22 @@ function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
             })
         })
         .then(() => {
-            const message = { type: 'installEvent', value: 'install done' }
-            input.context.sendData(message)
+            input.context.info('Dependencies installation done')
+            for (const task of input.args.postInstallTasks) {
+                input.context.info(`Start post-install task '${task.title}'`)
+                const entryPoint = new Function(task.entryPoint)()
+                entryPoint({
+                    args: task.args,
+                    context: input.context,
+                    taskId: input.taskId,
+                    workerScope: input.workerScope,
+                })
+            }
+            input.context.info('Post install tasks done')
+            input.context.sendData({
+                type: 'installEvent',
+                value: 'install done',
+            })
         })
 }
 
@@ -295,7 +303,13 @@ export class Process {
 export class WorkersFactory {
     public readonly poolSize = navigator.hardwareConcurrency - 2
 
-    public readonly workers$ = new BehaviorSubject<{ [p: string]: Worker }>({})
+    public readonly mergedChannel$ = new Subject<MessageEventData>()
+    public readonly workers$ = new BehaviorSubject<{
+        [p: string]: {
+            worker: Worker
+            channel$: Observable<MessageEventData>
+        }
+    }>({})
     public readonly runningTasks$ = new BehaviorSubject<
         { workerId: string; taskId: string }[]
     >([])
@@ -315,7 +329,7 @@ export class WorkersFactory {
         taskId: string
         targetWorkerId?: string
         args: unknown
-        channel$: Subject<MessageEventData>
+        channel$: Observable<MessageEventData>
         entryPoint: unknown
     }> = []
 
@@ -364,46 +378,15 @@ export class WorkersFactory {
     }
 
     reserve({ workersCount }: { workersCount: number }) {
-        const title = 'install requirements'
-        const tasks = [
-            {
-                title,
-                entryPoint: entryPointInstall,
-                args: {
-                    cdnUrl: this.environment.cdnUrl,
-                    variables: this.environment.variables,
-                    functions: this.environment.functions.map(
-                        ({ id, target }) => ({
-                            id,
-                            target: `return ${String(target)}`,
-                        }),
-                    ),
-                    cdnInstallation: this.environment.cdnInstallation,
-                },
-            },
-            ...this.environment.postInstallTasks,
-        ]
-        const scheduleTask$ = (index, targetWorkerId?) => {
-            const task = tasks[index]
-            const context = new Context(task.title)
-            return this.schedule({ ...task, targetWorkerId, context }).pipe(
-                tap((message: MessageEventData) => {
-                    const cdnEvent = isCdnEventMessage(message)
-                    if (cdnEvent) {
-                        this.cdnEvent$.next(cdnEvent)
-                    }
-                }),
-                filter((d) => d.type == 'Exit'),
-                take(1),
-                mergeMap((message) => {
-                    return index == tasks.length - 1
-                        ? of(undefined)
-                        : scheduleTask$(index + 1, message.data['workerId'])
-                }),
-            )
-        }
+        const context = new Context('Create worker')
         return forkJoin(
-            new Array(workersCount).fill(undefined).map(() => scheduleTask$(0)),
+            new Array(workersCount)
+                .fill(undefined)
+                .map(() =>
+                    this.createWorker$(context).pipe(
+                        map(({ channel$ }) => channel$),
+                    ),
+                ),
         )
     }
 
@@ -422,7 +405,6 @@ export class WorkersFactory {
     }): Observable<MessageEventData> {
         return context.withChild('schedule thread', (ctx) => {
             const taskId = `t${Math.floor(Math.random() * 1e6)}`
-            const channel$ = new Subject<MessageEventData>()
             const p = new Process({
                 taskId,
                 title,
@@ -430,7 +412,7 @@ export class WorkersFactory {
             })
             p.schedule()
 
-            const r$ = this.instrumentChannel$(channel$, p, taskId, context)
+            const taskChannel$ = this.getTaskChannel$(p, taskId, context)
 
             if (targetWorkerId && !this.workers$.value[targetWorkerId]) {
                 throw Error('Provided workerId not known')
@@ -440,7 +422,7 @@ export class WorkersFactory {
                     entryPoint,
                     args,
                     taskId,
-                    channel$,
+                    channel$: taskChannel$,
                     targetWorkerId,
                 })
 
@@ -448,17 +430,17 @@ export class WorkersFactory {
                     this.pickTask(targetWorkerId, ctx)
                 }
 
-                return r$
+                return taskChannel$
             }
-            const worker$ = this.getWorker$(ctx)
+            const worker$ = this.getIdleWorkerOrCreate$(ctx)
             if (!worker$) {
                 this.tasksQueue.push({
                     entryPoint,
                     args,
                     taskId,
-                    channel$,
+                    channel$: taskChannel$,
                 })
-                return r$
+                return taskChannel$
             }
             worker$
                 .pipe(
@@ -468,7 +450,7 @@ export class WorkersFactory {
                             entryPoint,
                             args,
                             taskId,
-                            channel$,
+                            channel$: taskChannel$,
                         })
                         this.pickTask(workerId, ctx)
                         return workerId
@@ -476,17 +458,17 @@ export class WorkersFactory {
                 )
                 .subscribe()
 
-            return r$
+            return taskChannel$
         })
     }
 
-    instrumentChannel$(
-        originalChannel$: Subject<MessageEventData>,
+    getTaskChannel$(
         exposedProcess: Process,
         taskId: string,
         context: Context,
     ): Observable<MessageEventData> {
-        const channel$ = originalChannel$.pipe(
+        const channel$ = this.mergedChannel$.pipe(
+            filter((message) => message.data.taskId == taskId),
             takeWhile((message) => message.type != 'Exit', true),
         )
 
@@ -496,7 +478,7 @@ export class WorkersFactory {
                 take(1),
             )
             .subscribe((message) => {
-                context.info('worker started', message)
+                context.info(`worker started on task ${taskId}`, message)
                 exposedProcess.start()
             })
 
@@ -508,12 +490,18 @@ export class WorkersFactory {
             .subscribe((message) => {
                 const data = message.data as unknown as MessageDataExit
                 if (data.error) {
-                    context.info('worker exited abnormally', message)
+                    context.info(
+                        `worker exited abnormally on task ${taskId}`,
+                        message,
+                    )
                     exposedProcess.fail(data.result)
                     return
                 }
                 exposedProcess.succeed()
-                context.info('worker exited normally', message)
+                context.info(
+                    `worker exited normally on task ${taskId}`,
+                    message,
+                )
             })
         channel$
             .pipe(filter((message) => message.type == 'Log'))
@@ -534,9 +522,11 @@ export class WorkersFactory {
         )
     }
 
-    getWorker$(
-        context: Context,
-    ): Observable<{ workerId: string; worker: Worker }> {
+    getIdleWorkerOrCreate$(context: Context): Observable<{
+        workerId: string
+        worker: Worker
+        channel$: Observable<MessageEventData>
+    }> {
         return context.withChild('get worker', (ctx) => {
             const idleWorkerId = Object.keys(this.workers$.value).find(
                 (workerId) => !this.busyWorkers$.value.includes(workerId),
@@ -546,7 +536,8 @@ export class WorkersFactory {
                 ctx.info(`return idle worker ${idleWorkerId}`)
                 return of({
                     workerId: idleWorkerId,
-                    worker: this.workers$.value[idleWorkerId],
+                    worker: this.workers$.value[idleWorkerId].worker,
+                    channel$: this.workers$.value[idleWorkerId].channel$,
                 })
             }
             if (Object.keys(this.workers$.value).length < this.poolSize) {
@@ -556,9 +547,11 @@ export class WorkersFactory {
         })
     }
 
-    createWorker$(
-        context: Context,
-    ): Observable<{ workerId: string; worker: Worker }> {
+    createWorker$(context: Context): Observable<{
+        workerId: string
+        worker: Worker
+        channel$: Observable<MessageEventData>
+    }> {
         return context.withChild('create worker', (ctx) => {
             const workerId = `w${Math.floor(Math.random() * 1e6)}`
             ctx.info(`Create worker ${workerId}`)
@@ -570,8 +563,69 @@ export class WorkersFactory {
             const url = URL.createObjectURL(blob)
             const worker = new Worker(url)
 
-            this.workers$.next({ ...this.workers$.value, [workerId]: worker })
-            return of({ workerId, worker })
+            const taskId = `t${Math.floor(Math.random() * 1e6)}`
+            const workerChannel$ = new Subject<MessageEventData>()
+            const title = 'Install environment'
+            const p = new Process({
+                taskId,
+                title,
+                context: ctx,
+            })
+            p.schedule()
+            worker.onmessage = ({ data }) => {
+                workerChannel$.next(data)
+                this.mergedChannel$.next(data)
+            }
+            const taskChannel$ = this.getTaskChannel$(p, taskId, context)
+
+            worker.postMessage({
+                type: 'Execute',
+                data: {
+                    taskId,
+                    workerId,
+                    args: {
+                        cdnUrl: this.environment.cdnUrl,
+                        variables: this.environment.variables,
+                        functions: this.environment.functions.map(
+                            ({ id, target }) => ({
+                                id,
+                                target: `return ${String(target)}`,
+                            }),
+                        ),
+                        cdnInstallation: this.environment.cdnInstallation,
+                        postInstallTasks: this.environment.postInstallTasks.map(
+                            (task) => {
+                                return {
+                                    title: task.title,
+                                    args: task.args,
+                                    entryPoint: `return ${String(
+                                        task.entryPoint,
+                                    )}`,
+                                }
+                            },
+                        ),
+                    },
+                    entryPoint: `return ${String(entryPointInstall)}`,
+                },
+            })
+
+            return workerChannel$.pipe(
+                tap((message: MessageEventData) => {
+                    const cdnEvent = isCdnEventMessage(message)
+                    if (cdnEvent) {
+                        this.cdnEvent$.next(cdnEvent)
+                    }
+                }),
+                filter((message) => message.type == 'Exit'),
+                take(1),
+                tap(() => {
+                    this.workers$.next({
+                        ...this.workers$.value,
+                        [workerId]: { worker, channel$: workerChannel$ },
+                    })
+                }),
+                mapTo({ workerId, worker, channel$: taskChannel$ }),
+            )
         })
     }
 
@@ -601,7 +655,7 @@ export class WorkersFactory {
                 ...this.runningTasks$.value,
                 { workerId, taskId },
             ])
-            const worker = this.workers$.value[workerId]
+            const worker = this.workers$.value[workerId].worker
 
             channel$
                 .pipe(
@@ -616,11 +670,6 @@ export class WorkersFactory {
                         workerId,
                     })
                 })
-            worker.onmessage = ({ data }) => {
-                if (data.data.taskId == taskId) {
-                    channel$.next(data)
-                }
-            }
 
             ctx.info('picked task', {
                 taskId,
@@ -640,6 +689,8 @@ export class WorkersFactory {
     }
 
     terminate() {
-        Object.values(this.workers$.value).forEach((w) => w.terminate())
+        Object.values(this.workers$.value).forEach(({ worker }) =>
+            worker.terminate(),
+        )
     }
 }
