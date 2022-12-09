@@ -13,7 +13,7 @@ export class RequirementsView extends CodePageView {
         state: EnvironmentState<ExecutingImplementation>
     }) {
         const run = () => {
-            this.state.applyRequirements().subscribe()
+            this.state.applyRequirements()
         }
         super({
             ...params,
