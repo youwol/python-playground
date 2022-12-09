@@ -41,10 +41,7 @@ function viewFactory(node: Node, appState: AppState) {
         })
     }
     if (node instanceof RequirementsNode) {
-        return new RequirementsView({
-            sourcePath: './requirements',
-            state: node.state,
-        })
+        return new RequirementsView(node.state)
     }
     if (node instanceof ConfigurationsNode) {
         return new ConfigurationsView({
