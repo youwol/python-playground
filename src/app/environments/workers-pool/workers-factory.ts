@@ -3,18 +3,13 @@
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs'
 import { filter, map, mapTo, take, takeWhile, tap } from 'rxjs/operators'
 import { Context } from '../../context'
-import { CdnEvent } from '@youwol/cdn-client'
+import {
+    CdnEvent,
+    InstallInputs,
+    InstallLoadingGraphInputs,
+} from '@youwol/cdn-client'
 import { isCdnEventMessage } from './utils'
 type WorkerId = string
-
-interface WorkerCdnInstallation {
-    modules: string[]
-    aliases: { [k: string]: string }
-    customInstallers: {
-        module: string
-        installInputs: Record<string, unknown>
-    }[]
-}
 
 interface WorkerFunction<T> {
     id: string
@@ -36,7 +31,7 @@ interface WorkerEnvironment {
     cdnUrl: string
     variables: WorkerVariable<unknown>[]
     functions: WorkerFunction<unknown>[]
-    cdnInstallation: WorkerCdnInstallation
+    cdnInstallation: InstallInputs | InstallLoadingGraphInputs
     postInstallTasks?: Task[]
 }
 
@@ -191,7 +186,7 @@ export interface MessageDataInstall {
     cdnUrl: string
     variables: WorkerVariable<unknown>[]
     functions: { id: string; target: string }[]
-    cdnInstallation: WorkerCdnInstallation
+    cdnInstallation: InstallInputs | InstallLoadingGraphInputs
     postInstallTasks: {
         title: string
         entryPoint: string
@@ -204,6 +199,12 @@ function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
         // The environment is already installed
         return Promise.resolve()
     }
+    function isLoadingGraphInstallInputs(
+        body: InstallInputs | InstallLoadingGraphInputs,
+    ): body is InstallLoadingGraphInputs {
+        return (body as InstallLoadingGraphInputs).loadingGraph !== undefined
+    }
+
     self['importScripts'](input.args.cdnUrl)
     const cdn = self['@youwol/cdn-client']
     cdn.Client.HostName = window.location.origin
@@ -213,21 +214,15 @@ function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
         input.context.sendData(message)
     }
 
-    const customInstallers = input.args.cdnInstallation.customInstallers.map(
-        (installer) => {
-            return {
-                installInputs: { ...installer.installInputs, onEvent },
-                module: installer.module,
-            }
-        },
-    )
-    const cdnBody = {
-        ...input.args.cdnInstallation,
-        customInstallers,
-    }
+    input.args.cdnInstallation.customInstallers.map((installer) => {
+        installer.installInputs['onEvent'] = onEvent
+    })
+    const install = isLoadingGraphInstallInputs(input.args.cdnInstallation)
+        ? cdn.installLoadingGraph(input.args.cdnInstallation)
+        : cdn.install(input.args.cdnInstallation)
     input.context.info('Start install')
-    return cdn
-        .install(cdnBody)
+
+    return install
         .then(() => {
             input.args.functions.forEach((f) => {
                 self[f.id] = new Function(f.target)()
@@ -345,7 +340,7 @@ export class WorkersFactory {
         cdnUrl: string
         variables?: { [_k: string]: unknown }
         functions?: { [_k: string]: unknown }
-        cdnInstallation?: WorkerCdnInstallation
+        cdnInstallation?: InstallInputs | InstallLoadingGraphInputs
         postInstallTasks?: Task[]
     }) {
         this.cdnEvent$ = cdnEvent$

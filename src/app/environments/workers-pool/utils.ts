@@ -1,10 +1,7 @@
-import { getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
 import { MessageEventData } from './workers-factory'
-import { RawLog, Requirements } from '../../models'
+import { RawLog } from '../../models'
 import { Subject } from 'rxjs'
 import { WorkerListener } from '../in-worker-executable'
-import { Environment } from '../environment.state'
-import { setup } from '../../../auto-generated'
 
 export interface CdnEventWorker {
     text: string
@@ -111,32 +108,4 @@ to_js(object, dict_converter= Object.fromEntries)
             globals: namespace,
         },
     )
-}
-
-export function formatCdnDependencies(requirements: Requirements) {
-    const cdnUrl = `${window.location.origin}${getUrlBase(
-        '@youwol/cdn-client',
-        cdnSetup.version,
-    )}`
-    return {
-        cdnUrl,
-        modules: [
-            `rxjs#${setup.runTimeDependencies.externals.rxjs}`,
-            ...requirements.javascriptPackages.modules,
-        ],
-        aliases: requirements.javascriptPackages.aliases,
-        customInstallers: [
-            {
-                module: '@youwol/cdn-pyodide-loader',
-                installInputs: {
-                    modules: requirements.pythonPackages.map(
-                        (p) => `@pyodide/${p}`,
-                    ),
-                    warmUp: true,
-                    exportedPyodideInstanceName:
-                        Environment.ExportedPyodideInstanceName,
-                },
-            },
-        ],
-    }
 }

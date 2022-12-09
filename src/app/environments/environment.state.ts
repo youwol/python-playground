@@ -1,6 +1,8 @@
 import {
     BehaviorSubject,
     combineLatest,
+    from,
+    merge,
     Observable,
     of,
     ReplaySubject,
@@ -8,8 +10,13 @@ import {
 } from 'rxjs'
 import { Common } from '@youwol/fv-code-mirror-editors'
 import { RawLog, Requirements, RunConfiguration, WorkerCommon } from '../models'
-import { CdnEvent } from '@youwol/cdn-client'
 import {
+    CdnEvent,
+    queryLoadingGraph,
+    InstallLoadingGraphInputs,
+} from '@youwol/cdn-client'
+import {
+    distinctUntilChanged,
     filter,
     map,
     mergeMap,
@@ -18,9 +25,11 @@ import {
     skip,
     take,
     tap,
+    withLatestFrom,
 } from 'rxjs/operators'
 import { patchPythonSrc, WorkerListener } from './in-worker-executable'
 import { logFactory } from '../log-factory.conf'
+import { setup } from '../../auto-generated'
 
 const log = logFactory().getChildLogger('environment.state.ts')
 
@@ -80,10 +89,47 @@ export interface ExecutingImplementation {
     ): Observable<unknown>
 
     installRequirements(
-        requirements: Requirements,
+        lockFile: InstallLoadingGraphInputs,
         rawLog$: Subject<RawLog>,
         cdnEvent$: Observable<CdnEvent>,
     ): Observable<unknown>
+}
+
+function fetchLoadingGraph(requirements) {
+    return from(
+        Promise.all([
+            queryLoadingGraph({
+                modules: [
+                    ...requirements.javascriptPackages.modules,
+                    `rxjs#${setup.runTimeDependencies.externals.rxjs}`,
+                    '@youwol/cdn-pyodide-loader#^0.1.1',
+                ],
+            }),
+            queryLoadingGraph({
+                modules: requirements.pythonPackages.map(
+                    (p) => `@pyodide/${p}`,
+                ),
+            }),
+        ]),
+    ).pipe(
+        map(([loadingGraphJs, loadingGraphPy]) => {
+            return {
+                loadingGraph: loadingGraphJs,
+                aliases: requirements.javascriptPackages.aliases,
+                customInstallers: [
+                    {
+                        module: '@youwol/cdn-pyodide-loader#^0.1.2',
+                        installInputs: {
+                            loadingGraph: loadingGraphPy,
+                            warmUp: true,
+                            exportedPyodideInstanceName:
+                                Environment.ExportedPyodideInstanceName,
+                        },
+                    },
+                ],
+            }
+        }),
+    )
 }
 
 /**
@@ -112,6 +158,18 @@ export class EnvironmentState<T extends ExecutingImplementation> {
         pythonPackages: [],
         javascriptPackages: { modules: [], aliases: {} },
     })
+
+    /**
+     * This observable emit whenever applying new (raw) requirements is triggered.
+     *
+     * @group Observables
+     */
+    private readonly applyRequirements$ = new Subject()
+
+    /**
+     * @group Observables
+     */
+    public readonly lockFile$: Observable<InstallLoadingGraphInputs>
 
     /**
      * @group Observables
@@ -200,7 +258,17 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             ),
             subject: this.configurations$,
         }
-        const nativeFiles = [requirementsFile, configurationsFile]
+        const locksFile = {
+            path: './locks',
+            content: JSON.stringify(
+                initialModel.environment.lockFile || {},
+                null,
+                4,
+            ),
+            // The user can not edit this file
+            subject: new Subject(),
+        }
+        const nativeFiles = [requirementsFile, configurationsFile, locksFile]
         this.configurations$.next(initialModel.environment.configurations)
         this.requirements$.next(initialModel.environment.requirements)
         this.selectedConfiguration$.next(
@@ -208,11 +276,7 @@ export class EnvironmentState<T extends ExecutingImplementation> {
         )
 
         this.ideState = new Common.IdeState({
-            files: [
-                requirementsFile,
-                configurationsFile,
-                ...initialModel.sources,
-            ],
+            files: [...nativeFiles, ...initialModel.sources],
             defaultFileSystem: Promise.resolve(new Map<string, string>()),
         })
         nativeFiles.map((nativeFile) => {
@@ -226,19 +290,54 @@ export class EnvironmentState<T extends ExecutingImplementation> {
                     }
                 })
         })
+        this.lockFile$ = merge(
+            this.applyRequirements$.pipe(
+                mergeMap(() => {
+                    return fetchLoadingGraph(this.requirements$.value)
+                }),
+            ),
+            initialModel.environment.lockFile
+                ? of(initialModel.environment.lockFile)
+                : this.requirements$.pipe(
+                      take(1),
+                      mergeMap((requirements) => {
+                          return fetchLoadingGraph(requirements)
+                      }),
+                  ),
+        ).pipe(
+            distinctUntilChanged(
+                (a, b) => JSON.stringify(a) == JSON.stringify(b),
+            ),
+            shareReplay({ bufferSize: 1, refCount: true }),
+        )
+
+        this.lockFile$.subscribe((lock) => {
+            if (!this.ideState.fsMap$.value) {
+                return
+            }
+            this.ideState.update({
+                path: './locks',
+                content: JSON.stringify(lock, null, 4),
+                updateOrigin: { uid: 'environment.state' },
+            })
+        })
+        this.lockFile$
+            .pipe(mergeMap((lockFile) => this.installLockFile(lockFile)))
+            .subscribe()
 
         this.serialized$ = combineLatest([
             signals && signals.save$ ? signals.save$ : of(true),
-            this.requirements$,
+            this.lockFile$,
             this.configurations$,
             this.ideState.fsMap$.pipe(filter((fsMap) => fsMap != undefined)),
         ]).pipe(
-            map(([_, requirements, configurations, fsMap]) => {
+            map(([_, lockFile, configurations, fsMap]) => {
                 return {
                     id: initialModel.id,
                     name: initialModel.name,
                     environment: {
-                        requirements,
+                        requirements: this.requirements$.value,
+                        lockFile: lockFile,
                         configurations,
                     },
                     sources: Array.from(fsMap.entries())
@@ -270,12 +369,14 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             shareReplay({ bufferSize: 1, refCount: true }),
         )
         if (signals && signals.install$) {
+            // This is when the capacity of a workers pool is increased: to be improved
             this.executingImplementation.signals.install$
-                .pipe(mergeMap(() => this.applyRequirements()))
+                .pipe(
+                    withLatestFrom(this.lockFile$),
+                    mergeMap(([_, lockFile]) => this.installLockFile(lockFile)),
+                )
                 .subscribe()
         }
-
-        this.applyRequirements().subscribe()
     }
 
     removeFile(path: string) {
@@ -304,21 +405,19 @@ export class EnvironmentState<T extends ExecutingImplementation> {
     }
 
     applyRequirements() {
+        this.applyRequirements$.next()
+    }
+
+    installLockFile(lockFile: InstallLoadingGraphInputs) {
         this.projectLoaded$.next(false)
         this.cdnEvent$.next('reset')
-        return this.requirements$.pipe(
-            take(1),
-            mergeMap((requirements) => {
-                return this.executingImplementation.installRequirements(
-                    requirements,
-                    this.rawLog$,
-                    this.cdnEvent$,
-                )
-            }),
-            tap(() => {
-                this.projectLoaded$.next(true)
-            }),
-        )
+        return this.executingImplementation
+            .installRequirements(lockFile, this.rawLog$, this.cdnEvent$)
+            .pipe(
+                tap(() => {
+                    this.projectLoaded$.next(true)
+                }),
+            )
     }
 
     run() {

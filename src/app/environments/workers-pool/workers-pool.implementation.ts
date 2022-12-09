@@ -3,7 +3,7 @@ import {
     EnvironmentState,
     ExecutingImplementation,
 } from '../environment.state'
-import { RawLog, Requirements, WorkerCommon } from '../../models'
+import { RawLog, WorkerCommon } from '../../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
 import {
@@ -11,11 +11,7 @@ import {
     MessageDataExit,
     WorkersFactory,
 } from './workers-factory'
-import {
-    dispatchWorkerMessage,
-    formatCdnDependencies,
-    objectPyToJs,
-} from './utils'
+import { dispatchWorkerMessage, objectPyToJs } from './utils'
 import { Context } from '../../context'
 import {
     cleanFileSystem,
@@ -27,7 +23,12 @@ import {
     syncFileSystem,
     WorkerListener,
 } from '../in-worker-executable'
-import { CdnEvent, getUrlBase, setup as cdnSetup } from '@youwol/cdn-client'
+import {
+    CdnEvent,
+    getUrlBase,
+    InstallLoadingGraphInputs,
+    setup as cdnSetup,
+} from '@youwol/cdn-client'
 import { setup } from '../../../auto-generated'
 
 interface EntryPointSyncFsMapArgs {
@@ -147,17 +148,18 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     }
 
     installRequirements(
-        requirements: Requirements,
+        lockFile: InstallLoadingGraphInputs,
         rawLog$: Subject<RawLog>,
         cdnEvent$: Subject<CdnEvent>,
     ) {
         const minWorkersCount = this.capacity$.value
+        const cdnPackage = '@youwol/cdn-client'
         const workersFactory = new WorkersFactory({
             cdnEvent$,
             cdnUrl: `${window.location.origin}${getUrlBase(
-                '@youwol/cdn-client',
+                cdnPackage,
                 cdnSetup.version,
-            )}`,
+            )}/dist/${cdnPackage}.js`,
             functions: {
                 objectPyToJs: objectPyToJs,
                 syncFileSystem: syncFileSystem,
@@ -167,7 +169,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                 registerYwPyodideModule: registerYwPyodideModule,
                 getModuleNameFromFile: getModuleNameFromFile,
             },
-            cdnInstallation: formatCdnDependencies(requirements),
+            cdnInstallation: lockFile,
             postInstallTasks: [
                 {
                     title: 'register py-play add-ons',
@@ -308,6 +310,7 @@ result
         return new Promise<void>((resolve) => {
             this.state.executingImplementation.workersFactory$
                 .pipe(
+                    filter((factory) => factory != undefined),
                     mergeMap((factory) => {
                         return factory.reserve({ workersCount })
                     }),

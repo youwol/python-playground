@@ -1,4 +1,5 @@
 import { VirtualDOM } from '@youwol/flux-view'
+import { InstallLoadingGraphInputs } from '@youwol/cdn-client'
 
 export interface Source {
     path: string
@@ -19,6 +20,7 @@ export interface RunConfiguration {
 export interface Environment {
     requirements: Requirements
     configurations: RunConfiguration[]
+    lockFile?: InstallLoadingGraphInputs
 }
 
 export interface WorkersPool {

@@ -1,4 +1,4 @@
-import { RawLog, Requirements } from '../../models'
+import { RawLog } from '../../models'
 import {
     BehaviorSubject,
     forkJoin,
@@ -20,7 +20,12 @@ import {
     syncFileSystem,
 } from '../in-worker-executable'
 import { AppState } from '../../app.state'
-import { CdnEvent, install } from '@youwol/cdn-client'
+import {
+    CdnEvent,
+    InstallDoneEvent,
+    installLoadingGraph,
+    InstallLoadingGraphInputs,
+} from '@youwol/cdn-client'
 
 /**
  * @category State
@@ -64,7 +69,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
     }
 
     installRequirements(
-        requirements: Requirements,
+        lockFile: InstallLoadingGraphInputs,
         rawLog$: Subject<RawLog>,
         cdnEvent$: Subject<CdnEvent>,
     ) {
@@ -72,21 +77,8 @@ export class MainThreadImplementation implements ExecutingImplementation {
             Environment.ExportedPyodideInstanceName
 
         return from(
-            install({
-                ...requirements.javascriptPackages,
-                customInstallers: [
-                    {
-                        module: '@youwol/cdn-pyodide-loader',
-                        installInputs: {
-                            modules: requirements.pythonPackages.map(
-                                (p) => `@pyodide/${p}`,
-                            ),
-                            warmUp: true,
-                            onEvent: (cdnEvent) => cdnEvent$.next(cdnEvent),
-                            exportedPyodideInstanceName,
-                        },
-                    },
-                ],
+            installLoadingGraph({
+                ...lockFile,
                 onEvent: (cdnEvent) => {
                     cdnEvent$.next(cdnEvent)
                 },
@@ -98,7 +90,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
             map(() => {
                 const pyodide = window[exportedPyodideInstanceName]
 
-                Object.entries(requirements.javascriptPackages.aliases).forEach(
+                Object.entries(lockFile.aliases).forEach(
                     ([alias, originalName]) => {
                         rawLog$.next({
                             level: 'info',
@@ -118,6 +110,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
                     level: 'info',
                     message: `Pyodide ${env.pyodideVersion}`,
                 })
+                cdnEvent$.next(new InstallDoneEvent())
                 return env
             }),
         )

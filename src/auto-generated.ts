@@ -2,11 +2,11 @@
 const runTimeDependencies = {
     "externals": {
         "@youwol/fv-code-mirror-editors": "^0.2.2",
-        "@youwol/os-core": "^0.1.3",
+        "@youwol/os-core": "^0.1.5",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
-        "@youwol/cdn-client": "^1.0.7",
-        "@youwol/http-clients": "^1.0.2",
+        "@youwol/cdn-client": "^1.0.9",
+        "@youwol/http-clients": "^2.0.1",
         "@youwol/flux-view": "^1.0.3",
         "@youwol/fv-context-menu": "^0.1.1",
         "@youwol/fv-tree": "^0.2.3",
@@ -23,7 +23,7 @@ const externals = {
     "@youwol/fv-tabs": "window['@youwol/fv-tabs_APIv02']",
     "@youwol/os-top-banner": "window['@youwol/os-top-banner_APIv01']",
     "@youwol/cdn-client": "window['@youwol/cdn-client_APIv1']",
-    "@youwol/http-clients": "window['@youwol/http-clients_APIv1']",
+    "@youwol/http-clients": "window['@youwol/http-clients_APIv2']",
     "@youwol/flux-view": "window['@youwol/flux-view_APIv1']",
     "@youwol/fv-context-menu": "window['@youwol/fv-context-menu_APIv01']",
     "@youwol/fv-tree": "window['@youwol/fv-tree_APIv02']",
@@ -55,7 +55,7 @@ const exportedSymbols = {
         "exportedSymbol": "@youwol/cdn-client"
     },
     "@youwol/http-clients": {
-        "apiKey": "1",
+        "apiKey": "2",
         "exportedSymbol": "@youwol/http-clients"
     },
     "@youwol/flux-view": {

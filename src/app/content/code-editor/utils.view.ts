@@ -17,7 +17,7 @@ export class CodePageView implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public readonly class = 'h-100 d-flex flex-column'
+    public readonly class = 'w-100 h-100 d-flex flex-column'
 
     /**
      * @group Immutable DOM Constants
