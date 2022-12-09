@@ -5,8 +5,18 @@ import {
 } from '../environments/environment.state'
 import { VirtualDOM } from '@youwol/flux-view'
 
+/**
+ * @category View
+ */
 export class RequirementsView implements VirtualDOM {
+    /**
+     * @group Immutable DOM Constants
+     */
     public readonly class = 'w-100 h-100 d-flex'
+
+    /**
+     * @group Immutable DOM Constants
+     */
     public readonly children: VirtualDOM[]
 
     constructor(state: EnvironmentState<ExecutingImplementation>) {
@@ -28,6 +38,7 @@ export class RequirementsView implements VirtualDOM {
         ]
     }
 }
+
 /**
  * @category View
  */
@@ -47,8 +58,18 @@ export class RawRequirementsView extends CodePageView {
     }
 }
 
+/**
+ * @category View
+ */
 export class LocksViewColumn implements VirtualDOM {
+    /**
+     * @group Immutable DOM Constants
+     */
     public readonly class = 'w-100 h-100 d-flex flex-column'
+
+    /**
+     * @group Immutable DOM Constants
+     */
     public readonly children: VirtualDOM[]
 
     constructor(state: EnvironmentState<ExecutingImplementation>) {
@@ -76,6 +97,10 @@ export class LocksViewColumn implements VirtualDOM {
         ]
     }
 }
+
+/**
+ * @category View
+ */
 export class LocksViewEditor extends CodePageView {
     constructor(params: {
         sourcePath: string
