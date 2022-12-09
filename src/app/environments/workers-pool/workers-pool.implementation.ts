@@ -310,6 +310,7 @@ result
         return new Promise<void>((resolve) => {
             this.state.executingImplementation.workersFactory$
                 .pipe(
+                    filter((factory) => factory != undefined),
                     mergeMap((factory) => {
                         return factory.reserve({ workersCount })
                     }),
