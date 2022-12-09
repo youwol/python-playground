@@ -1,10 +1,11 @@
 import {
     FilesBackend,
     ExplorerBackend,
-    HTTPError,
     AssetsGateway,
-    dispatchHTTPErrors,
 } from '@youwol/http-clients'
+
+import { HTTPError, dispatchHTTPErrors } from '@youwol/http-primitives'
+
 import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { Project, RawLog, WorkersPool } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'

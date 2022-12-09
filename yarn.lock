@@ -1218,10 +1218,17 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@youwol/cdn-client@^1.0.2", "@youwol/cdn-client@^1.0.7":
+"@youwol/cdn-client@^1.0.2":
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.7.tgz#14026f564a8c4c4ffc5ceedfb36f335b0c602e96"
   integrity sha512-AfeZ4JBBitj731gn+2P6PVQrSFTjHOV1zidAVqjVFBUoMp86dFxEiuaIW1LncGPKXKXDBi75a4603ell9XnSVw==
+  dependencies:
+    semver "^7.3.4"
+
+"@youwol/cdn-client@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.9.tgz#53a06c6a2a63af9b9866e4b0e14c8878b7c39fd6"
+  integrity sha512-Xk4qpjbP9dUvr3t+e5lYjUktm8T1ZKbikfVhk9q7shLt0OrHWqsZuT2G3i1mCK+mMwoRdsT7+Q0GQOyQ3L6xyw==
   dependencies:
     semver "^7.3.4"
 
@@ -1278,6 +1285,21 @@
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/@youwol/http-clients/-/http-clients-1.0.4.tgz#0171f24724abd8f1224413e3c44fdf7b3f8c75f0"
   integrity sha512-kbT0BwwIoz1bNt+EAJie11Qx+8jxx20aWStrWJzLYGioGpV+pwOd3qcbYXvX36qGeGIA5q3/WwZYzPLHEU1Neg==
+  dependencies:
+    rxjs "^6.5.5"
+
+"@youwol/http-clients@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@youwol/http-clients/-/http-clients-2.0.1.tgz#0e03b77e662632df7cc824ee7143f7eac16f2adf"
+  integrity sha512-f1zTQF0hthsmY48CJtAnJjy90yGyyWAt835l1SIQcol2YV0AKtSr+zJHCSclDw/10af1GGgc+A2Sr9M7uWJeEg==
+  dependencies:
+    "@youwol/http-primitives" "^0.1.1"
+    rxjs "^6.5.5"
+
+"@youwol/http-primitives@^0.1.1":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@youwol/http-primitives/-/http-primitives-0.1.2.tgz#0ac9e0d660508157dd777fd6c8f83fc4bca9d540"
+  integrity sha512-wtSarBFx1qf/tOvcX9eAj3PsT4LEqI9IbD+mUf2xKvH4XKkrIUaAIdcIX9rg5eFKYVeQAi3RlTyTQyQz14/X+A==
   dependencies:
     rxjs "^6.5.5"
 
