@@ -20,14 +20,10 @@ export class RequirementsView implements VirtualDOM {
                     }),
                 ],
             },
+            { class: 'h-100 mx-2' },
             {
                 class: 'w-50 h-100',
-                children: [
-                    new LocksView({
-                        sourcePath: './locks',
-                        state,
-                    }),
-                ],
+                children: [new LocksViewColumn(state)],
             },
         ]
     }
@@ -51,7 +47,36 @@ export class RawRequirementsView extends CodePageView {
     }
 }
 
-export class LocksView extends CodePageView {
+export class LocksViewColumn implements VirtualDOM {
+    public readonly class = 'w-100 h-100 d-flex flex-column'
+    public readonly children: VirtualDOM[]
+
+    constructor(state: EnvironmentState<ExecutingImplementation>) {
+        this.children = [
+            {
+                class: 'fv-bg-background-alt border rounded p-2 text-center',
+                innerText:
+                    'The content below is auto-generated from the raw requirements on the left side.\n ' +
+                    "To update it press 'Ctrl+enter' from the editor on the left.",
+            },
+
+            { class: 'w-100 my-1' },
+            {
+                class: 'w-100 flex-grow-1 overflow-auto',
+                style: {
+                    minHeight: '0px',
+                },
+                children: [
+                    new LocksViewEditor({
+                        sourcePath: './locks',
+                        state,
+                    }),
+                ],
+            },
+        ]
+    }
+}
+export class LocksViewEditor extends CodePageView {
     constructor(params: {
         sourcePath: string
         state: EnvironmentState<ExecutingImplementation>
