@@ -16,6 +16,7 @@ import {
     InstallLoadingGraphInputs,
 } from '@youwol/cdn-client'
 import {
+    distinctUntilChanged,
     filter,
     map,
     mergeMap,
@@ -24,6 +25,7 @@ import {
     skip,
     take,
     tap,
+    withLatestFrom,
 } from 'rxjs/operators'
 import { patchPythonSrc, WorkerListener } from './in-worker-executable'
 import { logFactory } from '../log-factory.conf'
@@ -302,7 +304,12 @@ export class EnvironmentState<T extends ExecutingImplementation> {
                           return fetchLoadingGraph(requirements)
                       }),
                   ),
-        ).pipe(shareReplay({ bufferSize: 1, refCount: true }))
+        ).pipe(
+            distinctUntilChanged(
+                (a, b) => JSON.stringify(a) == JSON.stringify(b),
+            ),
+            shareReplay({ bufferSize: 1, refCount: true }),
+        )
 
         this.lockFile$.subscribe((lock) => {
             if (!this.ideState.fsMap$.value) {
@@ -365,8 +372,8 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             // This is when the capacity of a workers pool is increased: to be improved
             this.executingImplementation.signals.install$
                 .pipe(
-                    mergeMap(() => this.lockFile$),
-                    mergeMap((lockFile) => this.installLockFile(lockFile)),
+                    withLatestFrom(this.lockFile$),
+                    mergeMap(([_, lockFile]) => this.installLockFile(lockFile)),
                 )
                 .subscribe()
         }
