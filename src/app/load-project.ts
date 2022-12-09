@@ -1,4 +1,4 @@
-import { CdnMessageEvent, install, LoadingScreenView } from '@youwol/cdn-client'
+import { CdnMessageEvent, LoadingScreenView } from '@youwol/cdn-client'
 import {
     AssetsGateway,
     FilesBackend,
@@ -7,9 +7,8 @@ import {
 import { downloadBlob, raiseHTTPErrors } from '@youwol/http-primitives'
 import { forkJoin, Observable, Subject } from 'rxjs'
 import { map, mergeMap, take, tap } from 'rxjs/operators'
-import { Project, Requirements } from './models'
+import { Project } from './models'
 import { defaultProject } from './default-project'
-import { Environment } from './environments/environment.state'
 
 /**
  *
@@ -118,55 +117,4 @@ export function new$(loadingScreen: LoadingScreenView): Observable<{
         }),
         mergeMap(({ id }) => load$(id, loadingScreen)),
     )
-}
-
-export async function installRequirements({
-    requirements,
-    cdnEvent$,
-    rawLog$,
-    environment$,
-}: {
-    requirements: Requirements
-    cdnEvent$
-    rawLog$
-    environment$: Subject<Environment>
-}) {
-    const exportedPyodideInstanceName = Environment.ExportedPyodideInstanceName
-    await install({
-        ...requirements.javascriptPackages,
-        customInstallers: [
-            {
-                module: '@youwol/cdn-pyodide-loader',
-                installInputs: {
-                    modules: requirements.pythonPackages.map(
-                        (p) => `@pyodide/${p}`,
-                    ),
-                    warmUp: true,
-                    onEvent: (cdnEvent) => cdnEvent$.next(cdnEvent),
-                    exportedPyodideInstanceName,
-                },
-            },
-        ],
-        onEvent: (cdnEvent) => {
-            cdnEvent$.next(cdnEvent)
-        },
-    })
-
-    const pyodide = window[exportedPyodideInstanceName]
-
-    Object.entries(requirements.javascriptPackages.aliases).forEach(
-        ([alias, originalName]) => {
-            rawLog$.next({
-                level: 'info',
-                message: `create alias '${alias}' to import '${originalName}' (version ${window[alias].__yw_set_from_version__}) `,
-            })
-            pyodide.registerJsModule(alias, window[alias])
-        },
-    )
-    environment$.next(
-        new Environment({
-            pyodide,
-        }),
-    )
-    //projectLoaded$.next(true)
 }
