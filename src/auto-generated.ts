@@ -13,7 +13,8 @@ const runTimeDependencies = {
         "lodash": "^4.17.15",
         "rxjs": "^6.5.5",
         "@youwol/logging": "^0.1.0",
-        "uuid": "^8.3.2"
+        "uuid": "^8.3.2",
+        "@youwol/pyodide-helpers": "^0.1.0"
     },
     "includedInBundle": {}
 }
@@ -31,6 +32,7 @@ const externals = {
     "rxjs": "window['rxjs_APIv6']",
     "@youwol/logging": "window['@youwol/logging_APIv01']",
     "uuid": "window['uuid_APIv8']",
+    "@youwol/pyodide-helpers": "window['@youwol/pyodide-helpers_APIv01']",
     "rxjs/operators": "window['rxjs_APIv6']['operators']"
 }
 const exportedSymbols = {
@@ -85,6 +87,10 @@ const exportedSymbols = {
     "uuid": {
         "apiKey": "8",
         "exportedSymbol": "uuid"
+    },
+    "@youwol/pyodide-helpers": {
+        "apiKey": "01",
+        "exportedSymbol": "@youwol/pyodide-helpers"
     }
 }
 
@@ -104,7 +110,8 @@ const mainEntry : Object = {
         "lodash",
         "rxjs",
         "@youwol/logging",
-        "uuid"
+        "uuid",
+        "@youwol/pyodide-helpers"
     ]
 }
 

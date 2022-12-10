@@ -83,7 +83,8 @@
         "lodash": "^4.17.15",
         "rxjs": "^6.5.5",
         "@youwol/logging": "^0.1.0",
-        "uuid": "^8.3.2"
+        "uuid": "^8.3.2",
+        "@youwol/pyodide-helpers": "^0.1.0"
     },
     "youwol": {
         "cdnDependencies": {
@@ -99,7 +100,8 @@
             "lodash": "^4.17.15",
             "rxjs": "^6.5.5",
             "@youwol/logging": "^0.1.0",
-            "uuid": "^8.3.2"
+            "uuid": "^8.3.2",
+            "@youwol/pyodide-helpers": "^0.1.0"
         }
     }
 }
