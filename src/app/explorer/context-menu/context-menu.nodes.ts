@@ -7,8 +7,7 @@ import {
     WorkersPoolNode,
 } from '../nodes'
 import { ContextMenuState } from './context-menu'
-import { ExecutingImplementation } from '../../environments/environment.state'
-
+import { AbstractEnvImplementation } from '../../models'
 /**
  * Factory of available actions in the
  * tree-view's context-menu
@@ -105,11 +104,11 @@ export class ContextRootNode extends ContextTreeNode {
 
 export class AddPyFileNode extends ContextTreeNode implements ExecutableNode {
     public readonly explorerState: TreeState
-    public readonly parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
+    public readonly parentNode: ExecutingEnvironmentNode<AbstractEnvImplementation>
 
     constructor(params: {
         explorerState: TreeState
-        parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
+        parentNode: ExecutingEnvironmentNode<AbstractEnvImplementation>
     }) {
         super({
             id: 'new-python-file',
@@ -131,11 +130,11 @@ export class AddPyFileNode extends ContextTreeNode implements ExecutableNode {
 
 export class AddJsFileNode extends ContextTreeNode implements ExecutableNode {
     public readonly explorerState: TreeState
-    public readonly parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
+    public readonly parentNode: ExecutingEnvironmentNode<AbstractEnvImplementation>
 
     constructor(params: {
         explorerState: TreeState
-        parentNode: ExecutingEnvironmentNode<ExecutingImplementation>
+        parentNode: ExecutingEnvironmentNode<AbstractEnvImplementation>
     }) {
         super({
             id: 'new-javascript-file',

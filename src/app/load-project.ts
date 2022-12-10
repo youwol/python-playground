@@ -7,8 +7,8 @@ import {
 import { downloadBlob, raiseHTTPErrors } from '@youwol/http-primitives'
 import { forkJoin, Observable, Subject } from 'rxjs'
 import { map, mergeMap, take, tap } from 'rxjs/operators'
-import { Project } from './models'
 import { defaultProject } from './default-project'
+import { Project } from './models'
 
 /**
  *

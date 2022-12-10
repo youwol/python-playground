@@ -18,7 +18,7 @@ import { AppState } from '../app.state'
 import { ContextMenuState } from './context-menu'
 import { ContextMenu } from '@youwol/fv-context-menu'
 import { filter } from 'rxjs/operators'
-import { WorkersPoolImplementation } from '../environments/workers-pool'
+import { WorkersPoolImplementation } from '../models'
 
 /**
  * @category State
