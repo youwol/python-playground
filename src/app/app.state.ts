@@ -240,7 +240,9 @@ export class AppState {
     }
 
     run() {
-        this.projectState.run()
+        this.projectState.run().then((result) => {
+            console.log('Got result', result)
+        })
     }
 
     openTab(node: Node) {
