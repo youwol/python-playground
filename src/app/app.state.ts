@@ -95,7 +95,6 @@ export class AppState {
         this.projectState = new IdeProject.ProjectState({
             project: params.project,
             createIdeState: ({ files }) => {
-                console.log('Files', files)
                 return new Common.IdeState({
                     files: files,
                     defaultFileSystem: Promise.resolve(
