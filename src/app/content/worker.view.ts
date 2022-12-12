@@ -4,10 +4,14 @@ import {
     childrenWithReplace$,
     VirtualDOM,
 } from '@youwol/flux-view'
-
+import { CdnEvent } from '@youwol/cdn-client'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ConfigurationSelectorView } from '../top-banner'
 import { WorkersPoolState, CdnEventWorker } from '../models'
+
+function isWorkerEvent(event: CdnEvent): event is CdnEventWorker {
+    return event['workerId'] != undefined
+}
 
 /**
  * @category View
@@ -36,7 +40,11 @@ export class WorkerView implements VirtualDOM {
         const workerIds$ = this.workerState.cdnEvents$.pipe(
             map(
                 (events) =>
-                    new Set(events.map((e: CdnEventWorker) => e.workerId)),
+                    new Set(
+                        events
+                            .filter((event) => isWorkerEvent(event))
+                            .map((e: CdnEventWorker) => e.workerId),
+                    ),
             ),
             distinctUntilChanged(eqSet),
         )
@@ -157,8 +165,13 @@ export class WorkerCard implements VirtualDOM {
                 class: 'p-2',
                 children: childrenWithReplace$(
                     this.workersPoolState.cdnEvents$.pipe(
-                        map((cdnEvents: CdnEventWorker[]) => {
-                            const filtered = cdnEvents.filter(
+                        map((cdnEvents: CdnEvent[]) => {
+                            return cdnEvents.filter((event) =>
+                                isWorkerEvent(event),
+                            )
+                        }),
+                        map((cdnWorkerEvents: CdnEventWorker[]) => {
+                            const filtered = cdnWorkerEvents.filter(
                                 (cdnEvent) =>
                                     cdnEvent.workerId == this.workerId,
                             )
