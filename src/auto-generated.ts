@@ -5,7 +5,7 @@ const runTimeDependencies = {
         "@youwol/os-core": "^0.1.5",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
-        "@youwol/cdn-client": "^1.0.9",
+        "@youwol/cdn-client": "^1.0.10",
         "@youwol/http-clients": "^2.0.1",
         "@youwol/flux-view": "^1.0.3",
         "@youwol/fv-context-menu": "^0.1.1",
@@ -14,7 +14,7 @@ const runTimeDependencies = {
         "rxjs": "^6.5.5",
         "@youwol/logging": "^0.1.0",
         "uuid": "^8.3.2",
-        "@youwol/pyodide-helpers": "^0.1.0"
+        "@youwol/pyodide-helpers": "^0.1.1"
     },
     "includedInBundle": {}
 }

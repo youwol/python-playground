@@ -1218,6 +1218,13 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
+"@youwol/cdn-client@^1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.10.tgz#2e240601625f3fe6d95a69f951c35cbd673f21ff"
+  integrity sha512-tUYFztmQ6kztkm1HBl7Qq0Fxbt5iuLuc9j+x9FXhti79UKN8121tBhLdG49hnlQcIIPw54UI4GOK2ggrDQcCWQ==
+  dependencies:
+    semver "^7.3.4"
+
 "@youwol/cdn-client@^1.0.2", "@youwol/cdn-client@^1.0.9":
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.9.tgz#53a06c6a2a63af9b9866e4b0e14c8878b7c39fd6"
@@ -1319,10 +1326,10 @@
   resolved "https://registry.yarnpkg.com/@youwol/prettier-config/-/prettier-config-0.0.2.tgz#4b7badc7e234193d38383940011df4246960960e"
   integrity sha512-6SWLHnoom4Zv9Vu79ztjfnsU69RLcnzrhXFBDvC/KEnrbkqfjRqVeAooVUqote1pMckN9DFaTOt2+CtCXvCxnQ==
 
-"@youwol/pyodide-helpers@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@youwol/pyodide-helpers/-/pyodide-helpers-0.1.0.tgz#3b7b652b00bce1cab3e9db309ce77bced8708680"
-  integrity sha512-VHRloa62SN80Uhh/+xYb8xoQYtta15/ZM4AmI4T5m8n2PlxMZGtC9yrJyQmqqvSFprdyodD9kQZK+N4ehjVDYw==
+"@youwol/pyodide-helpers@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@youwol/pyodide-helpers/-/pyodide-helpers-0.1.1.tgz#6a43893f39c50e021c09d17e641d61ce21a0dee2"
+  integrity sha512-yXLJiQOF8c5I9Rj2qEvqnhL/bq9rKtIUIfM4EuXHTHx30feP/wGzLX/Oli42YlmiyIZKMQ2nZE3eopTIBEQwjw==
   dependencies:
     "@youwol/cdn-client" "^1.0.9"
     "@youwol/logging" "^0.1.0"
