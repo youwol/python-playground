@@ -1,9 +1,6 @@
 import { CodePageView } from './code-editor'
-import {
-    EnvironmentState,
-    ExecutingImplementation,
-} from '../environments/environment.state'
 import { VirtualDOM } from '@youwol/flux-view'
+import { AbstractEnvState } from '../models'
 
 /**
  * @category View
@@ -19,7 +16,7 @@ export class RequirementsView implements VirtualDOM {
      */
     public readonly children: VirtualDOM[]
 
-    constructor(state: EnvironmentState<ExecutingImplementation>) {
+    constructor(state: AbstractEnvState) {
         this.children = [
             {
                 class: 'w-50 h-100',
@@ -43,10 +40,7 @@ export class RequirementsView implements VirtualDOM {
  * @category View
  */
 export class RawRequirementsView extends CodePageView {
-    constructor(params: {
-        sourcePath: string
-        state: EnvironmentState<ExecutingImplementation>
-    }) {
+    constructor(params: { sourcePath: string; state: AbstractEnvState }) {
         const run = () => {
             this.state.applyRequirements()
         }
@@ -72,7 +66,7 @@ export class LocksViewColumn implements VirtualDOM {
      */
     public readonly children: VirtualDOM[]
 
-    constructor(state: EnvironmentState<ExecutingImplementation>) {
+    constructor(state: AbstractEnvState) {
         this.children = [
             {
                 class: 'fv-bg-background-alt border rounded p-2 text-center',
@@ -102,10 +96,7 @@ export class LocksViewColumn implements VirtualDOM {
  * @category View
  */
 export class LocksViewEditor extends CodePageView {
-    constructor(params: {
-        sourcePath: string
-        state: EnvironmentState<ExecutingImplementation>
-    }) {
+    constructor(params: { sourcePath: string; state: AbstractEnvState }) {
         const run = () => {
             /*no op*/
         }

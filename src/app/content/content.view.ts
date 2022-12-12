@@ -30,7 +30,7 @@ import { WorkerView } from './worker.view'
 function viewFactory(node: Node, appState: AppState) {
     if (node instanceof ProjectNode) {
         return new ProjectView({
-            mainThreadState: appState.mainThreadState,
+            mainThreadState: appState.projectState.mainThreadState,
         })
     }
     if (node instanceof SourceNode) {
@@ -147,7 +147,7 @@ export class ContentView implements VirtualDOM {
                 ),
                 tabs$: new BehaviorSubject([
                     new LogsTab({
-                        rawLog$: this.appState.rawLog$,
+                        rawLog$: this.appState.projectState.rawLog$,
                     }),
                 ]),
                 selected$: new BehaviorSubject<string>('Logs'),

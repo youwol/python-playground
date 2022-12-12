@@ -7,7 +7,6 @@ import {
 import { HTTPError, dispatchHTTPErrors } from '@youwol/http-primitives'
 
 import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
-import { Project, RawLog, WorkersPool } from './models'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab, OutputViewsTab } from './side-nav-tabs'
@@ -17,10 +16,8 @@ import {
     mergeMap,
     skip,
     switchMap,
-    take,
     tap,
 } from 'rxjs/operators'
-import { MainThreadImplementation } from './environments/main-thread'
 import {
     createProjectRootNode,
     HelpersJsSourceNode,
@@ -31,20 +28,18 @@ import {
 } from './explorer'
 import { Explorer } from '.'
 import { logFactory } from './log-factory.conf'
+import { getDefaultWorker } from './default-project'
+import { IdeProject } from '@youwol/pyodide-helpers'
+import { Common } from '@youwol/fv-code-mirror-editors'
 import {
-    getDefaultWorker,
-    WorkersPoolImplementation,
-} from './environments/workers-pool'
-import {
-    EnvironmentState,
-    ExecutingImplementation,
-} from './environments/environment.state'
+    AbstractEnvState,
+    Project,
+    ProjectState,
+    WorkersPool,
+    WorkersPoolState,
+} from './models'
 
 const log = logFactory().getChildLogger('app.state.ts')
-
-type MainThreadState = EnvironmentState<MainThreadImplementation>
-type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
-type AbstractEnvState = EnvironmentState<ExecutingImplementation>
 
 /**
  * See https://github.com/pyodide/pyodide/blob/main/docs/usage/faq.md for eventual improvements
@@ -53,6 +48,11 @@ type AbstractEnvState = EnvironmentState<ExecutingImplementation>
  * @category State
  */
 export class AppState {
+    /**
+     * @group States
+     */
+    public readonly projectState: ProjectState
+
     /**
      * @group States
      */
@@ -69,16 +69,6 @@ export class AppState {
     public readonly explorerState: Explorer.TreeState
 
     /**
-     * @group Immutable Constants
-     */
-    public readonly mainThreadState: MainThreadState
-
-    /**
-     * @group Immutable Constants
-     */
-    public readonly pyWorkersState$: BehaviorSubject<WorkersPoolState[]>
-
-    /**
      * @group Observables
      */
     public readonly openTabs$ = new BehaviorSubject<Node[]>([])
@@ -87,11 +77,6 @@ export class AppState {
      * @group Observables
      */
     public readonly selectedTab$ = new BehaviorSubject<Node>(undefined)
-
-    /**
-     * @group Observables
-     */
-    public readonly rawLog$ = new ReplaySubject<RawLog>()
 
     /**
      *
@@ -107,37 +92,22 @@ export class AppState {
         explorerInfo: ExplorerBackend.GetItemResponse
     }) {
         Object.assign(this, params)
-
-        this.rawLog$.next({
-            level: 'info',
-            message: 'Welcome to the python playground 🐍',
-        })
-        this.mainThreadState = new EnvironmentState<MainThreadImplementation>({
-            initialModel: params.project,
-            rawLog$: this.rawLog$,
-            executingImplementation: new MainThreadImplementation({
-                appState: this,
-            }),
-        })
-        const initialWorkers = (params.project.workersPools || []).map(
-            (workersPool) => {
-                return new EnvironmentState<WorkersPoolImplementation>({
-                    initialModel: workersPool,
-                    rawLog$: this.rawLog$,
-                    executingImplementation: new WorkersPoolImplementation({
-                        capacity: workersPool.capacity,
-                    }),
+        this.projectState = new IdeProject.ProjectState({
+            project: params.project,
+            createIdeState: ({ files }) => {
+                return new Common.IdeState({
+                    files: files,
+                    defaultFileSystem: Promise.resolve(
+                        new Map<string, string>(),
+                    ),
                 })
             },
-        )
-        this.pyWorkersState$ = new BehaviorSubject<WorkersPoolState[]>(
-            initialWorkers,
-        )
+        })
 
         const rootNode = createProjectRootNode(
             params.project,
-            this.mainThreadState,
-            initialWorkers,
+            this.projectState.mainThreadState,
+            this.projectState.pyWorkersState$.value,
         )
         this.explorerState = new Explorer.TreeState({
             rootNode,
@@ -146,10 +116,10 @@ export class AppState {
         const mergeWorkerBaseObs = (
             toObs: (state: AbstractEnvState) => Observable<unknown>,
         ) => {
-            return this.pyWorkersState$.pipe(
+            return this.projectState.pyWorkersState$.pipe(
                 switchMap((workers) => {
                     return combineLatest([
-                        toObs(this.mainThreadState),
+                        toObs(this.projectState.mainThreadState),
                         ...workers.map((w) => toObs(w)),
                     ])
                 }),
@@ -190,7 +160,7 @@ export class AppState {
             this.openTab(node)
         })
 
-        this.mainThreadState.runStart$.subscribe(() => {
+        this.projectState.mainThreadState.runStart$.subscribe(() => {
             const toKeep = this.openTabs$.value.filter(
                 (v) => !(v instanceof OutputViewNode),
             )
@@ -269,8 +239,8 @@ export class AppState {
     }
 
     run() {
-        this.pyWorkersState$.pipe(take(1)).subscribe(() => {
-            this.mainThreadState.run()
+        this.projectState.run().then((result) => {
+            console.log('Got result', result)
         })
     }
 
@@ -312,7 +282,7 @@ export class AppState {
         log.info(`deleteFile: ${path}`)
         const node = this.explorerState.getNode(SourceNode.getId(state, path))
         this.explorerState.removeNode(node)
-        state.removeFile(path)
+        state.ideState.removeFile(path)
         this.closeTab(node)
     }
 
@@ -335,63 +305,30 @@ export class AppState {
 
     addWorkersPool() {
         const pyWorker = getDefaultWorker({
-            name: `Workers-pool ${this.getWorkersPoolNodes().length}`,
+            name: `Workers-pool ${this.projectState.pyWorkersState$.value.length}`,
         })
-        const state = new EnvironmentState<WorkersPoolImplementation>({
-            initialModel: pyWorker,
-            rawLog$: this.rawLog$,
-            executingImplementation: new WorkersPoolImplementation({
-                capacity: pyWorker.capacity,
-            }),
-        })
+
+        const state = this.projectState.addWorkersPool(pyWorker)
+
         const node = new WorkersPoolNode({
             pyWorker,
             state,
         })
-        this.explorerState.addChild(this.mainThreadState.id, node)
-        this.pyWorkersState$.next([...this.pyWorkersState$.value, state])
+        this.explorerState.addChild(this.projectState.mainThreadState.id, node)
     }
 
     deleteWorkersPool(state: WorkersPoolState) {
+        this.projectState.deleteWorkersPool(state)
+
         const workersPoolNode: WorkersPoolNode = this.explorerState.getNode(
             state.id,
         )
         const childrenNodes: Node[] =
             workersPoolNode.resolvedChildren() as unknown as Node[]
-        state.executingImplementation.terminate()
-        const pools = this.pyWorkersState$.value.filter(
-            (actual_state) => actual_state != state,
-        )
-        this.pyWorkersState$.next(pools)
         this.explorerState.removeNode(state.id)
         this.closeTab(workersPoolNode)
         childrenNodes.forEach((node) => {
             this.closeTab(node)
         })
-    }
-
-    getPythonProxy() {
-        return {
-            get_worker_pool: (name: string) => {
-                const id = this.getWorkersPoolNodes().find(
-                    (node: WorkersPoolNode) => node.name == name,
-                ).id
-                const state = this.pyWorkersState$
-                    .getValue()
-                    .find((pool) => pool.id == id)
-
-                return state.executingImplementation.getPythonProxy(
-                    state,
-                    this.rawLog$,
-                )
-            },
-        }
-    }
-
-    private getWorkersPoolNodes() {
-        const projectNode = this.explorerState.getNode(this.mainThreadState.id)
-        return projectNode
-            .resolvedChildren()
-            .filter((node) => node instanceof WorkersPoolNode)
     }
 }

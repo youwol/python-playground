@@ -1,9 +1,6 @@
 import { VirtualDOM, HTMLElement$ } from '@youwol/flux-view'
 import { CodeEditorView } from './code-editor.view'
-import {
-    EnvironmentState,
-    ExecutingImplementation,
-} from '../../environments/environment.state'
+import { AbstractEnvState } from '../../models'
 
 /**
  * @category View
@@ -12,7 +9,7 @@ export class CodePageView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly state: EnvironmentState<ExecutingImplementation>
+    public readonly state: AbstractEnvState
 
     /**
      * @group Immutable DOM Constants
@@ -46,7 +43,7 @@ export class CodePageView implements VirtualDOM {
 
     constructor(params: {
         sourcePath: string
-        state: EnvironmentState<ExecutingImplementation>
+        state: AbstractEnvState
         headerView: VirtualDOM
         onCtrlEnter: () => void
     }) {

@@ -1,17 +1,11 @@
 import { CodePageView } from './code-editor'
-import {
-    EnvironmentState,
-    ExecutingImplementation,
-} from '../environments/environment.state'
+import { AbstractEnvState } from '../models'
 
 /**
  * @category View
  */
 export class ConfigurationsView extends CodePageView {
-    constructor(params: {
-        sourcePath: string
-        state: EnvironmentState<ExecutingImplementation>
-    }) {
+    constructor(params: { sourcePath: string; state: AbstractEnvState }) {
         const run = () => {
             this.state.applyConfigurations()
         }

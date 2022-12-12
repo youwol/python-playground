@@ -1,17 +1,18 @@
 import { ImmutableTree } from '@youwol/fv-tree'
-import { Environment, Project, WorkersPool } from '../models'
-import { MainThreadImplementation } from '../environments/main-thread'
+import {
+    AbstractEnvImplementation,
+    AbstractEnvState,
+    Environment,
+    Project,
+    EnvironmentState,
+    MainThreadImplementation,
+    MainThreadState,
+    WorkersPool,
+    WorkersPoolImplementation,
+    WorkersPoolState,
+} from '../models'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/flux-view'
-import {
-    EnvironmentState,
-    ExecutingImplementation,
-} from '../environments/environment.state'
-import { WorkersPoolImplementation } from '../environments/workers-pool'
-
-type MainThreadState = EnvironmentState<MainThreadImplementation>
-type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
-type AbstractEnvState = EnvironmentState<ExecutingImplementation>
 
 /**
  * Node's signal data-structure
@@ -94,7 +95,7 @@ export abstract class Node extends ImmutableTree.Node {
 }
 
 export class ExecutingEnvironmentNode<
-    TState extends ExecutingImplementation,
+    TState extends AbstractEnvImplementation,
 > extends Node {
     /**
      * @group Immutable Constants
@@ -247,10 +248,7 @@ export class HelpersJsSourceNode extends SourceNode {
      */
     public readonly category: NodeCategory = 'HelpersJsSourceNode'
 
-    constructor(params: {
-        path: string
-        state: EnvironmentState<ExecutingImplementation>
-    }) {
+    constructor(params: { path: string; state: AbstractEnvState }) {
         super(params)
     }
 }

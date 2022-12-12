@@ -1218,6 +1218,13 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
+"@youwol/cdn-client@^1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.10.tgz#2e240601625f3fe6d95a69f951c35cbd673f21ff"
+  integrity sha512-tUYFztmQ6kztkm1HBl7Qq0Fxbt5iuLuc9j+x9FXhti79UKN8121tBhLdG49hnlQcIIPw54UI4GOK2ggrDQcCWQ==
+  dependencies:
+    semver "^7.3.4"
+
 "@youwol/cdn-client@^1.0.2", "@youwol/cdn-client@^1.0.9":
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/@youwol/cdn-client/-/cdn-client-1.0.9.tgz#53a06c6a2a63af9b9866e4b0e14c8878b7c39fd6"
@@ -1225,10 +1232,10 @@
   dependencies:
     semver "^7.3.4"
 
-"@youwol/eslint-config@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@youwol/eslint-config/-/eslint-config-0.0.2.tgz#7f09617f60ba61e71fb43e964f0bf5db8c107807"
-  integrity sha512-4K/euIHPo2qATnO7WrAEuE7Y+9xgnzXRFI8fclS0qyTN7nH5Th+cC1kOMt2VFwNHCiHt3YkGjFncFHbcju7l7A==
+"@youwol/eslint-config@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@youwol/eslint-config/-/eslint-config-0.0.4.tgz#f5ca190a60173d67dd01306587c0ac0dc1d184e0"
+  integrity sha512-TdsslNgIeh/zOw/h20FNK7I8TW67YrIc0doNzodVyM0agUsHQbxvUKZt590DqVJ03UTDsGR3xSEu3ivkDmZzEw==
 
 "@youwol/flux-view@^1.0.3":
   version "1.0.3"
@@ -1318,6 +1325,15 @@
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/@youwol/prettier-config/-/prettier-config-0.0.2.tgz#4b7badc7e234193d38383940011df4246960960e"
   integrity sha512-6SWLHnoom4Zv9Vu79ztjfnsU69RLcnzrhXFBDvC/KEnrbkqfjRqVeAooVUqote1pMckN9DFaTOt2+CtCXvCxnQ==
+
+"@youwol/pyodide-helpers@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@youwol/pyodide-helpers/-/pyodide-helpers-0.1.1.tgz#6a43893f39c50e021c09d17e641d61ce21a0dee2"
+  integrity sha512-yXLJiQOF8c5I9Rj2qEvqnhL/bq9rKtIUIfM4EuXHTHx30feP/wGzLX/Oli42YlmiyIZKMQ2nZE3eopTIBEQwjw==
+  dependencies:
+    "@youwol/cdn-client" "^1.0.9"
+    "@youwol/logging" "^0.1.0"
+    rxjs "^6.5.5"
 
 "@youwol/tsconfig@^0.0.2":
   version "0.0.2"

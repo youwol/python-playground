@@ -4,14 +4,14 @@ import {
     childrenWithReplace$,
     VirtualDOM,
 } from '@youwol/flux-view'
-
-import {
-    WorkersPoolImplementation,
-    CdnEventWorker,
-} from '../environments/workers-pool'
+import { CdnEvent } from '@youwol/cdn-client'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { EnvironmentState } from '../environments/environment.state'
 import { ConfigurationSelectorView } from '../top-banner'
+import { WorkersPoolState, CdnEventWorker } from '../models'
+
+function isWorkerEvent(event: CdnEvent): event is CdnEventWorker {
+    return event['workerId'] != undefined
+}
 
 /**
  * @category View
@@ -25,16 +25,14 @@ export class WorkerView implements VirtualDOM {
     /**
      * @group States
      */
-    workerState: EnvironmentState<WorkersPoolImplementation>
+    workerState: WorkersPoolState
 
     /**
      * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
 
-    constructor(params: {
-        workerState: EnvironmentState<WorkersPoolImplementation>
-    }) {
+    constructor(params: { workerState: WorkersPoolState }) {
         Object.assign(this, params)
         const eqSet = (xs, ys) =>
             xs.size === ys.size && [...xs].every((x) => ys.has(x))
@@ -42,7 +40,11 @@ export class WorkerView implements VirtualDOM {
         const workerIds$ = this.workerState.cdnEvents$.pipe(
             map(
                 (events) =>
-                    new Set(events.map((e: CdnEventWorker) => e.workerId)),
+                    new Set(
+                        events
+                            .filter((event) => isWorkerEvent(event))
+                            .map((e: CdnEventWorker) => e.workerId),
+                    ),
             ),
             distinctUntilChanged(eqSet),
         )
@@ -81,11 +83,9 @@ export class PoolSizeSelectorView {
     /**
      * @group States
      */
-    public readonly workersPoolState: EnvironmentState<WorkersPoolImplementation>
+    public readonly workersPoolState: WorkersPoolState
 
-    constructor(params: {
-        workersPoolState: EnvironmentState<WorkersPoolImplementation>
-    }) {
+    constructor(params: { workersPoolState: WorkersPoolState }) {
         Object.assign(this, params)
         this.children = [
             {
@@ -148,11 +148,11 @@ export class WorkerCard implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly workersPoolState: EnvironmentState<WorkersPoolImplementation>
+    public readonly workersPoolState: WorkersPoolState
 
     constructor(params: {
         workerId: string
-        workersPoolState: EnvironmentState<WorkersPoolImplementation>
+        workersPoolState: WorkersPoolState
     }) {
         Object.assign(this, params)
         this.children = [
@@ -165,8 +165,13 @@ export class WorkerCard implements VirtualDOM {
                 class: 'p-2',
                 children: childrenWithReplace$(
                     this.workersPoolState.cdnEvents$.pipe(
-                        map((cdnEvents: CdnEventWorker[]) => {
-                            const filtered = cdnEvents.filter(
+                        map((cdnEvents: CdnEvent[]) => {
+                            return cdnEvents.filter((event) =>
+                                isWorkerEvent(event),
+                            )
+                        }),
+                        map((cdnWorkerEvents: CdnEventWorker[]) => {
+                            const filtered = cdnWorkerEvents.filter(
                                 (cdnEvent) =>
                                     cdnEvent.workerId == this.workerId,
                             )
@@ -210,11 +215,11 @@ export class WorkerCardTitleView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly workersPoolState: EnvironmentState<WorkersPoolImplementation>
+    public readonly workersPoolState: WorkersPoolState
 
     constructor(params: {
         workerId: string
-        workersPoolState: EnvironmentState<WorkersPoolImplementation>
+        workersPoolState: WorkersPoolState
     }) {
         Object.assign(this, params)
         this.children = [

@@ -2,10 +2,7 @@ import { TopBannerView as TopBannerBaseView } from '@youwol/os-top-banner'
 import { AppState } from '../app.state'
 import { children$, VirtualDOM } from '@youwol/flux-view'
 import { combineLatest } from 'rxjs'
-import {
-    EnvironmentState,
-    ExecutingImplementation,
-} from '../environments/environment.state'
+import { AbstractEnvState } from '../models'
 
 /**
  * @category View
@@ -65,12 +62,9 @@ export class ConfigurationSelectorView implements VirtualDOM {
     /**
      * @group State
      */
-    public readonly state: EnvironmentState<ExecutingImplementation>
+    public readonly state: AbstractEnvState
 
-    constructor(params: {
-        state: EnvironmentState<ExecutingImplementation>
-        onRun: () => void
-    }) {
+    constructor(params: { state: AbstractEnvState; onRun: () => void }) {
         Object.assign(this, params)
 
         this.children = [
@@ -102,7 +96,7 @@ export class TopBannerView extends TopBannerBaseView {
                         class: 'flex-grow-1 d-flex justify-content-center',
                         children: [
                             new ConfigurationSelectorView({
-                                state: appState.mainThreadState,
+                                state: appState.projectState.mainThreadState,
                                 onRun: () => appState.run(),
                             }),
                         ],
@@ -128,11 +122,7 @@ export class ConfigurationsDropDown implements VirtualDOM {
      */
     public readonly children: VirtualDOM[]
 
-    constructor({
-        state,
-    }: {
-        state: EnvironmentState<ExecutingImplementation>
-    }) {
+    constructor({ state }: { state: AbstractEnvState }) {
         this.children = [
             {
                 tag: 'select',

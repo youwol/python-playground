@@ -1,58 +1,34 @@
-import { VirtualDOM } from '@youwol/flux-view'
-import { InstallLoadingGraphInputs } from '@youwol/cdn-client'
+import { Common } from '@youwol/fv-code-mirror-editors'
+import { IdeProject } from '@youwol/pyodide-helpers'
 
-export interface Source {
-    path: string
-    content: string
-}
+export type RawLog = IdeProject.JsonModels.RawLog
+export type WorkersPool = IdeProject.JsonModels.WorkersPool
+export type Environment = IdeProject.JsonModels.Environment
+export type Project = IdeProject.JsonModels.Project
+export type WorkerCommon = IdeProject.JsonModels.WorkerCommon
 
-export interface Requirements {
-    pythonPackages: string[]
-    javascriptPackages: { modules: string[]; aliases: { [k: string]: string } }
-}
+export type AbstractEnvImplementation = IdeProject.ExecutingImplementation
+export type WorkersPoolImplementation =
+    IdeProject.WorkersPool.WorkersPoolImplementation
+export type MainThreadImplementation =
+    IdeProject.MainThread.MainThreadImplementation
 
-export interface RunConfiguration {
-    name: string
-    scriptPath: string
-    parameters?: string
-}
+export type EnvironmentState<T extends AbstractEnvImplementation> =
+    IdeProject.EnvironmentState<T, Common.IdeState>
 
-export interface Environment {
-    requirements: Requirements
-    configurations: RunConfiguration[]
-    lockFile?: InstallLoadingGraphInputs
-}
+export type MainThreadState = IdeProject.EnvironmentState<
+    MainThreadImplementation,
+    Common.IdeState
+>
 
-export interface WorkersPool {
-    id: string
-    name: string
-    capacity: number
-    environment: Environment
-    sources: Source[]
-}
+export type WorkersPoolState = IdeProject.EnvironmentState<
+    WorkersPoolImplementation,
+    Common.IdeState
+>
+export type AbstractEnvState = IdeProject.EnvironmentState<
+    AbstractEnvImplementation,
+    Common.IdeState
+>
+export type ProjectState = IdeProject.ProjectState<Common.IdeState>
 
-export interface Project {
-    id: string
-    name: string
-    environment: Environment
-    sources: Source[]
-    workersPools?: WorkersPool[]
-}
-
-export interface WorkerCommon {
-    id: string
-    name: string
-    environment: Environment
-    sources: Source[]
-}
-
-export interface RawLog {
-    level: 'info' | 'warning' | 'error'
-    message: string
-    data?: unknown
-}
-
-export interface View {
-    name: string
-    htmlElement: VirtualDOM | HTMLElement
-}
+export type CdnEventWorker = IdeProject.WorkersPool.CdnEventWorker

@@ -1,11 +1,10 @@
 import { VirtualDOM } from '@youwol/flux-view'
-import { MainThreadImplementation } from '../environments/main-thread'
 import {
     LoadingScreenView,
     InstallDoneEvent,
     CdnMessageEvent,
 } from '@youwol/cdn-client'
-import { EnvironmentState } from '../environments/environment.state'
+import { MainThreadState } from '../models'
 
 /**
  * @category View
@@ -18,16 +17,14 @@ export class ProjectView implements VirtualDOM {
     /**
      * @group States
      */
-    public readonly mainThreadState: EnvironmentState<MainThreadImplementation>
+    public readonly mainThreadState: MainThreadState
 
     /**
      * @group Immutable DOM Constants
      */
     public readonly children: VirtualDOM[]
 
-    constructor(params: {
-        mainThreadState: EnvironmentState<MainThreadImplementation>
-    }) {
+    constructor(params: { mainThreadState: MainThreadState }) {
         Object.assign(this, params)
         this.children = [
             {
