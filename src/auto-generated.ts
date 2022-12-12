@@ -124,7 +124,7 @@ const entries = {
 export const setup = {
     name:'@youwol/python-playground',
         assetId:'QHlvdXdvbC9weXRob24tcGxheWdyb3VuZA==',
-    version:'0.1.3-wip',
+    version:'0.1.3',
     shortDescription:"Python playground application",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground',
     npmPackage:'https://www.npmjs.com/package/@youwol/python-playground',
@@ -159,7 +159,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/python-playground#0.1.3-wip~dist/@youwol/python-playground/${entry.name}.js`
+            `@youwol/python-playground#0.1.3~dist/@youwol/python-playground/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),
