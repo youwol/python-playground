@@ -1,6 +1,7 @@
 import {
     FilesBackend,
     ExplorerBackend,
+    AssetsBackend,
     AssetsGateway,
 } from '@youwol/http-clients'
 
@@ -12,6 +13,7 @@ import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab, OutputViewsTab } from './side-nav-tabs'
 import {
     debounceTime,
+    filter,
     map,
     mergeMap,
     skip,
@@ -86,12 +88,29 @@ export class AppState {
         savingErrors$: new ReplaySubject<HTTPError>(1),
     }
 
+    /**
+     * @group Immutable Constants
+     */
+    public readonly projectInfo: {
+        fileInfo: FilesBackend.GetInfoResponse
+        explorerInfo: ExplorerBackend.GetItemResponse
+        permissionsInfo: AssetsBackend.GetPermissionsResponse
+    }
+
     constructor(params: {
         project: Project
         fileInfo: FilesBackend.GetInfoResponse
         explorerInfo: ExplorerBackend.GetItemResponse
+        permissionsInfo: AssetsBackend.GetPermissionsResponse
     }) {
         Object.assign(this, params)
+
+        this.projectInfo = {
+            fileInfo: params.fileInfo,
+            explorerInfo: params.explorerInfo,
+            permissionsInfo: params.permissionsInfo,
+        }
+
         this.projectState = new IdeProject.ProjectState({
             project: params.project,
             createIdeState: ({ files }) => {
@@ -193,6 +212,7 @@ export class AppState {
         })
         mergeWorkerBaseObs((state) => state.serialized$)
             .pipe(
+                filter(() => this.projectInfo.permissionsInfo.write),
                 skip(1),
                 tap(() => {
                     const projectNode = this.explorerState.getNode(

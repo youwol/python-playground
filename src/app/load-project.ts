@@ -2,6 +2,7 @@ import { CdnMessageEvent, LoadingScreenView } from '@youwol/cdn-client'
 import {
     AssetsGateway,
     FilesBackend,
+    AssetsBackend,
     ExplorerBackend,
 } from '@youwol/http-clients'
 import { downloadBlob, raiseHTTPErrors } from '@youwol/http-primitives'
@@ -23,15 +24,19 @@ export function load$(
     project: Project
     fileInfo: FilesBackend.GetInfoResponse
     explorerInfo: ExplorerBackend.GetItemResponse
+    permissionsInfo: AssetsBackend.GetPermissionsResponse
 }> {
     const filesClient = new AssetsGateway.Client().files
-
+    const assetsClient = new AssetsGateway.Client().assets
     const explorerClient = new AssetsGateway.Client().explorer
 
     const data$ = forkJoin([
         filesClient.getInfo$({ fileId: projectId }).pipe(raiseHTTPErrors()),
         explorerClient
             .getItem$({ itemId: window.btoa(projectId) })
+            .pipe(raiseHTTPErrors()),
+        assetsClient
+            .getPermissions$({ assetId: window.btoa(projectId) })
             .pipe(raiseHTTPErrors()),
         downloadBlob(
             `${
@@ -47,7 +52,7 @@ export function load$(
                 new CdnMessageEvent('fetch_project', 'Project retrieved'),
             )
         }),
-        mergeMap(([fileInfo, explorerInfo, blob]) => {
+        mergeMap(([fileInfo, explorerInfo, permissionsInfo, blob]) => {
             const jsonResp = new Subject()
             const reader = new FileReader()
             reader.onload = (ev) => {
@@ -60,6 +65,7 @@ export function load$(
                     project: { ...project, id: explorerInfo.rawId },
                     fileInfo,
                     explorerInfo,
+                    permissionsInfo,
                 })),
             )
         }),
@@ -74,6 +80,7 @@ export function load$(
 export function new$(loadingScreen: LoadingScreenView): Observable<{
     project: Project
     fileInfo: FilesBackend.GetInfoResponse
+    permissionsInfo: AssetsBackend.GetPermissionsResponse
     explorerInfo: ExplorerBackend.GetItemResponse
 }> {
     const client = new AssetsGateway.AssetsGatewayClient()

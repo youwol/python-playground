@@ -86,12 +86,38 @@ export class ConfigurationSelectorView implements VirtualDOM {
 /**
  * @category View
  */
+export class PermissionsBadgeView implements VirtualDOM {
+    public readonly class: string
+    public readonly children: VirtualDOM[] = []
+
+    constructor({ appState }: { appState: AppState }) {
+        if (appState.projectInfo.permissionsInfo.write) {
+            return
+        }
+        this.class =
+            'd-flex rounded fv-bg-background-alt fv-text-focus mx-2 p-1 align-items-center'
+        this.children = [
+            {
+                class: 'fas fa-lock',
+            },
+            { class: 'px-1' },
+            {
+                innerText: 'No write permissions',
+            },
+        ]
+    }
+}
+
+/**
+ * @category View
+ */
 export class TopBannerView extends TopBannerBaseView {
     constructor({ appState }: { appState: AppState }) {
         super({
             innerView: {
                 class: 'd-flex w-100 justify-content-center my-auto align-items-center',
                 children: [
+                    new PermissionsBadgeView({ appState }),
                     {
                         class: 'flex-grow-1 d-flex justify-content-center',
                         children: [
@@ -103,7 +129,7 @@ export class TopBannerView extends TopBannerBaseView {
                     },
                     {
                         tag: 'a',
-                        href: '/applications/@youwol/stories/latest?id=9ad4ef57-182a-40a6-a5ba-17d0d3bbf47b&mode=reader',
+                        href: '/applications/@youwol/stories/latest?id=1b1d6ff1-9dad-4a1f-951a-5bd362e0ee53&mode=reader',
                         class: 'mx-3 fas fa-question fv-text-focus p-1 fv-pointer rounded fv-hover-bg-background-alt',
                         target: '_blank',
                     },

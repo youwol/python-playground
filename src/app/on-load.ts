@@ -16,15 +16,17 @@ const vDOM = {
                 ? load$(projectId, Client['initialLoadingScreen'])
                 : new$(Client['initialLoadingScreen']),
 
-            ({ project, fileInfo, explorerInfo }) => {
+            ({ project, fileInfo, permissionsInfo, explorerInfo }) => {
                 const state = new AppState({
                     fileInfo,
                     project,
                     explorerInfo,
+                    permissionsInfo,
                 })
                 return new AppView({ appState: state })
             },
         ),
     ],
 }
+
 document.getElementById('content').appendChild(render(vDOM))
