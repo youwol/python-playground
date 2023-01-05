@@ -103,7 +103,7 @@ export class TopBannerView extends TopBannerBaseView {
                     },
                     {
                         tag: 'a',
-                        href: '/applications/@youwol/stories/latest?id=9ad4ef57-182a-40a6-a5ba-17d0d3bbf47b&mode=reader',
+                        href: '/applications/@youwol/stories/latest?id=1b1d6ff1-9dad-4a1f-951a-5bd362e0ee53&mode=reader',
                         class: 'mx-3 fas fa-question fv-text-focus p-1 fv-pointer rounded fv-hover-bg-background-alt',
                         target: '_blank',
                     },
