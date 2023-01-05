@@ -46,6 +46,7 @@ export class CodePageView implements VirtualDOM {
         state: AbstractEnvState
         headerView: VirtualDOM
         onCtrlEnter: () => void
+        cmOptions?: { [k: string]: unknown }
     }) {
         Object.assign(this, params)
 
@@ -53,6 +54,7 @@ export class CodePageView implements VirtualDOM {
             sourcePath: this.sourcePath,
             state: this.state,
             onRun: this.onCtrlEnter,
+            cmOptions: params.cmOptions,
         })
 
         this.children = [

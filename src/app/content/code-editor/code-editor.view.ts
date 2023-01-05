@@ -38,6 +38,7 @@ export class CodeEditorView {
         state: AbstractEnvState
         onRun: () => void
         refresh$?: Observable<unknown>
+        cmOptions?: { [k: string]: unknown }
     }) {
         Object.assign(this, params)
         const codeEditorView = new Common.CodeEditorView({
@@ -45,6 +46,7 @@ export class CodeEditorView {
             path: this.sourcePath,
             language: this.sourcePath.endsWith('.py') ? 'python' : 'javascript',
             config: {
+                ...(params.cmOptions || {}),
                 extraKeys: {
                     'Ctrl-Enter': () => {
                         params.onRun()
