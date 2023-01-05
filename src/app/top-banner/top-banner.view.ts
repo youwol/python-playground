@@ -86,12 +86,38 @@ export class ConfigurationSelectorView implements VirtualDOM {
 /**
  * @category View
  */
+export class PermissionsBadgeView implements VirtualDOM {
+    public readonly class: string
+    public readonly children: VirtualDOM[] = []
+
+    constructor({ appState }: { appState: AppState }) {
+        if (appState.projectInfo.permissionsInfo.write) {
+            return
+        }
+        this.class =
+            'd-flex rounded fv-bg-background-alt fv-text-focus mx-2 p-1 align-items-center'
+        this.children = [
+            {
+                class: 'fas fa-lock',
+            },
+            { class: 'px-1' },
+            {
+                innerText: 'No write permissions',
+            },
+        ]
+    }
+}
+
+/**
+ * @category View
+ */
 export class TopBannerView extends TopBannerBaseView {
     constructor({ appState }: { appState: AppState }) {
         super({
             innerView: {
                 class: 'd-flex w-100 justify-content-center my-auto align-items-center',
                 children: [
+                    new PermissionsBadgeView({ appState }),
                     {
                         class: 'flex-grow-1 d-flex justify-content-center',
                         children: [
