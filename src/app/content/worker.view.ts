@@ -52,7 +52,7 @@ export class WorkerView implements VirtualDOM {
         this.children = [
             new PoolSizeSelectorView({ workersPoolState: this.workerState }),
             {
-                class: 'w-100 d-flex flex-grow-1 p-2 flex-wrap',
+                class: 'w-100 d-flex flex-grow-1 p-2 flex-wrap overflow-auto',
                 children: children$(workerIds$, (workerIds) => {
                     return [...workerIds].map((workerId) => {
                         return new WorkerCard({
