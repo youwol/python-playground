@@ -1325,10 +1325,10 @@
   resolved "https://registry.yarnpkg.com/@youwol/prettier-config/-/prettier-config-0.0.2.tgz#4b7badc7e234193d38383940011df4246960960e"
   integrity sha512-6SWLHnoom4Zv9Vu79ztjfnsU69RLcnzrhXFBDvC/KEnrbkqfjRqVeAooVUqote1pMckN9DFaTOt2+CtCXvCxnQ==
 
-"@youwol/pyodide-helpers@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@youwol/pyodide-helpers/-/pyodide-helpers-0.1.1.tgz#6a43893f39c50e021c09d17e641d61ce21a0dee2"
-  integrity sha512-yXLJiQOF8c5I9Rj2qEvqnhL/bq9rKtIUIfM4EuXHTHx30feP/wGzLX/Oli42YlmiyIZKMQ2nZE3eopTIBEQwjw==
+"@youwol/pyodide-helpers@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@youwol/pyodide-helpers/-/pyodide-helpers-0.1.2.tgz#b8cf42243281770f1e722824f591a70a2e7067f8"
+  integrity sha512-pYxohBYxe3z+VVXKQEHVtFq/eG8ZR7DG+eZOzRAaoTClkH9I+pGx2YIMXnLZGaUsHQ9C0pnq4JXtGJj7T0zocA==
   dependencies:
     "@youwol/cdn-client" "^1.0.9"
     "@youwol/logging" "^0.1.0"
