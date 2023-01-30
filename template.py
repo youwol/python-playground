@@ -23,7 +23,7 @@ load_dependencies = {
     'rxjs': '^6.5.5',
     "@youwol/logging": "^0.1.0",
     'uuid': '^8.3.2',
-    "@youwol/pyodide-helpers": "^0.1.1",
+    "@youwol/pyodide-helpers": "^0.1.2",
 }
 
 template = Template(
