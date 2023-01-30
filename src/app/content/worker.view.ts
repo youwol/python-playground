@@ -159,7 +159,10 @@ export class WorkerCard implements VirtualDOM {
             new WorkerCardTitleView(params),
             new ConfigurationSelectorView({
                 state: this.workersPoolState,
-                onRun: () => this.workersPoolState.run(),
+                onRun: () =>
+                    this.workersPoolState
+                        .run({ targetWorkerId: this.workerId })
+                        .subscribe(),
             }),
             {
                 class: 'p-2',
