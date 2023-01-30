@@ -174,8 +174,8 @@ export class AppState {
                 new OutputViewsTab({ appState: this }),
             ]),
             selected$: new BehaviorSubject<string>('Views'),
-            // If the view is not persisted, each time it is expanded => new node for each view => openTab will
-            // recreate a new tab each time a view is selected.
+            // If the side-nav content's view is not persisted, each time it is expanded
+            // => new node for each output view created => openTab will recreate a new tab each time a view is selected.
             // By persisting => only one ref for each view => no tab duplication.
             persistTabsView: true,
         })
