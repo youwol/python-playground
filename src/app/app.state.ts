@@ -7,19 +7,11 @@ import {
 
 import { HTTPError, dispatchHTTPErrors } from '@youwol/http-primitives'
 
-import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { ChildApplicationAPI } from '@youwol/os-core'
 import { DockableTabs } from '@youwol/fv-tabs'
 import { ProjectTab, OutputViewsTab } from './side-nav-tabs'
-import {
-    debounceTime,
-    filter,
-    map,
-    mergeMap,
-    skip,
-    switchMap,
-    tap,
-} from 'rxjs/operators'
+import { debounceTime, filter, map, mergeMap, skip, tap } from 'rxjs/operators'
 import {
     createProjectRootNode,
     HelpersJsSourceNode,
@@ -37,7 +29,6 @@ import {
     AbstractEnvState,
     Project,
     ProjectState,
-    WorkersPool,
     WorkersPoolState,
 } from './models'
 
@@ -132,31 +123,22 @@ export class AppState {
             rootNode,
             appState: this,
         })
-        const mergeWorkerBaseObs = (
-            toObs: (state: AbstractEnvState) => Observable<unknown>,
-        ) => {
-            return this.projectState.pyWorkersState$.pipe(
-                switchMap((workers) => {
-                    return combineLatest([
-                        toObs(this.projectState.mainThreadState),
-                        ...workers.map((w) => toObs(w)),
-                    ])
-                }),
+
+        this.projectState
+            .mergeEnvObservable((state) =>
+                state.projectLoaded$.pipe(map((loaded) => ({ loaded, state }))),
             )
-        }
-        mergeWorkerBaseObs((state) =>
-            state.projectLoaded$.pipe(map((loaded) => ({ loaded, state }))),
-        ).subscribe((loadeds) => {
-            loadeds.forEach(({ loaded, state }) => {
-                const node = this.explorerState.getNode(state.id)
-                loaded
-                    ? node.removeProcess(params.project.id)
-                    : node.addProcess({
-                          type: 'loading',
-                          id: params.project.id,
-                      })
+            .subscribe((loaded_envs) => {
+                loaded_envs.forEach(({ loaded, state }) => {
+                    const node = this.explorerState.getNode(state.id)
+                    loaded
+                        ? node.removeProcess(params.project.id)
+                        : node.addProcess({
+                              type: 'loading',
+                              id: params.project.id,
+                          })
+                })
             })
-        })
 
         this.leftSideNavState = new DockableTabs.State({
             disposition: 'left',
@@ -214,7 +196,7 @@ export class AppState {
                 id: 'errorSaving',
             })
         })
-        mergeWorkerBaseObs((state) => state.serialized$)
+        this.projectState.project$
             .pipe(
                 filter(() => this.projectInfo.permissionsInfo.write),
                 skip(1),
@@ -229,12 +211,6 @@ export class AppState {
                     })
                 }),
                 debounceTime(1000),
-                map(([project, ...workers]: [Project, WorkersPool[]]) => {
-                    return {
-                        ...project,
-                        workersPools: workers,
-                    }
-                }),
                 mergeMap((project) => {
                     const filesClient = new AssetsGateway.Client().files
                     const str = JSON.stringify(project, null, 4)
