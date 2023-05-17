@@ -1,7 +1,7 @@
 import {
     attr$,
     children$,
-    childrenWithReplace$,
+    childrenFromStore$,
     VirtualDOM,
 } from '@youwol/flux-view'
 import { CdnEvent, WorkersPoolTypes } from '@youwol/cdn-client'
@@ -171,7 +171,7 @@ export class WorkerCard implements VirtualDOM {
             }),
             {
                 class: 'p-2',
-                children: childrenWithReplace$(
+                children: childrenFromStore$(
                     this.workersPoolState.cdnEvents$.pipe(
                         map((cdnEvents: CdnEvent[]) => {
                             return cdnEvents.filter((event) =>
