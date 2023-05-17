@@ -5,16 +5,16 @@ const runTimeDependencies = {
         "@youwol/os-core": "^0.1.5",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
-        "@youwol/cdn-client": "^1.0.10",
+        "@youwol/cdn-client": "^2.0.3",
         "@youwol/http-clients": "^2.0.1",
-        "@youwol/flux-view": "^1.0.3",
+        "@youwol/flux-view": "^1.1.1",
         "@youwol/fv-context-menu": "^0.1.1",
         "@youwol/fv-tree": "^0.2.3",
         "lodash": "^4.17.15",
         "rxjs": "^6.5.5",
         "@youwol/logging": "^0.1.0",
         "uuid": "^8.3.2",
-        "@youwol/pyodide-helpers": "^0.1.3"
+        "@youwol/pyodide-helpers": "^0.1.4"
     },
     "includedInBundle": {}
 }
@@ -23,7 +23,7 @@ const externals = {
     "@youwol/os-core": "window['@youwol/os-core_APIv01']",
     "@youwol/fv-tabs": "window['@youwol/fv-tabs_APIv02']",
     "@youwol/os-top-banner": "window['@youwol/os-top-banner_APIv01']",
-    "@youwol/cdn-client": "window['@youwol/cdn-client_APIv1']",
+    "@youwol/cdn-client": "window['@youwol/cdn-client_APIv2']",
     "@youwol/http-clients": "window['@youwol/http-clients_APIv2']",
     "@youwol/flux-view": "window['@youwol/flux-view_APIv1']",
     "@youwol/fv-context-menu": "window['@youwol/fv-context-menu_APIv01']",
@@ -53,7 +53,7 @@ const exportedSymbols = {
         "exportedSymbol": "@youwol/os-top-banner"
     },
     "@youwol/cdn-client": {
-        "apiKey": "1",
+        "apiKey": "2",
         "exportedSymbol": "@youwol/cdn-client"
     },
     "@youwol/http-clients": {
@@ -123,7 +123,7 @@ const entries = {
 export const setup = {
     name:'@youwol/python-playground',
         assetId:'QHlvdXdvbC9weXRob24tcGxheWdyb3VuZA==',
-    version:'0.1.5',
+    version:'0.1.6-wip',
     shortDescription:"Python playground application",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground',
     npmPackage:'https://www.npmjs.com/package/@youwol/python-playground',
@@ -169,7 +169,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/python-playground#0.1.5~dist/@youwol/python-playground/${entry.name}.js`
+            `@youwol/python-playground#0.1.6-wip~dist/@youwol/python-playground/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),
