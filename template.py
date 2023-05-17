@@ -3,7 +3,7 @@ from pathlib import Path
 
 from youwol.pipelines.pipeline_typescript_weback_npm import Template, PackageType, Dependencies, \
     RunTimeDeps, generate_template, DevServer, Bundles, MainModule
-from youwol_utils import parse_json
+from youwol.utils import parse_json
 
 folder_path = Path(__file__).parent
 
@@ -14,16 +14,16 @@ load_dependencies = {
     '@youwol/os-core': '^0.1.5',
     '@youwol/fv-tabs': '^0.2.1',
     '@youwol/os-top-banner': '^0.1.1',
-    '@youwol/cdn-client': '^1.0.10',
+    '@youwol/cdn-client': '^2.0.3',
     '@youwol/http-clients': '^2.0.1',
-    '@youwol/flux-view': '^1.0.3',
+    '@youwol/flux-view': '^1.1.1',
     '@youwol/fv-context-menu': '^0.1.1',
     '@youwol/fv-tree': '^0.2.3',
     'lodash': '^4.17.15',
     'rxjs': '^6.5.5',
     "@youwol/logging": "^0.1.0",
     'uuid': '^8.3.2',
-    "@youwol/pyodide-helpers": "^0.1.3",
+    "@youwol/pyodide-helpers": "^0.1.4",
 }
 
 template = Template(

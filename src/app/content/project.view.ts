@@ -3,6 +3,7 @@ import {
     LoadingScreenView,
     InstallDoneEvent,
     CdnMessageEvent,
+    CdnEvent,
 } from '@youwol/cdn-client'
 import { BehaviorSubject, combineLatest } from 'rxjs'
 
@@ -130,7 +131,7 @@ export class ProjectDependenciesView {
                     })
                     loadingScreen.render()
                     this.appState.projectState.mainThreadState.cdnEvent$.subscribe(
-                        (event) => {
+                        (event: CdnEvent) => {
                             if (event instanceof InstallDoneEvent) {
                                 loadingScreen.next(
                                     new CdnMessageEvent(
