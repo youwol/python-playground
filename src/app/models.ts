@@ -30,5 +30,3 @@ export type AbstractEnvState = IdeProject.EnvironmentState<
     Common.IdeState
 >
 export type ProjectState = IdeProject.ProjectState<Common.IdeState>
-
-export type CdnEventWorker = IdeProject.WorkersPool.CdnEventWorker

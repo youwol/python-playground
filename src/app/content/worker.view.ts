@@ -4,12 +4,14 @@ import {
     childrenWithReplace$,
     VirtualDOM,
 } from '@youwol/flux-view'
-import { CdnEvent } from '@youwol/cdn-client'
+import { CdnEvent, WorkersPoolTypes } from '@youwol/cdn-client'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ConfigurationSelectorView } from '../top-banner'
-import { WorkersPoolState, CdnEventWorker } from '../models'
+import { WorkersPoolState } from '../models'
 
-function isWorkerEvent(event: CdnEvent): event is CdnEventWorker {
+function isWorkerEvent(
+    event: CdnEvent,
+): event is WorkersPoolTypes.CdnEventWorker {
     return event['workerId'] != undefined
 }
 
@@ -42,8 +44,11 @@ export class WorkerView implements VirtualDOM {
                 (events) =>
                     new Set(
                         events
-                            .filter((event) => isWorkerEvent(event))
-                            .map((e: CdnEventWorker) => e.workerId),
+                            .filter((event: CdnEvent) => isWorkerEvent(event))
+                            .map(
+                                (e: WorkersPoolTypes.CdnEventWorker) =>
+                                    e.workerId,
+                            ),
                     ),
             ),
             distinctUntilChanged(eqSet),
@@ -173,19 +178,23 @@ export class WorkerCard implements VirtualDOM {
                                 isWorkerEvent(event),
                             )
                         }),
-                        map((cdnWorkerEvents: CdnEventWorker[]) => {
-                            const filtered = cdnWorkerEvents.filter(
-                                (cdnEvent) =>
-                                    cdnEvent.workerId == this.workerId,
-                            )
-                            const ids = new Set(filtered.map((f) => f.id))
-                            const reversed = filtered.reverse()
-                            return [...ids].map((id) =>
-                                reversed.find((event) => event.id == id),
-                            )
-                        }),
+                        map(
+                            (
+                                cdnWorkerEvents: WorkersPoolTypes.CdnEventWorker[],
+                            ) => {
+                                const filtered = cdnWorkerEvents.filter(
+                                    (cdnEvent) =>
+                                        cdnEvent.workerId == this.workerId,
+                                )
+                                const ids = new Set(filtered.map((f) => f.id))
+                                const reversed = filtered.reverse()
+                                return [...ids].map((id) =>
+                                    reversed.find((event) => event.id == id),
+                                )
+                            },
+                        ),
                     ),
-                    (cdnEvent: CdnEventWorker) => {
+                    (cdnEvent: WorkersPoolTypes.CdnEventWorker) => {
                         return {
                             innerText: cdnEvent.text,
                         }
