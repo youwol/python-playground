@@ -41,7 +41,6 @@ template = Template(
         ),
         devTime={
             #  those two prevent failure of typedoc
-            "@types/lz-string": "^1.3.34",
             "lz-string": "^1.4.4"
         }
     ),
