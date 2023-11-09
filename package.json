@@ -29,7 +29,7 @@
         ]
     },
     "dependencies": {
-        "@youwol/fv-code-mirror-editors": "^0.2.2",
+        "@youwol/fv-code-mirror-editors": "^0.3.1",
         "@youwol/os-core": "^0.1.5",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
@@ -71,7 +71,7 @@
     },
     "webpm": {
         "dependencies": {
-            "@youwol/fv-code-mirror-editors": "^0.2.2",
+            "@youwol/fv-code-mirror-editors": "^0.3.1",
             "@youwol/os-core": "^0.1.5",
             "@youwol/fv-tabs": "^0.2.1",
             "@youwol/os-top-banner": "^0.1.1",
