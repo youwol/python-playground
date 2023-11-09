@@ -10,7 +10,7 @@ folder_path = Path(__file__).parent
 pkg_json = parse_json(folder_path / 'package.json')
 
 load_dependencies = {
-    '@youwol/fv-code-mirror-editors': '^0.2.2',
+    '@youwol/fv-code-mirror-editors': '^0.3.1',
     '@youwol/os-core': '^0.1.5',
     '@youwol/fv-tabs': '^0.2.1',
     '@youwol/os-top-banner': '^0.1.1',
@@ -41,7 +41,6 @@ template = Template(
         ),
         devTime={
             #  those two prevent failure of typedoc
-            "@types/lz-string": "^1.3.34",
             "lz-string": "^1.4.4"
         }
     ),

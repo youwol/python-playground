@@ -1,7 +1,7 @@
 
 const runTimeDependencies = {
     "externals": {
-        "@youwol/fv-code-mirror-editors": "^0.2.2",
+        "@youwol/fv-code-mirror-editors": "^0.3.1",
         "@youwol/os-core": "^0.1.5",
         "@youwol/fv-tabs": "^0.2.1",
         "@youwol/os-top-banner": "^0.1.1",
@@ -19,7 +19,7 @@ const runTimeDependencies = {
     "includedInBundle": {}
 }
 const externals = {
-    "@youwol/fv-code-mirror-editors": "window['@youwol/fv-code-mirror-editors_APIv02']",
+    "@youwol/fv-code-mirror-editors": "window['@youwol/fv-code-mirror-editors_APIv03']",
     "@youwol/os-core": "window['@youwol/os-core_APIv01']",
     "@youwol/fv-tabs": "window['@youwol/fv-tabs_APIv02']",
     "@youwol/os-top-banner": "window['@youwol/os-top-banner_APIv01']",
@@ -37,7 +37,7 @@ const externals = {
 }
 const exportedSymbols = {
     "@youwol/fv-code-mirror-editors": {
-        "apiKey": "02",
+        "apiKey": "03",
         "exportedSymbol": "@youwol/fv-code-mirror-editors"
     },
     "@youwol/os-core": {
@@ -125,7 +125,7 @@ export const setup = {
         assetId:'QHlvdXdvbC9weXRob24tcGxheWdyb3VuZA==',
     version:'0.1.6',
     shortDescription:"Python playground application",
-    developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground',
+    developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground&tab=doc',
     npmPackage:'https://www.npmjs.com/package/@youwol/python-playground',
     sourceGithub:'https://github.com/youwol/python-playground',
     userGuide:'https://l.youwol.com/doc/@youwol/python-playground',
@@ -140,7 +140,7 @@ export const setup = {
     },
 
     installMainModule: ({cdnClient, installParameters}:{
-        cdnClient:{install:(unknown) => Promise<Window>},
+        cdnClient:{install:(unknown) => Promise<WindowOrWorkerGlobalScope>},
         installParameters?
     }) => {
         const parameters = installParameters || {}
@@ -159,7 +159,7 @@ export const setup = {
     },
     installAuxiliaryModule: ({name, cdnClient, installParameters}:{
         name: string,
-        cdnClient:{install:(unknown) => Promise<Window>},
+        cdnClient:{install:(unknown) => Promise<WindowOrWorkerGlobalScope>},
         installParameters?
     }) => {
         const entry = secondaryEntries[name]
