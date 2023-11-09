@@ -11,7 +11,7 @@ This library is part of the hybrid cloud/local ecosystem
 
 [Online user-guide](https://l.youwol.com/doc/@youwol/python-playground)
 
-[Developers documentation](https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground)
+[Developers documentation](https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/python-playground&tab=doc)
 
 [Package on npm](https://www.npmjs.com/package/@youwol/python-playground)
 
@@ -40,6 +40,8 @@ yarn build:prod
 ```
 
 ---
+
+<!-- no specific test configuration documented -->
 
 To run tests:
 
@@ -75,7 +77,7 @@ Configuration(
             FlowSwitcherMiddleware(
                 name = 'front-end dev-servers',
                 oneOf = [
-                    WebpackDevServerSwitch(packageName="@youwol/todo-app-ts", port=3012),
+                    WebpackDevServerSwitch(packageName="@youwol/python-playground", port=3012),
                 ]
             )
         ]
@@ -87,7 +89,7 @@ Additional information on the `Configuration` class can be found in the "Configu
 [Py-YouWol guide](https://l.youwol.com/doc/py-youwol).
 
 Once Py-YouWol is running with the updated configuration,
-the application can be accessed from [here](http://localhost:2000/applications/@youwol/todo-app-ts/latest)
+the application can be accessed from [here](http://localhost:2000/applications/@youwol/python-playground/latest)
 (providing py-youwol running using the default port `2000`).
 
 ---
