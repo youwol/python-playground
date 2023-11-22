@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 283.46 283.46">
+
+<defs>
+<style>.cls-1{fill:url(#linear-gradient);}.cls-2{fill:url(#linear-gradient-2);}.cls-3{fill:url(#linear-gradient-3);}
+#shadow {filter: drop-shadow(rgb(0, 0, 0) 5px 5px 5px);}
+</style>
+
+
+<linearGradient id="linear-gradient" x1="-0.3" y1="-0.63" x2="282.37" y2="282.7" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="gray"/><stop offset="1" stop-color="#f2f2f2"/></linearGradient>
+
+<linearGradient id="linear-gradient-2" x1="304.28" y1="68.17" x2="504.87" y2="-104.41" gradientTransform="matrix(0.56, 0, 0, -0.57, -136.72, 82.94)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5a9fd4"/><stop offset="1" stop-color="#306998"/></linearGradient>
+
+<linearGradient id="linear-gradient-3" x1="582.42" y1="-208.86" x2="510.79" y2="-107.52" gradientTransform="matrix(0.56, 0, 0, -0.57, -136.72, 82.94)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd43b"/><stop offset="1" stop-color="#ffe873"/></linearGradient>
+</defs>
+
+<title>Python</title>
+<g id="Layer_2" data-name="Layer 2">
+<g id="background_04" data-name="background 04"><rect class="cls-1" width="283.46" height="283.46"/>
+</g>
+<g id="shadow"><path id="path1948" class="cls-2" d="M140.51,38.34a140.34,140.34,0,0,0-23.57,2C96.06,44,92.27,51.76,92.27,66V84.8h49.34v6.26H73.76c-14.34,0-26.9,8.62-30.82,25-4.53,18.79-4.73,30.51,0,50.14,3.5,14.6,11.88,25,26.22,25h17V168.69c0-16.29,14.09-30.65,30.82-30.65h49.28A24.85,24.85,0,0,0,190.88,113V66c0-13.37-11.27-23.41-24.66-25.64A154,154,0,0,0,140.51,38.34ZM113.83,53.46a9.4,9.4,0,1,1-9.25,9.43A9.36,9.36,0,0,1,113.83,53.46Z"/><path id="path1950" class="cls-3" d="M197,91.06V113c0,17-14.4,31.28-30.82,31.28H116.94c-13.5,0-24.67,11.55-24.67,25.07v47c0,13.37,11.63,21.23,24.67,25.07,15.62,4.59,30.59,5.42,49.28,0,12.42-3.6,24.66-10.83,24.66-25.07V197.5H141.61v-6.27h73.94c14.34,0,19.68-10,24.67-25,5.15-15.46,4.93-30.32,0-50.14-3.54-14.28-10.31-25-24.67-25ZM169.32,210a9.4,9.4,0,1,1-9.26,9.37A9.31,9.31,0,0,1,169.32,210Z"/>
+</g>
+</g>
+</svg>
