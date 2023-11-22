@@ -12,7 +12,7 @@ class PipelineFactory(IPipelineFactory):
 
     async def get(self, env: YouwolEnvironment, context: Context):
         config = PipelineConfig(target=BrowserApp(
-            displayName="Py-Play",
+            displayName="Py playground",
             execution=Execution(
                 standalone=True,
                 parametrized=[
